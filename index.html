@@ -314,6 +314,40 @@ ol.steps li::before{content:counter(st); font-family:var(--f-mono); font-size:ca
 ol.steps li.pt::before{border-color:var(--pt); color:var(--pt)} ol.steps li.th::before{border-color:var(--th); color:var(--th)}
 ol.steps li .role{margin-top:1px}
 .pn2.one{grid-template-columns:1fr}
+/* evidence-reading guide — top of the tests panel, collapsed by default */
+details.evg{margin-bottom:14px; border:1px solid var(--ev); border-inline-start-width:5px; border-radius:11px; background:var(--ev-soft); scroll-margin-top:calc(var(--ptabs-h, 52px) + 8px)}
+details.evg > summary{cursor:pointer; list-style:none; display:flex; align-items:center; gap:11px; padding:10px 13px}
+details.evg > summary::-webkit-details-marker{display:none}
+.evg-pm{width:26px; height:26px; flex:0 0 auto; border-radius:50%; background:var(--ev); position:relative}
+.evg-pm::before, .evg-pm::after{content:""; position:absolute; inset:50% auto auto 50%; width:12px; height:2px; margin:-1px 0 0 -6px; background:var(--surface); border-radius:1px; transition:transform .18s}
+.evg-pm::after{transform:rotate(90deg)}
+details.evg[open] > summary .evg-pm::after{transform:rotate(0deg)}
+.evg-t{display:grid; gap:1px}
+.evg-t b{font-size:calc(16.5px * var(--fs)); color:var(--ink)}
+.evg-t span{font-size:calc(13px * var(--fs)); color:var(--ev); font-weight:600}
+.evg-in{padding:0 13px 12px; display:grid; gap:8px; font-size:calc(14.5px * var(--fs))}
+.evg-in p{margin:0}
+.evg-intro{color:var(--ink)}
+details.evi{border:1px solid var(--line); border-radius:9px; background:var(--surface)}
+details.evi > summary{cursor:pointer; list-style:none; padding:9px 12px; display:grid; grid-template-columns:1fr auto; gap:1px 10px; align-items:center}
+details.evi > summary::-webkit-details-marker{display:none}
+details.evi > summary::after{content:"+"; grid-row:1 / span 2; grid-column:2; font-family:var(--f-mono); font-weight:600; font-size:calc(17px * var(--fs)); color:var(--ev)}
+details.evi[open] > summary::after{content:"−"}
+.evi-n{font-weight:700; font-size:calc(15px * var(--fs))}
+.evi-k{font-size:calc(13px * var(--fs)); color:var(--muted)}
+details.evi > div{padding:2px 12px 12px; display:grid; gap:9px; border-top:1px solid var(--line); padding-top:10px}
+details.evi strong, .evg-intro strong{font-weight:700; color:var(--ink)}
+.gx{background:var(--surface-2); border-inline-start:3px solid var(--accent-line); border-radius:6px; padding:7px 10px}
+.mn{display:grid; gap:6px}
+.mn > div{display:grid; grid-template-columns:auto 1fr; gap:10px; align-items:baseline; background:var(--accent-soft); border-radius:7px; padding:7px 10px}
+.mnk{font-family:var(--f-mono); font-weight:600; color:var(--accent); font-size:calc(14px * var(--fs))}
+.evg-src{font-size:calc(12.5px * var(--fs)); color:var(--muted)}
+table.cut.wrap td{white-space:normal; font-weight:600}
+table.cut.tt td{text-align:center}
+table.cut.tt tbody tr:first-child td:nth-of-type(1), table.cut.tt tbody tr:last-child td:nth-of-type(2){color:var(--go)}
+table.cut.tt tbody tr:first-child td:nth-of-type(2), table.cut.tt tbody tr:last-child td:nth-of-type(1){color:var(--stop)}
+.h4row{display:flex; align-items:baseline; justify-content:space-between; gap:10px}
+.evq{border:0; background:none; padding:0; cursor:pointer; font:inherit; font-size:calc(12.5px * var(--fs)); font-weight:600; color:var(--ev); text-decoration:underline; text-underline-offset:3px; letter-spacing:0; text-transform:none}
 /* test illustration: 80% of the panel width, aspect kept; white paper blends into the theme surface */
 .tfig{width:85%; width:min(100%, 80cqw); margin:10px auto 8px; border-radius:10px; overflow:hidden; border:1px solid var(--line)}
 .tfig img{display:block; width:100%; height:auto; mix-blend-mode:multiply}
@@ -2483,6 +2517,73 @@ const TX2 = {
 
 
 
+// Evidence-reading guide shown at the top of the tests panel.
+// Blocks: string = paragraph (**bold** allowed, [label](url) links), {t:{h,r,cls}} = table,
+// {mn:[[term, text], ...]} = mnemonic cards, {ex:string} = example box.
+const EVGUIDE = {
+  title: "איך קוראים את הראיות",
+  sub: "רגישות וספציפיות · LR · Kappa",
+  intro: "לכל מבדק יש שורת ״ראיות״. היא עונה על שתי שאלות שונות: **האם המבדק צודק** — רגישות, ספציפיות ו־LR; ו**האם שני מטפלים יקבלו אותה תוצאה** — Kappa.",
+  items: [
+    {
+      name: "רגישות וספציפיות",
+      key: "רגיש ושלילי ← שולל · ספציפי וחיובי ← מאשר",
+      body: [
+        "**רגישות** — מתוך כל מי ש**באמת יש לו** את הפגיעה: כמה אחוזים המבדק תופס. רגישות 90% אומרת שמתוך 100 אנשים עם פגיעה, 90 יקבלו מבדק חיובי ו־10 יוחמצו.",
+        "**ספציפיות** — מתוך כל מי ש**אין לו** את הפגיעה: כמה אחוזים המבדק משאיר שליליים. ספציפיות 60% אומרת שמתוך 100 אנשים בלי פגיעה, 60 יקבלו שלילי ו־40 יקבלו חיובי שגוי.",
+        { t: { cls: "tt", h: ["", "יש פגיעה", "אין פגיעה"], r: [["מבדק חיובי", "חיובי אמיתי", "חיובי שגוי"], ["מבדק שלילי", "שלילי שגוי", "שלילי אמיתי"]] } },
+        "רגישות היא החיוביים האמיתיים חלקי כל עמודת ״יש פגיעה״. ספציפיות היא השליליים האמיתיים חלקי כל עמודת ״אין פגיעה״.",
+        { mn: [["SnNout", "Sensitive, Negative ← rule out: מבדק **רגיש** מאוד שיצא **שלילי** — שולל."], ["SpPin", "Specific, Positive ← rule in: מבדק **ספציפי** מאוד שיצא **חיובי** — מאשר."]] },
+        "**למה זה עובד?** מבדק רגיש כמעט לא מפספס, ולכן כשהוא שלילי אפשר לסמוך עליו. אבל הוא ״נדלק״ גם אצל הרבה בריאים, ולכן החיובי שלו אומר מעט. במבדק ספציפי זה הפוך.",
+        { ex: "**מהמפה:** Snuffbox — 92% / 48%. הרגישות גבוהה: שלילי כמעט שולל שבר בסקפואיד. הספציפיות נמוכה: הוא חיובי גם אצל כחצי מאלה שאין להם שבר, ולכן לבדו הוא לא מאשר." },
+        "**זהירות:** הכלל עובד כשהערך גבוה מאוד. כשהערך השני נמוך מאוד, עדיף להסתכל על ה־LR, שמשקלל את שניהם."
+      ]
+    },
+    {
+      name: "LR — יחס סבירות",
+      key: "בכמה התוצאה מזיזה את החשד",
+      body: [
+        "LR מאחד רגישות וספציפיות למספר אחד, שעונה על השאלה שבאמת מעניינת מול המטופל: **בכמה התוצאה הזאת משנה את הסבירות שיש פגיעה?**",
+        "**LR חיובי** — פי כמה תוצאה חיובית שכיחה יותר אצל מי שיש לו פגיעה מאשר אצל מי שאין לו. מחשבים: רגישות חלקי (1 פחות ספציפיות). ככל שהוא גבוה יותר — מאשר יותר.",
+        "**LR שלילי** — אותו רעיון לתוצאה שלילית: (1 פחות רגישות) חלקי ספציפיות. ככל שהוא קרוב יותר ל־0 — שולל יותר.",
+        "**LR של 1** — המבדק לא משנה דבר.",
+        { t: { cls: "wrap", h: ["LR חיובי", "LR שלילי", "השינוי בחשד"], r: [["מעל 10", "מתחת ל־0.1", "גדול — לרוב מכריע"], ["5–10", "0.1–0.2", "בינוני"], ["2–5", "0.2–0.5", "קטן, לפעמים חשוב"], ["1–2", "0.5–1", "זניח"]] } },
+        "**כלל אצבע:** LR של 2 מעלה את הסבירות בכ־15 נקודות אחוז, LR של 5 בכ־30, ו־LR של 10 בכ־45. בכיוון ההפוך: 0.5 מוריד בכ־15, 0.2 בכ־30, ו־0.1 בכ־45. הכלל מדויק כשהחשד ההתחלתי בין 10% ל־90%.",
+        { ex: "**דוגמה:** מהאנמנזה החשד לפגיעה הוא בערך 30%. מבדק עם LR חיובי 10 יצא חיובי ← בערך 75%. אילו ה־LR החיובי היה 2 ← רק בערך 45%." },
+        { ex: "**מהמפה:** Snuffbox — 92% / 48%. LR חיובי: 0.92 חלקי 0.52, בערך 1.8 — חיובי כמעט לא מזיז. LR שלילי: 0.08 חלקי 0.48, בערך 0.17 — שלילי מוריד את החשד בכ־30 נקודות." },
+        "גם ממצאים שונים באותו מבדק מקבלים LR שונה. ב־Apprehension: **תחושת חשש** — LR חיובי 20; **כאב בלבד** — 1.1."
+      ]
+    },
+    {
+      name: "Kappa — מהימנות",
+      key: "האם שני מטפלים יקבלו אותה תוצאה",
+      body: [
+        "Kappa (κ) מודד **הסכמה בין בודקים** — או של אותו בודק בשתי פעמים — אחרי שמנכים את ההסכמה שהייתה קורית במקרה. 0 — לא יותר ממקרה; 1 — הסכמה מלאה.",
+        "**למה לנכות מקרה?** אם רוב המטופלים יוצאים שליליים, שני בודקים ״יסכימו״ הרבה גם בלי לדעת דבר. Kappa מוריד את החלק הזה.",
+        { t: { h: ["Kappa", "רמת ההסכמה"], r: [["מתחת ל־0", "גרועה — פחות ממקרה"], ["0–0.20", "קלושה"], ["0.21–0.40", "הוגנת"], ["0.41–0.60", "בינונית"], ["0.61–0.80", "משמעותית"], ["0.81–1", "כמעט מלאה"]] } },
+        "**ICC** — המקביל ל־Kappa במדידות רציפות, כמו מעלות, סנטימטרים או ניקוד: מתחת ל־0.5 — חלשה; 0.5–0.75 — בינונית; 0.75–0.9 — טובה; מעל 0.9 — מצוינת.",
+        { ex: "**מהמפה:** Infraspinatus Test — Kappa 0.67, הסכמה משמעותית. Pain-Free Grip — ICC 0.97, מצוין, ולכן מדד טוב למעקב." },
+        "**מהימנות היא לא דיוק.** מבדק יכול לתת לשני מטפלים בדיוק אותה תוצאה — ועדיין לטעות באבחנה. צריך את שניהם: מהימן וגם תקף."
+      ]
+    },
+    {
+      name: "שורת הראיות במפה",
+      key: "איך קוראים ״80% / 56%״, ומה עושים עם זה",
+      body: [
+        "**״80% / 56%״** — המספר הראשון הוא רגישות, השני ספציפיות.",
+        "**טווח, כמו ״66%–88%״** — מחקרים שונים מצאו ערכים שונים.",
+        "**״מחקר קטן״ או ״מחקר יחיד״** — המספרים פחות יציבים. לא לבנות עליהם לבד.",
+        "**״לא נבדק״ או ״אבחנה קלינית״** — אין נתוני דיוק. המבדק עדיין יכול לעזור כחלק מהתמונה.",
+        "**מבדק אחד כמעט אף פעם לא מכריע.** האנמנזה קובעת את נקודת הפתיחה, ואשכול של כמה מבדקים מזיז הרבה יותר ממבדק בודד.",
+        "**על מי נעשה המחקר?** מבדק שנבדק במרפאה אורטופדית, על מטופלים עם חשד גבוה, יכול להתנהג אחרת אצל ספורטאי במגרש."
+      ]
+    }
+  ],
+  src: "מקורות: [McGee 2002](https://pmc.ncbi.nlm.nih.gov/articles/PMC1495095/) · [Users' Guides — פירוש LR](https://idp.mercer.edu/library/diagnostic-test-study.htm) · [Landis & Koch 1977](https://doi.org/10.2307/2529310) · [Koo & Li 2016](https://pmc.ncbi.nlm.nih.gov/articles/PMC4913118/)"
+};
+
+
+
 </script>
 <script>
 (function(){
@@ -2761,12 +2862,23 @@ function videoBox(t){
 }
 function cutTable(c){
   if(!c || !c.r) return "";
-  return '<table class="cut">' + (c.h ? "<thead><tr>" + c.h.map(s => '<th scope="col">' + fx(s) + "</th>").join("") + "</tr></thead>" : "") +
+  return '<table class="cut' + (c.cls ? " " + c.cls : "") + '">' + (c.h ? "<thead><tr>" + c.h.map(s => '<th scope="col">' + fx(s) + "</th>").join("") + "</tr></thead>" : "") +
     "<tbody>" + c.r.map(row => "<tr>" + row.map((s, i) => i === 0 ? '<th scope="row">' + fx(s) + "</th>" : "<td>" + fx(s) + "</td>").join("") + "</tr>").join("") + "</tbody></table>";
+}
+const strong = s => String(s).split("**").map((p, i) => i % 2 ? "<strong>" + rich(p) + "</strong>" : rich(p)).join("");
+function evGuide(){
+  const G = EVGUIDE, blk = b => typeof b === "string" ? "<p>" + strong(b) + "</p>" :
+    b.t ? cutTable(b.t) :
+    b.mn ? '<div class="mn">' + b.mn.map(([k, v]) => '<div><span class="mnk"><bdi>' + esc(k) + "</bdi></span><span>" + strong(v) + "</span></div>").join("") + "</div>" :
+    b.ex ? '<p class="gx">' + strong(b.ex) + "</p>" : "";
+  return '<details class="evg" id="evg"><summary><span class="evg-pm" aria-hidden="true"></span><span class="evg-t"><b>' + esc(G.title) + '</b><span>' + fx(G.sub) + "</span></span></summary>" +
+    '<div class="evg-in"><p class="evg-intro">' + strong(G.intro) + "</p>" +
+    G.items.map(it => '<details class="evi"><summary><span class="evi-n">' + fx(it.name) + '</span><span class="evi-k">' + fx(it.key) + "</span></summary><div>" + it.body.map(blk).join("") + "</div></details>").join("") +
+    '<p class="evg-src">' + rich(G.src) + "</p></div></details>";
 }
 function testDetail(id){
   const t = T[id], x = TX[id] || {}, uses = USES[id] || [];
-  let h = '<div class="pbox"><button type="button" class="back" data-back>→ כל המבדקים' + (current === "general" ? "" : " · " + esc(regionName(current))) + "</button>" +
+  let h = '<div class="pbox">' + evGuide() + '<button type="button" class="back" data-back>→ כל המבדקים' + (current === "general" ? "" : " · " + esc(regionName(current))) + "</button>" +
     '<div class="thead"><h3>' + fx(t.n) + "</h3>" + (x.img ? '<figure class="tfig"><img src="' + esc(x.img.src) + '" width="' + x.img.w + '" height="' + x.img.h + '" alt="' + esc(x.img.alt || t.n) + '" decoding="async"></figure>' : "") + (x.aim ? '<p class="aim">' + rich(x.aim) + "</p>" : "") + "</div>" + videoBox(t);
   // execution — who does what, in order
   if(x.steps){
@@ -2783,7 +2895,7 @@ function testDetail(id){
   const stop = [x.contra, t.warn].filter(Boolean);
   if(stop.length) h += '<div class="warn"><b>מתי לא, או בזהירות</b>' + stop.map(w => "<span>" + rich(w) + "</span>").join("") + "</div>";
   const evs = x.evs || t.ev;
-  if(evs || x.evd) h += '<section class="ps"><h4>ראיות</h4>' + (evs ? '<p class="evd">' + fx(evs) + "</p>" : "") +
+  if(evs || x.evd) h += '<section class="ps"><h4 class="h4row">ראיות <button type="button" class="evq" data-evguide>איך קוראים את המספרים?</button></h4>' + (evs ? '<p class="evd">' + fx(evs) + "</p>" : "") +
     (x.evd ? more("ev", "פירוט ומקורות", '<p class="evx">' + rich(x.evd) + "</p>") : "") + "</section>";
   if(x.tips && x.tips.length) h += more("tips", "דגשים וטעויות נפוצות · " + x.tips.length, '<ul class="li">' + x.tips.map(s => "<li>" + who(rich(s)) + "</li>").join("") + "</ul>");
   if(t.note) h += '<p class="plain">' + fx(t.note) + "</p>";
@@ -2795,7 +2907,7 @@ function testDetail(id){
 function renderPanel(){
   const box = $("#pbody");
   if(ptest){ box.innerHTML = testDetail(ptest); return; }
-  let h = '<div class="pbox">';
+  let h = '<div class="pbox">' + evGuide();
   if(current === "general"){
     h += '<h3>כל המבדקים</h3><p class="phint">בחירת מבדק מציגה מי עושה מה, לפי הסדר, מה מחפשים, ראיות וסרטון הדגמה.</p>';
     REGIONS.forEach(r => { const rt = regionTests(r); h += '<div class="tl-h">' + esc(r.name) + '</div><div class="tlist">' + rt.safety.concat(rt.clinical).map(testRow).join("") + "</div>"; });
@@ -3011,6 +3123,7 @@ document.addEventListener("click", e => {
   const res = t.closest("[data-hit]"); if(res){ pick(hits[+res.dataset.hit]); return; }
   const tab = t.closest("[data-tab]"); if(tab){ show(tab.dataset.tab, true); return; }
   const ph = t.closest("button.ph"); if(ph){ togglePath(ph.parentElement); return; }
+  if(t.closest("[data-evguide]")){ const g = $("#evg"); if(g){ g.open = true; g.scrollIntoView({block: "start", behavior: "smooth"}); } return; }
   const yt = t.closest("[data-yt]"); if(yt){ yt.parentElement.innerHTML = ytFrame(yt.dataset.yt); return; }
   const tst = t.closest("[data-test]"); if(tst){ openTest(tst.dataset.test); return; }
   if(t.closest("[data-back]")){ ptest = null; $$(".chip.on").forEach(c => c.classList.remove("on")); renderPanel(); return; }
