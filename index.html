@@ -363,6 +363,19 @@ p.evd{margin:0; color:var(--ev); font-weight:700; font-size:calc(15px * var(--fs
 .vid .play{width:30px; height:30px; border-radius:50%; background:var(--video); display:grid; place-items:center; flex:0 0 auto}
 .vid .play svg{width:12px; height:12px; fill:var(--surface); margin-inline-end:-2px}
 .vch{font-size:calc(13px * var(--fs)); color:var(--muted)}
+/* embedded YouTube player: 16:9, full panel width, thumbnail until clicked */
+.yt{position:relative; aspect-ratio:16/9; border-radius:9px; overflow:hidden; background:#1b1a18}
+.yt iframe, .ytp{position:absolute; inset:0; width:100%; height:100%; border:0}
+.ytp{padding:0; cursor:pointer; background:#1b1a18; display:grid; place-items:center}
+.ytp img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.92; transition:opacity .15s}
+.ytp:hover img, .ytp:focus-visible img{opacity:1}
+.ytb{position:relative; width:64px; height:44px; border-radius:12px; background:var(--video); display:grid; place-items:center; box-shadow:0 2px 10px rgba(0,0,0,.35); transition:transform .15s}
+.ytp:hover .ytb, .ytp:focus-visible .ytb{transform:scale(1.07)}
+.ytb svg{width:18px; height:18px; fill:#fff; transform:translateX(2px)}
+.ytp:focus-visible{outline:3px solid var(--accent); outline-offset:-3px}
+.vmeta{display:flex; justify-content:space-between; align-items:baseline; gap:10px; flex-wrap:wrap}
+.vout{font-size:calc(13px * var(--fs)); font-weight:600; color:var(--video); text-decoration:none}
+.vout:hover{text-decoration:underline}
 .vx{font-size:calc(13.5px * var(--fs)); display:flex; flex-wrap:wrap; gap:4px 12px}
 .novid{font-size:calc(13.5px * var(--fs)); color:var(--muted)}
 .uses{display:grid; gap:4px}
@@ -2730,9 +2743,19 @@ const moreOpen = k => store.get("uqmap-more-" + k) === "1";
 function more(k, label, body){
   return '<details class="more" data-more="' + k + '"' + (moreOpen(k) ? " open" : "") + "><summary>" + label + "</summary><div>" + body + "</div></details>";
 }
+const ytId = u => (String(u || "").match(/(?:[?&]v=|youtu\.be\/|\/shorts\/|\/embed\/)([\w-]{11})/) || [])[1];
+// Click-to-load player: a thumbnail until the first click, so nothing from YouTube loads before it's wanted.
+function ytFrame(id){
+  return '<iframe src="https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&rel=0&playsinline=1" title="סרטון הדגמה" ' +
+    'allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>';
+}
 function videoBox(t){
-  if(t.v) return '<div class="vbox"><a class="vid" href="' + esc(t.v) + '" target="_blank" rel="noopener"><span class="play">' + PLAY + "</span>צפייה בהדגמה ביוטיוב</a>" +
-    (t.ch ? '<span class="vch">ערוץ: <bdi>' + esc(t.ch) + "</bdi></span>" : "") + (t.vn ? '<span class="vch">' + fx(t.vn) + "</span>" : "") +
+  const id = ytId(t.v);
+  if(t.v) return '<div class="vbox">' +
+    (id ? '<div class="yt"><button type="button" class="ytp" data-yt="' + id + '" aria-label="ניגון סרטון ההדגמה">' +
+      '<img src="https://i.ytimg.com/vi/' + id + '/hqdefault.jpg" alt="" loading="lazy" onerror="this.remove()"><span class="ytb">' + PLAY + "</span></button></div>" : "") +
+    '<div class="vmeta">' + (t.ch ? '<span class="vch">ערוץ: <bdi>' + esc(t.ch) + "</bdi></span>" : "") +
+    '<a class="vout" href="' + esc(t.v) + '" target="_blank" rel="noopener">פתיחה ביוטיוב ↗</a></div>' + (t.vn ? '<span class="vch">' + fx(t.vn) + "</span>" : "") +
     (t.vx ? '<span class="vx">' + t.vx.map(([l, u]) => '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + fx(l) + " ↗</a>").join("") + "</span>" : "") + "</div>";
   return '<div class="vbox"><span class="novid">לא נמצא סרטון הדגמה מקצועי למבדק הזה.</span>' +
     (t.vx ? '<span class="vx">' + t.vx.map(([l, u]) => '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + fx(l) + " ↗</a>").join("") + "</span>" : "") + "</div>";
@@ -2989,6 +3012,7 @@ document.addEventListener("click", e => {
   const res = t.closest("[data-hit]"); if(res){ pick(hits[+res.dataset.hit]); return; }
   const tab = t.closest("[data-tab]"); if(tab){ show(tab.dataset.tab, true); return; }
   const ph = t.closest("button.ph"); if(ph){ togglePath(ph.parentElement); return; }
+  const yt = t.closest("[data-yt]"); if(yt){ yt.parentElement.innerHTML = ytFrame(yt.dataset.yt); return; }
   const tst = t.closest("[data-test]"); if(tst){ openTest(tst.dataset.test); return; }
   if(t.closest("[data-back]")){ ptest = null; $$(".chip.on").forEach(c => c.classList.remove("on")); renderPanel(); return; }
   const pth = t.closest("[data-path]"); if(pth){ goPath(pth.dataset.path); if(narrowPanel() && t.closest("#panel")) hidePanel(); return; }
