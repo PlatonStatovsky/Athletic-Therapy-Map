@@ -314,6 +314,12 @@ ol.steps li::before{content:counter(st); font-family:var(--f-mono); font-size:ca
 ol.steps li.pt::before{border-color:var(--pt); color:var(--pt)} ol.steps li.th::before{border-color:var(--th); color:var(--th)}
 ol.steps li .role{margin-top:1px}
 .pn2.one{grid-template-columns:1fr}
+/* test illustration: 80% of the panel width, aspect kept; white paper blends into the theme surface */
+.tfig{width:85%; width:min(100%, 80cqw); margin:10px auto 8px; border-radius:10px; overflow:hidden; border:1px solid var(--line)}
+.tfig img{display:block; width:100%; height:auto; mix-blend-mode:multiply}
+:root[data-theme="dark"] .tfig{background:#d6d0c4}
+:root[data-theme="dark"] .tfig img{filter:brightness(.97)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]):not([data-theme="comfort"]) .tfig{background:#d6d0c4} }
 table.cut{width:100%; border-collapse:collapse; margin:8px 0 2px; font-size:calc(14px * var(--fs)); background:var(--surface); border:1px solid var(--accent-line); border-radius:6px; overflow:hidden}
 table.cut th, table.cut td{padding:6px 10px; text-align:start; border-top:1px solid var(--line); vertical-align:middle}
 table.cut thead th{border-top:0; background:var(--accent-soft); color:var(--muted); font-weight:600; font-size:calc(12.5px * var(--fs))}
@@ -1949,6 +1955,7 @@ const TX2 = {
     pair: ["mills", "maudsley", "pfgrip"]
   },
   maudsley: {
+    img: { src: "img/maudsley.webp", w: 793, h: 504, alt: "Maudsley's Test: המטפל מייצב את המרפק ולוחץ על קצה האצבע האמצעית; שרירי האקסטנסורים של האמה מסומנים" },
     aim: "ה־ECRB ומוצא האקסטנסורים: התנגדות ליישור אצבע 3.",
     pt: "יושב, המרפק ישר; מיישר את האצבע האמצעית כנגד התנגדות.",
     th: "יד אחת על האפיקונדיל הלטרלי; אצבע של היד השנייה לוחצת על הגליל הדיסטלי של אצבע 3.",
@@ -2738,7 +2745,7 @@ function cutTable(c){
 function testDetail(id){
   const t = T[id], x = TX[id] || {}, uses = USES[id] || [];
   let h = '<div class="pbox"><button type="button" class="back" data-back>→ כל המבדקים' + (current === "general" ? "" : " · " + esc(regionName(current))) + "</button>" +
-    '<div class="thead"><h3>' + fx(t.n) + "</h3>" + (x.aim ? '<p class="aim">' + rich(x.aim) + "</p>" : "") + "</div>" + videoBox(t);
+    '<div class="thead"><h3>' + fx(t.n) + "</h3>" + (x.img ? '<figure class="tfig"><img src="' + esc(x.img.src) + '" width="' + x.img.w + '" height="' + x.img.h + '" alt="' + esc(x.img.alt || t.n) + '" decoding="async"></figure>' : "") + (x.aim ? '<p class="aim">' + rich(x.aim) + "</p>" : "") + "</div>" + videoBox(t);
   // execution — who does what, in order
   if(x.steps){
     h += '<section class="ps"><h4>ביצוע</h4><div class="rolecards">' +
