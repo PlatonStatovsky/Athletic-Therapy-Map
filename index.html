@@ -314,6 +314,11 @@ ol.steps li::before{content:counter(st); font-family:var(--f-mono); font-size:ca
 ol.steps li.pt::before{border-color:var(--pt); color:var(--pt)} ol.steps li.th::before{border-color:var(--th); color:var(--th)}
 ol.steps li .role{margin-top:1px}
 .pn2.one{grid-template-columns:1fr}
+table.cut{width:100%; border-collapse:collapse; margin:8px 0 2px; font-size:calc(14px * var(--fs)); background:var(--surface); border:1px solid var(--accent-line); border-radius:6px; overflow:hidden}
+table.cut th, table.cut td{padding:6px 10px; text-align:start; border-top:1px solid var(--line); vertical-align:middle}
+table.cut thead th{border-top:0; background:var(--accent-soft); color:var(--muted); font-weight:600; font-size:calc(12.5px * var(--fs))}
+table.cut tbody th{font-weight:400; color:var(--ink)}
+table.cut td{font-weight:700; color:var(--ink); white-space:nowrap; font-variant-numeric:tabular-nums}
 .plain{margin:0; font-size:calc(14.5px * var(--fs))}
 .warn b{display:block; color:var(--stop); font-size:calc(12.5px * var(--fs)); margin-bottom:2px}
 .warn span{display:block}
@@ -394,6 +399,7 @@ p.evd{margin:0; color:var(--ev); font-weight:700; font-size:calc(15px * var(--fs
 </style>
 </head>
 <body>
+
 <div class="app" id="app" dir="rtl" lang="he">
   <header class="bar" id="bar">
     <div class="brand">
@@ -1808,7 +1814,8 @@ const TX = {
       ["pt", "כיפוף קדימה בברכיים ישרות — כפות ידיים שטוחות על הרצפה ← נקודה אחת."],
       ["th", "מסכם את הניקוד, מתוך 9."]
     ],
-    pos: "מבוגרים עד גיל 50: 5 נקודות ומעלה ← גמישות יתר כללית. מעל 50: 4 ומעלה. לפני גיל ההתבגרות: 6 ומעלה.",
+    pos: "גמישות יתר כללית — כשהניקוד מגיע לסף של קבוצת הגיל:",
+    cut: { h: ["גיל", "ניקוד חיובי (מתוך 9)"], r: [["לפני גיל ההתבגרות", "6 ומעלה"], ["מגיל ההתבגרות עד 50", "5 ומעלה"], ["מעל 50", "4 ומעלה"]] },
     neg: "ניקוד נמוך — לא שולל רפיון מקומי בכתף.",
     evs: "אמין; תקפות מוגבלת",
     evd: "הספים לפי הקריטריונים הבינלאומיים — [hEDS 2017](https://www.ehlers-danlos.com/wp-content/uploads/2017/05/hEDS-Dx-Criteria-checklist-1.pdf). האמינות טובה כשבודקים באותה שיטה; התקפות חלשה יותר — [EDS Society](https://www.ehlers-danlos.com/2017-eds-classification-non-experts/clinical-assessment-methods-classifying-generalized-joint-hypermobility/).",
@@ -2723,6 +2730,11 @@ function videoBox(t){
   return '<div class="vbox"><span class="novid">לא נמצא סרטון הדגמה מקצועי למבדק הזה.</span>' +
     (t.vx ? '<span class="vx">' + t.vx.map(([l, u]) => '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + fx(l) + " ↗</a>").join("") + "</span>" : "") + "</div>";
 }
+function cutTable(c){
+  if(!c || !c.r) return "";
+  return '<table class="cut">' + (c.h ? "<thead><tr>" + c.h.map(s => '<th scope="col">' + fx(s) + "</th>").join("") + "</tr></thead>" : "") +
+    "<tbody>" + c.r.map(row => "<tr>" + row.map((s, i) => i === 0 ? '<th scope="row">' + fx(s) + "</th>" : "<td>" + fx(s) + "</td>").join("") + "</tr>").join("") + "</tbody></table>";
+}
 function testDetail(id){
   const t = T[id], x = TX[id] || {}, uses = USES[id] || [];
   let h = '<div class="pbox"><button type="button" class="back" data-back>→ כל המבדקים' + (current === "general" ? "" : " · " + esc(regionName(current))) + "</button>" +
@@ -2738,7 +2750,7 @@ function testDetail(id){
   }
   const pos = x.pos || t.pos, neg = x.neg;
   if(pos || neg) h += '<section class="ps"><h4>מה מחפשים</h4><div class="pn2 one">' +
-    (pos ? '<div class="pp"><b>חיובי ←</b>' + who(rich(pos)) + "</div>" : "") + (neg ? '<div class="nn"><b>שלילי ←</b>' + who(rich(neg)) + "</div>" : "") + "</div></section>";
+    (pos ? '<div class="pp"><b>חיובי ←</b>' + who(rich(pos)) + cutTable(x.cut) + "</div>" : "") + (neg ? '<div class="nn"><b>שלילי ←</b>' + who(rich(neg)) + "</div>" : "") + "</div></section>";
   const stop = [x.contra, t.warn].filter(Boolean);
   if(stop.length) h += '<div class="warn"><b>מתי לא, או בזהירות</b>' + stop.map(w => "<span>" + rich(w) + "</span>").join("") + "</div>";
   const evs = x.evs || t.ev;
@@ -2851,7 +2863,7 @@ Object.keys(T).forEach(id => {
   const keys = []; String(t.n).replace(ABRE, (a, x, k) => { keys.push(k + " " + ABBR[k][0] + " " + ABBR[k][1]); return a; });
   const x = TX[id] || {}, strip = s => String(s || "").replace(LINK, "$1");
   IDX.push({ type: "test", id, title: t.n, sub: [...new Set(u.map(x => regionName(x.rid)))].join(" · ") + (t.v ? " · יש סרטון" : ""),
-    body: [x.aim, x.pos || t.pos, t.ev, x.neg, (x.steps || []).map(st => st[1]).join(" "), t.how, (x.tips || []).join(" "), t.note].filter(Boolean).map(strip).join(" · "), key: x.aim || "", extra: keys.join(" ") + " " + u.map(x => x.name).join(" ") });
+    body: [x.aim, x.pos || t.pos, x.cut ? x.cut.r.map(r => r.join(" ")).join(" · ") : "", t.ev, x.neg, (x.steps || []).map(st => st[1]).join(" "), t.how, (x.tips || []).join(" "), t.note].filter(Boolean).map(strip).join(" · "), key: x.aim || "", extra: keys.join(" ") + " " + u.map(x => x.name).join(" ") });
 });
 GENERAL.steps.forEach((s, i) => {
   const all = [].concat(s.body || [], s.after || []).map(b => [b.h || "", (b.li || []).join(" ")].join(" ")).join(" · ") + (s.dec ? " · " + s.dec.q : "");
