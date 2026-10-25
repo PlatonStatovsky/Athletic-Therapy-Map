@@ -518,17 +518,17 @@ p.evd{margin:0; color:var(--ev); font-weight:700; font-size:calc(15px * var(--fs
 </div>
 
 <script>
-// תוכן המפה — מקור אחד לאתר ולמסמך
-// מקורות: נושא 1 + נושא 2 (סדנת סטאז׳, יקיר כרמלי) · סיכומי שיעורים 1–3 רביע עליון · Cheat Sheet 8 תיאורי מקרה
+
+
 
 const T = {
-  // ---------- צוואר — בטיחות ----------
+
   transverse: { n: "Transverse Ligament Test", how: "שכיבה על הגב; ידי הבודק תומכות בראש וב־C1.", pos: "תנועה אקססיבית או שחזור סימפטומים ← הפנייה" },
   sharp: { n: "Sharp-Purser Test", how: "בדיקת תת־פריקה של ה־Atlas על ה־Axis, בישיבה.", pos: "תנועה אקססיבית או שחזור סימפטומים ← הפנייה" },
   alar: { n: "Alar Ligament Stress Test", how: "אחיזה בלמינה של C2; רוטציה וכפיפה צידית של הראש לשני הצדדים.", pos: "תנועה אקססיבית, שחזור סימפטומים או חוסר סימטריה ← הפנייה" },
   vat: { n: "Vertebral Artery Test", how: "רוטציה צווארית ל־90°, קשר עין, ספירה לאחור מ־100, 30 שניות לכל צד.", pos: "אחד או יותר מ־5D's / 3N's ← הפנייה" },
   hoffmann: { n: "Hoffmann's & Trömner's", how: "טפיחה על הפלנקס הדיסטלי של אצבע 3.", pos: "פלקשן בשאר האצבעות ובאגודל ← הפרעת UMN אפשרית ← הפנייה" },
-  // ---------- צוואר ----------
+
   cfrt: { n: "CFRT — Flexion-Rotation", how: "שכיבה; כיפוף צוואר מלא, ומתוכו רוטציה לכל צד עד הגבול — בלי להכריח.", pos: "הגבלה (מתחת ל־32°, או הבדל של 10°) או שחזור כאב הראש ← C1–C2", ev: "טוב: 91% / 90%", v: "https://www.youtube.com/watch?v=TziMAn77ZRU" },
   spurling: { n: "Spurling's Test", how: "ישיבה, בשלבים: Extension אקטיבי ← כיפוף צידי לצד הכואב ← רק אם עדיין אין סימפטומים: לחץ צירי עדין. עוצרים בשלב שבו הופיעו.", pos: "שחזור ההקרנה המוכרת לזרוע ← לחץ שורשי. כאב מקומי בצוואר לא מספיק", ev: "ספציפי, לא רגיש — חיובי מחזק, שלילי לא שולל", v: "https://www.youtube.com/watch?v=3ZSNdv0o0yk", warn: "לא במטופל איריטבילי מאוד, ולא בקונטרה־אינדיקציה צווארית (סחרחורת)" },
   distraction: { n: "Cervical Distraction", how: "תמיכה בראש והרמה עדינה לאורך ציר הצוואר לכמה שניות.", pos: "הקלה בכאב או בהקרנה ← מקור שורשי", ev: "חלש לבדו (רגישות 44%)", v: "https://www.youtube.com/watch?v=uLdzgd5snmw", note: "גם טכניקת טיפול" },
@@ -537,13 +537,13 @@ const T = {
   armsq: { n: "Arm Squeeze Test", how: "לחיצה בשליש האמצעי של הזרוע, ואותו לחץ על ה־ACJ ועל האזור הסאב־אקרומיאלי; ציון VAS לכל נקודה.", pos: "הזרוע גבוהה ב־3 נקודות VAS ומעלה ← מקור צווארי", ev: "מבטיח, מחקר יחיד", v: "https://www.youtube.com/watch?v=rROAZDrAYUk", note: "עדין — פותחים בו במטופל איריטבילי" },
   adson: { n: "Adson Test", how: "ישיבה; זרוע ב־20° ABD, ER ומעט Extension, אצבע על הדופק הרדיאלי. Extension צוואר, רוטציה לצד הנבדק, שאיפה עמוקה והחזקה.", pos: "ירידה בדופק או הנימול המוכר, בהבדל מהצד הבריא ← TOS", ev: "חלש; רק שחזור הסימפטום נחשב", v: "https://www.youtube.com/watch?v=BnwwvuSagIU" },
   roos: { n: "Roos — EAST", how: "שתי הכתפיים 90° ABD ו־90° ER, מרפקים 90°; פתיחה וסגירה של אגרופים 3 דקות.", pos: "שחזור כאב, נימול או חולשה, או הבדל בהתעייפות ← TOS", ev: "רגיש, לא ספציפי; שני המבדקים יחד — 82% ספציפיות", v: "https://www.youtube.com/watch?v=0oGGdcQsBKY" },
-  // ---------- כתף — בטיחות ----------
+
   bonyapp: { n: "Bony Apprehension Test", how: "אבדוקציה 45° + ER.", pos: "Apprehension ← חשד ל־Hill-Sachs / Bony Bankart ← הפנייה" },
   ompt: { n: "OMPT — Olecranon-Manubrium Percussion", how: "עמידה, ידיים משולבות; סטטוסקופ על המנובריום, הקשה על המרפק בקצה אצבע 3.", pos: "צליל מושתק או עמום בצד אחד ← הפנייה" },
   murphy: { n: "Murphy's Sign — כיס מרה", how: "מישוש ב־RUQ מתחת לזווית הצלע הימנית, בקו ה־Mid-Clavicular, תוך נשימות חוזרות.", pos: "הפסקת נשימה תוך לחץ, או כאב חד ← הפנייה" },
   liver: { n: "מישוש כבד", how: "מישוש ב־RUQ מתחת לזווית הצלע הימנית, בגישה לטרלית.", pos: "כאב, או כבד מוגדל שיורד מתחת לקו הצלעות ← הפנייה" },
   spleen: { n: "מישוש טחול — Kehr's Sign", how: "מישוש אלכסוני מהטבור לכיוון ה־LUQ, עם נשימות עמוקות.", pos: "כאב, או טחול מוגדל שמורגש במישוש ← הפנייה" },
-  // ---------- כתף ----------
+
   painarc: { n: "Painful Arc", how: "אבדוקציה אקטיבית ואיטית עד למעלה, והורדה איטית.", pos: "כאב בקשת האמצעית ← SAPS", ev: "53% / 76% — לאישור", v: "https://www.youtube.com/watch?v=7-aXHIBRsbU" },
   neer: { n: "Neer Test", how: "ייצוב השכמה; פלקסיה פסיבית מלאה כשהכתף ברוטציה פנימית.", pos: "הכאב המוכר בקדמת הכתף ← SAPS", ev: "72% / 60% — חלש לבדו", v: "https://www.youtube.com/watch?v=nNyax0iocZo" },
   hk: { n: "Hawkins–Kennedy", how: "פלקסיה 90°, מרפק 90°; רוטציה פנימית פסיבית ועדינה.", pos: "כאב בכתף ← SAPS", ev: "80% / 56% — רגיש, לשלילה", v: "https://www.youtube.com/watch?v=X9YiuvQJVJc" },
@@ -567,8 +567,8 @@ const T = {
   crossbody: { n: "Cross-Body Adduction", how: "היד לרוחב החזה אל הכתף הנגדית, אקטיבי; אם לא כואב — Overpressure.", pos: "כאב ממוקד על ה־ACJ", ev: "רגיש 77% — שלילי מועיל", v: "https://www.youtube.com/watch?v=DKLvt816x6o" },
   acpalp: { n: "מישוש ה־ACJ", how: "לחיצה ישירה על המפרק, והשוואה לצד השני.", pos: "רגישות חדה בדיוק על המפרק", ev: "הממצא הרגיש ביותר: 96%" },
   promef: { n: "PROM + End Feel", how: "טווח פסיבי ו־Overpressure בסוף הטווח; השוואת ER, ABD ו־IR לצד השני.", pos: "הגבלה שווה ב־AROM וב־PROM, בעיקר ב־ER ← קפסולרי" },
-  beighton: { n: "Beighton Score", how: "זרת מעל 90° · אגודל לאמה · מרפק מעל 10° · ברך מעל 10° — נקודה לכל צד; כפות ידיים לרצפה — נקודה. סה״כ 9.", pos: "2 ומעלה ← פוטנציאל לגמישות יתר" },
-  // ---------- מרפק ----------
+  beighton: { n: "Beighton Score", how: "זרת מעל 90° · אגודל לאמה · מרפק מעל 10° · ברך מעל 10° — נקודה לכל צד; כפות ידיים לרצפה — נקודה. סה״כ 9.", pos: "לפי גיל: 6 ומעלה לפני ההתבגרות · 5 ומעלה עד גיל 50 · 4 ומעלה מעל 50 ← גמישות יתר כללית" },
+
   fourway: { n: "4-Way Test for Elbow Fracture", how: "פלקשן · אקסטנשן · סופינציה · פרונציה.", pos: "חסר ROM + כאב ← הפנייה" },
   elbext: { n: "Elbow Extension Test", how: "שתי הזרועות קדימה בסופינציה, יישור מלא של שני המרפקים.", pos: "אין יישור מלא ← צילום", ev: "97% / 49% — טוב לשלילה", v: "https://www.youtube.com/watch?v=1TILxnuB4P0" },
   varus: { n: "Varus Stress — LCL", how: "כיפוף 20°–30°, קיבוע מעל המרפק, לחץ ל־Varus דרך האמה.", pos: "רפיון או כאב לטרלי ← LCL", ev: "לא נבדק", v: "https://www.youtube.com/watch?v=5zl8GsG3hR4" },
@@ -589,7 +589,7 @@ const T = {
   resext: { n: "Resisted Extension" },
   termext: { n: "Terminal Extension" },
   olepalp: { n: "מישוש האולקרנון" },
-  // ---------- שורש כף היד וכף היד ----------
+
   snuff: { n: "מבדקי סקפואיד", how: "לחיצה ב־Anatomical Snuffbox ועל ה־Scaphoid Tubercle; דחיסת האגודל לאורך הציר.", pos: "כאב באחד מהם ← הדמיה. אף אחד לא כואב ← שבר לא סביר", ev: "Snuffbox: 92% / 48% — טוב לשלילה", v: "https://www.youtube.com/watch?v=TCDluv83TpE" },
   grip: { n: "Grip Strength", how: "דינמומטר (ממוצע של 3), או לחיצת שתי אצבעות של הבודק בשתי הידיים יחד.", pos: "חולשה או כאב מול הצד השני — ממצא, לא אבחנה", ev: "אמין — מדד מעקב", v: "https://www.youtube.com/watch?v=cguUks_Eby0" },
   phalen: { n: "Phalen's Test", how: "גב כף יד אל גב כף יד, כיפוף מלא, 60 שניות.", pos: "נימול באצבעות 1–3 ← CTS. חיובי רק ביד המתלוננת — מחזק", ev: "57% / 67% — חלש לבדו", v: "https://www.youtube.com/watch?v=TMAD-dhT9PM" },
@@ -610,7 +610,7 @@ const T = {
   wpalp: { n: "מישוש" }
 };
 
-// ---------- מסגרת כללית — נושא 1 ----------
+
 const GENERAL = {
   intro: "שמונת השלבים של כל מפגש, מהטלפון הראשון ועד השחרור. כל אזור בגפה העליונה רץ על אותו שלד.",
   steps: [
@@ -693,7 +693,7 @@ const GENERAL = {
   ]
 };
 
-// ---------- אזורים — נושא 2 + סיכומים ----------
+
 const REGIONS = [
   {
     id: "neck", name: "צוואר וראש", tool: "NDI",
@@ -783,7 +783,7 @@ const REGIONS = [
         {
           title: "הגבלה ב־AROM וב־PROM", pic: "נוקשות, ירידה בסיבוב חיצוני, לעיתים כאב לילה",
           paths: [
-            { n: "Adhesive Capsulitis — כתף קפואה", clue: "גיל 40–60, נשים, סוכרת, בלוטת תריס, אחרי קיבוע או ניתוח. כאב משמעותי + הגבלה הדרגתית בכל הטווחים. ״אם זה לא ממש כואב — כנראה זה לא זה״.", tests: ["promef"], order: "Capsular Pattern: ER מוגבל ביותר ← ABD ← IR.", pos: "הגבלה שווה ב־ER אקטיבי ופסיבי, עם צילום תקין. ספרות: יותר מ־25% בשני מישורים + ER פסיבי מתחת ל־50% מהצד השני או מתחת ל־30°.", neg: "רק AROM מוגבל ו־PROM כמעט מלא ← פחות מתאים.", tx: "שמרני: להפעיל, להרגיע כאב, למנוע הימנעות. איזומטריה, טווחים בעזרה (גלגלת), עבודה ידנית, חימום, PNF, טייפ; שינה. זריקת סטרואידים — לא קו ראשון; אחריה מנצלים את חלון ההקלה.", prog: "Freezing ← Frozen ← Thawing, לעיתים מעורבבים. ממוצע כ־30 חודשים; תסמינים קלים יכולים להימשך שנים." },
+            { n: "Adhesive Capsulitis — כתף קפואה", clue: "גיל 40–60, נשים, סוכרת, בלוטת תריס, אחרי קיבוע או ניתוח. כאב משמעותי + הגבלה הדרגתית בכל הטווחים. בשלב הראשון הכאב בולט, גם בלילה; בהמשך הוא פוחת והנוקשות נשארת.", tests: ["promef"], order: "Capsular Pattern: ER מוגבל ביותר ← ABD ← IR.", pos: "הגבלה שווה ב־ER אקטיבי ופסיבי, עם צילום תקין. ספרות: יותר מ־25% בשני מישורים + ER פסיבי מתחת ל־50% מהצד השני או מתחת ל־30°.", neg: "רק AROM מוגבל ו־PROM כמעט מלא ← פחות מתאים.", tx: "שמרני: להפעיל, להרגיע כאב, למנוע הימנעות. איזומטריה, טווחים בעזרה (גלגלת), עבודה ידנית, חימום, PNF, טייפ; שינה. זריקת סטרואידים — לא קו ראשון; אחריה מנצלים את חלון ההקלה.", prog: "Freezing ← Frozen ← Thawing, לעיתים מעורבבים. ממוצע כ־30 חודשים; תסמינים קלים יכולים להימשך שנים." },
             { n: "Glenohumeral OA", clue: "הטווח מוגבל גם כשהמטופל מזיז בעצמו (AROM) וגם כשהמטפל מזיז (PROM) — כמו בכתף קפואה.", tests: ["promef"] }
           ]
         },
@@ -953,9 +953,9 @@ const THREE_N = ["Nystagmus — ניסטגמוס", "Nausea — בחילה", "Num
 
 
 
-// תוספות לאתר האינטראקטיבי: הסבר מורחב לכל פתולוגיה, סרטונים, תיאור משלים למבדקים שמופיעים בשם בלבד, ומילון ראשי תיבות
 
-// הסבר מורחב — לפי שם המסלול. g:1 = הסבר משלים מידע כללי (הפתולוגיה מופיעה במצגת בשם בלבד)
+
+
 const ABOUT = {
   "כאב מפרקי צווארי — Facet": { t: "Facet Joints הם המפרקים הקטנים שבין קשתות החוליות, משני צידי עמוד השדרה. כאב מפרקי נובע מהמפרק עצמו או מהקפסולה שלו: מגירוי, מעומס מכני, משינויים ניווניים או מטראומה — ולא מעצב. לכן הוא מקומי, או מושלך לשכמה ולכתף, ולא מתפזר לפי דרמטום; אין נימול ברור. כאב כזה יכול להופיע יחד עם מקור עצבי, למשל בפגיעת דיסק." },
   "Muscle Strain / ספזם הגנתי": { t: "Muscle Strain היא מתיחה או עומס יתר של שריר. Muscle Guarding, ספזם הגנתי, הוא כיווץ שמערכת העצבים מייצרת סביב אזור פגוע אחרי פציעה חריפה. השריר לא בהכרח פגוע או מקוצר — הוא מגיב לאיום. הספזם נוצר למשל מתנועה מהירה שהשרירים לא הספיקו להתגייס אליה, ויש לו תפקיד של הגנה; לכן לא ממהרים ״לשחרר״ אותו בכוח בימים הראשונים." },
@@ -1005,7 +1005,7 @@ const ABOUT = {
   "שברים באצבעות ובמטקרפלים": { t: "שברים במטקרפלים — עצמות כף היד — ובגלילים, עצמות האצבעות, שכיחים מאוד בספורט, והסוג תלוי בענף. Boxer's Fracture הוא שבר בצוואר המטקרפל החמישי ממכת אגרוף. הסכנה העיקרית אחרי כל שבר באזור היא אובדן טווח: קונטרקטורות, הידבקויות של גידים וצלקות. תמיד מוודאים איחוי בצילום ביקורת." }
 };
 
-// סרטונים — ערוץ, הערה, קישורים נוספים. v חדש למבדקים שלא היה להם סרטון
+
 const VIDS = {
   cfrt: { ch: "Physiotutors" }, spurling: { ch: "Physiotutors" }, distraction: { ch: "Physiotutors" }, bakody: { ch: "Physiotutors" },
   ultt: { ch: "Physiotutors", vn: "בסרטון המספור שונה: הרדיאלי נקרא ULTT3 והאולנרי ULTT4", vx: [["ULTT 2 — Radial", "https://www.youtube.com/watch?v=rir6x6Iiqc4&t=139s"], ["ULTT 3 — Ulnar", "https://www.youtube.com/watch?v=rir6x6Iiqc4&t=178s"]] },
@@ -1026,11 +1026,11 @@ const VIDS = {
   tinelw: { ch: "Physiotutors" }, durkan: { ch: "Physiotutors" }, fink: { ch: "Physiotutors" },
   grind: { ch: "Dr. Borst's Occupational Therapy Classroom" }, fovea: { ch: "Physiotutors" },
   trigger: { ch: "Royal Orthopaedic Hospital" }, thumbval: { ch: "University of Michigan" },
-  // חדשים
+
   transverse: { v: "https://www.youtube.com/watch?v=ug7FtFlW7BU", ch: "Catalyst University" },
   sharp: { v: "https://www.youtube.com/watch?v=_Fi6kZrL68g", ch: "Physiotutors" },
   alar: { v: "https://www.youtube.com/watch?v=KkXnT6LNLhI", ch: "Catalyst University" },
-  vat: { v: "https://www.youtube.com/watch?v=HbzrigqkEa4", ch: "MedBridge", vn: "ייתכן שהגרסה בסרטון שונה מהפרוטוקול של המצגת (90°, ספירה לאחור, 30 שניות לכל צד)" },
+  vat: { v: "https://www.youtube.com/watch?v=HbzrigqkEa4", ch: "MedBridge", vn: "ייתכן שהגרסה בסרטון שונה מהביצוע שבכרטיס: 90°, ספירה לאחור, כ־30 שניות לכל צד" },
   hoffmann: { v: "https://www.youtube.com/watch?v=1YH8M6jeBto", ch: "Ortho Eval Pal — Paul Marquis PT" },
   beighton: { v: "https://www.youtube.com/watch?v=6dx7tLPdfuQ", ch: "Dr John Kiel" },
   ompt: { v: "https://www.youtube.com/watch?v=adYDUMCx-ss", ch: "Ostéo-Upgrade", vn: "הסרטון בצרפתית; הביצוע ברור גם בלי קול" },
@@ -1058,7 +1058,7 @@ const VIDS = {
   dip: { v: "https://www.youtube.com/watch?v=Q-a1-82f5Is", ch: "Dr. Nabil Ebraheim", vn: "הסבר על הפציעה ואיך היא נראית; לא הדגמת מבדק" }
 };
 
-// תיאור משלים למבדקים שמופיעים במצגת בשם בלבד
+
 const TEST_GEN = {
   plri: { how: "שכיבה על הגב, הזרוע מעל הראש, המרפק כפוף מעט (כ־40°) והאמה בסופינציה. המטפל מייצב את ההומרוס ומסובב את האמה החוצה, כמו פתיחת מגירה, כך שהצד הלטרלי שלה מתרחק מההומרוס.", pos: "תזוזה סיבובית לעומת הצד השני, או חשש ← חוסר יציבות PLRI ← הפניה" },
   hook: { how: "המטופל מכופף את המרפק ל־90° ומבצע סופינציה אקטיבית. המטפל מנסה לתפוס באצבע המורה, כמו וו, את הגיד הדיסטלי של הביספס — מהצד הלטרלי.", pos: "אין גיד לתפוס ← חשד לקרע מלא ← הפניה דחופה" },
@@ -1074,7 +1074,7 @@ const TEST_GEN = {
   wpalp: { how: "מישוש הבליטה בגב שורש כף היד: גודל, רכות, ניידות ורגישות. אפשר להאיר בפנס (Transillumination).", pos: "גוש עגול, חלק ורך שמעביר אור ← גנגליון" }
 };
 
-// מילון ראשי תיבות: מפתח ← [שם מלא, משמעות בעברית]
+
 const ABBR = {
   "AAROM": ["Active-Assisted Range of Motion", "טווח תנועה אקטיבי בעזרה"],
   "ABD": ["Abduction", "הרחקה מקו האמצע של הגוף"],
@@ -1158,13 +1158,13 @@ const ABBR = {
 
 
 
-// כרטיסי מבדק מורחבים — חלק 1: צוואר, בטיחות וכתף
-// aim — מה בודק · pt — מנח ותפקיד המטופל · th — מנח ואחיזת המטפל · steps — [תפקיד, פעולה] לפי הסדר
-// pos/neg — פירוש · evs — שורת ראיות קצרה · evd — פירוט עם קישורים · tips — דגשים · contra — מתי לא · pair — מבדקים משלימים
-// מקורות: סיכומי שיעורים 1–3, מצגות נושא 1–2, Physiotutors, Physiopedia ומחקרים שמקושרים בגוף הטקסט
+
+
+
+
 
 const TX = {
-  // ================= צוואר — בטיחות =================
+
   transverse: {
     aim: "שלמות ה־Transverse Ligament, שמחזיק את ה־Dens של C2 צמוד לקשת הקדמית של C1. מבדק סינון לחוסר יציבות צווארית עליונה לפני טיפול ידני.",
     pt: "שוכב על הגב, הראש על המיטה, הצוואר בנייטרל ומשוחרר.",
@@ -1255,7 +1255,7 @@ const TX = {
     pair: ["spurling", "vat"]
   },
 
-  // ================= צוואר =================
+
   cfrt: {
     aim: "הגבלה במקטע C1–C2 כמקור לכאב ראש — האם כאב הראש מושלך מהצוואר העליון.",
     pt: "שוכב על הגב, משוחרר לגמרי.",
@@ -1394,7 +1394,7 @@ const TX = {
     pair: ["adson"]
   },
 
-  // ================= כתף — בטיחות =================
+
   bonyapp: {
     aim: "אובדן עצם אחרי פריקה קדמית — Bony Bankart או Hill-Sachs — שמוריד את רף החשש לטווח קטן בהרבה.",
     pt: "שוכב על הגב, הזרוע נתמכת; מדווח על כל תחושה ש״הכתף עומדת לצאת״.",
@@ -1479,7 +1479,7 @@ const TX = {
     pair: ["murphy", "liver"]
   },
 
-  // ================= כתף =================
+
   painarc: {
     aim: "כאב סאב־אקרומיאלי — SAPS: כאב שמופיע באמצע ההרמה ונעלם מעליה.",
     pt: "עומד, מרים את היד לצד (אבדוקציה) לאט עד למעלה, ומוריד לאט.",
@@ -1771,7 +1771,7 @@ const TX = {
     neg: "אין כאב באף שלב.",
     evs: "חלש ל־SLAP; כאב שטחי ספציפי ל־ACJ (95%)",
     evd: "במחקר המקורי המבדק חיובי כשהכאב משלב א׳ פוחת בשלב ב׳, גם כשהמקור ב־ACJ; המיקום מבדיל — [O'Brien 1998](https://pubmed.ncbi.nlm.nih.gov/9784804/). ל־SLAP: רגישות 72%, ספציפיות 52% במטא־אנליזה — [Davis 2019](https://journals.sagepub.com/doi/10.1177/1758573218811656). כאב שטחי מעל ה־ACJ — ספציפי ל־ACJ, 95% — [Chronopoulos 2004](https://journals.sagepub.com/doi/abs/10.1177/0363546503261723).",
-    tips: ["בשיעור נאמר שב־ACJ הכאב מופיע בשני המנחים — במחקר המקורי הוא פוחת. מה שמכריע: המיקום.", "SLAP נדיר — בערך 1 מכל 200 מטופלים עם כאב כתף. לא בפגישה הראשונה אצל מטופל איריטבילי."],
+    tips: ["גם כשהמקור ב־ACJ, הכאב פוחת בשלב ב׳ — לכן הירידה לבדה לא מבדילה; מה שמכריע: המיקום.", "SLAP נדיר — בערך 1 מכל 200 מטופלים עם כאב כתף. לא בפגישה הראשונה אצל מטופל איריטבילי."],
     pair: ["crank", "bload", "crossbody"]
   },
   crank: {
@@ -1852,7 +1852,7 @@ const TX = {
     neg: "פסיבי כמעט מלא והאקטיבי מוגבל ← לא קפסולרי; לחשוב על כאב, חולשה או RC.",
     evs: "הגדרה קלינית מקובלת",
     evd: "כתף קפואה: ירידה של יותר מ־25% בטווח בשני מישורים לפחות, ו־ER פסיבי שקטן ביותר מ־50% מהצד השני או קטן מ־30° — [Kelley 2013](https://www.orthopt.org/uploads/content_files/ICF/Updated_Guidelines/Shoulder_Guidelines_AdhesiveCapsulitis_JOSPT_May_2013.pdf). הקריטריון הפשוט: הגבלה שווה ב־ER אקטיבי ופסיבי, עם צילום תקין — [Lewis 2015](https://www.csp.org.uk/system/files/mt2015_masterclass_frozen_shoulder.pdf).",
-    tips: ["״אם זה לא ממש כואב — כנראה זה לא זה.״", "צילום מבדיל בין כתף קפואה ל־OA: ב־OA רואים היצרות של המפרק ואוסטאופיטים.", "חלק מההגבלה יכול להיות הגנה שרירית — תחת הרדמה הטווח גדל אצל חלק מהמטופלים."],
+    tips: ["בשלב הראשון הכאב בולט, גם בלילה; בשלב הקפוא הכאב פוחת והנוקשות נשארת — לכן שואלים על המהלך לאורך זמן.", "צילום מבדיל בין כתף קפואה ל־OA: ב־OA רואים היצרות של המפרק ואוסטאופיטים.", "חלק מההגבלה יכול להיות הגנה שרירית — תחת הרדמה הטווח גדל אצל חלק מהמטופלים."],
     pair: ["painarc"]
   },
   beighton: {
@@ -1872,17 +1872,17 @@ const TX = {
     neg: "ניקוד נמוך — לא שולל רפיון מקומי בכתף.",
     evs: "אמין; תקפות מוגבלת",
     evd: "הספים לפי הקריטריונים הבינלאומיים — [hEDS 2017](https://www.ehlers-danlos.com/wp-content/uploads/2017/05/hEDS-Dx-Criteria-checklist-1.pdf). האמינות טובה כשבודקים באותה שיטה; התקפות חלשה יותר — [EDS Society](https://www.ehlers-danlos.com/2017-eds-classification-non-experts/clinical-assessment-methods-classifying-generalized-joint-hypermobility/).",
-    tips: ["בשיעור: 2 ומעלה מעיד על ״פוטנציאל״ — אבל זה לא עומד בהגדרה המקובלת של גמישות יתר כללית.", "גמישות יתר היא גורם תורם, לא אבחנה: ניקוד גבוה ← יותר חיזוק ושליטה, פחות מתיחות."],
+    tips: ["ספים נמוכים יותר, כמו 2 ומעלה, מופיעים לפעמים — אבל הם לא עומדים בהגדרה המקובלת של גמישות יתר כללית.", "גמישות יתר היא גורם תורם, לא אבחנה: ניקוד גבוה ← יותר חיזוק ושליטה, פחות מתיחות."],
     pair: ["sulcus"]
   }
 };
 
 
 
-// כרטיסי מבדק מורחבים — חלק 2: מרפק, שורש כף היד וכף היד (אותו מבנה כמו בחלק 1)
+
 
 const TX2 = {
-  // ================= מרפק — בטיחות ושבר =================
+
   fourway: {
     aim: "סינון לשבר אחרי חבלה במרפק: האם ארבע התנועות של המרפק והאמה מלאות ונסבלות.",
     pt: "יושב; מבצע אקטיבית כיפוף, יישור, סופינציה ופרונציה — בשתי הידיים.",
@@ -1965,7 +1965,7 @@ const TX2 = {
     tips: ["תנועה אחת, מהירה יחסית.", "לא לעמוד קרוב מדי — מקרוב קשה לייצר כוח ל־Valgus.", "מבצעים אחרון: הוא המעמיס ביותר."],
     pair: ["valgus"]
   },
-  // ================= מרפק טניס ומרפק גולף =================
+
   mills: {
     aim: "מוצא האקסטנסורים באפיקונדיל הלטרלי — במתיחה פסיבית (מרפק טניס).",
     pt: "יושב, היד משוחררת לגמרי — המטפל עושה הכל.",
@@ -2068,7 +2068,7 @@ const TX2 = {
     tips: ["המדיאלי הוא רק 10%–20% ממקרי האפיקונדיליטיס — לפני שמסיקים, שוללים UCL, עצב אולנרי וצוואר."],
     pair: ["golfers"]
   },
-  // ================= עצב אולנרי במרפק =================
+
   tinelelb: {
     aim: "העצב האולנרי בתעלה שמאחורי האפיקונדיל המדיאלי — Cubital Tunnel.",
     pt: "יושב, המרפק כפוף מעט ונתמך.",
@@ -2101,7 +2101,7 @@ const TX2 = {
     tips: ["המבדק משחזר בדיוק את מה שמחמיר ביום־יום: טלפון ליד האוזן, שינה עם יד כפופה."],
     pair: ["tinelelb"]
   },
-  // ================= מרפק — מבדקים משלימים =================
+
   plri: {
     aim: "חוסר יציבות סיבובי אחורי־לטרלי (PLRI): ראש הרדיוס והאולנה מסתובבים ובורחים אחורה ביחס להומרוס.",
     pt: "שוכב על הגב, הזרוע מעל הראש, משוחרר לגמרי.",
@@ -2216,7 +2216,7 @@ const TX2 = {
     pair: ["resext"]
   },
 
-  // ================= שורש כף היד וכף היד =================
+
   snuff: {
     aim: "שבר בסקפואיד אחרי נפילה על יד מושטת: שלושה סימנים.",
     pt: "יושב, האמה נתמכת, היד משוחררת.",
@@ -2295,7 +2295,7 @@ const TX2 = {
     pos: "נימול או ״זרם״ לכיוון אצבעות 1–3 ← CTS.",
     neg: "שלילי לא שולל — המבדק מפספס יותר ממחצית המקרים.",
     evs: "45% / 78% — ספציפי, לא רגיש",
-    evd: "רגישות 45%, ספציפיות 78%, בשקלול של 7 מחקרים — [Dabbagh 2023](https://doi.org/10.1093/ptj/pzad029). כלומר ספציפי יותר משהוא רגיש — הפוך מהכתוב במצגת.",
+    evd: "רגישות 45%, ספציפיות 78%, בשקלול של 7 מחקרים — [Dabbagh 2023](https://doi.org/10.1093/ptj/pzad029). כלומר ספציפי יותר משהוא רגיש.",
     tips: ["Tinel חיובי הוא 4 נקודות ב־CTS-6."],
     pair: ["phalen", "durkan"]
   },
@@ -2517,9 +2517,9 @@ const TX2 = {
 
 
 
-// Evidence-reading guide shown at the top of the tests panel.
-// Blocks: string = paragraph (**bold** allowed, [label](url) links), {t:{h,r,cls}} = table,
-// {mn:[[term, text], ...]} = mnemonic cards, {ex:string} = example box.
+
+
+
 const EVGUIDE = {
   title: "איך קוראים את הראיות",
   sub: "רגישות וספציפיות · LR · Kappa",
@@ -2594,13 +2594,13 @@ const root = document.documentElement, app = $("#app");
 const store = { get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }, set(k, v){ try{ localStorage.setItem(k, v); }catch(e){} } };
 const PLAY = '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 0.5 9.5 5 1 9.5z"></path></svg>';
 
-// ---------- merge extras into tests ----------
+
 Object.keys(VIDS).forEach(id => { const t = T[id], x = VIDS[id]; if(!t) return; if(x.v) t.v = x.v; t.ch = x.ch; t.vn = x.vn; t.vx = x.vx; });
 Object.keys(TEST_GEN).forEach(id => { const t = T[id]; if(t && !t.how){ t.how = TEST_GEN[id].how; t.pos = TEST_GEN[id].pos; t.gen = 1; } });
 Object.assign(TX, TX2);
 Object.keys(TX).forEach(id => { if(T[id] && TX[id].evs) T[id].ev = TX[id].evs; });
 
-// ---------- bidi + abbreviations ----------
+
 const TOK = "[A-Za-zÀ-ɏ0-9(/–+&][A-Za-zÀ-ɏ0-9'’°%.\\-–−/+×&:()]*";
 const RUN = new RegExp(TOK + "(?: " + TOK + ")*", "g");
 const KEYS = Object.keys(ABBR).sort((a, b) => b.length - a.length).map(k => k.replace(/[-]/g, "\\-"));
@@ -2619,12 +2619,12 @@ function fx(s, o){
   let out = "", pos = 0;
   merged.forEach(([a, b]) => {
     let m = str.slice(a, b), pre = "", post = "";
-    // an opening bracket or separator at the end of a Latin run belongs to the Hebrew that follows it
+
     while(/[\s(\/–+&]$/.test(m) && m.trim().length > 1){ post = m.slice(-1) + post; m = m.slice(0, -1); }
     while(m.startsWith("(") && count(m, "(") > count(m, ")")){ pre += "("; m = m.slice(1); }
     while(/[.:)]$/.test(m) && (m.slice(-1) !== ")" || count(m, ")") > count(m, "("))){ post = m.slice(-1) + post; m = m.slice(0, -1); }
     let lead; while((lead = m.match(/^[\/–+&] */))){ pre += lead[0]; m = m.slice(lead[0].length); }
-    // a bracket opened inside the run and closed later in Hebrew — e.g. "100% (17 מתוך 17)" — splits the run
+
     let tail = "";
     { let depth = 0, cut = -1;
       for(let i = 0; i < m.length; i++){ if(m[i] === "("){ if(!depth) cut = i; depth++; } else if(m[i] === ")" && depth){ depth--; if(!depth) cut = -1; } }
@@ -2651,7 +2651,7 @@ function chip(id, i){
   if(!t.how && !t.v) return '<span class="chip flat">' + o + fx(t.n, { ng: 1 }) + "</span>";
   return '<button class="chip" type="button" data-test="' + id + '">' + o + fx(t.n, { ng: 1 }) + (t.v ? PLAY.replace("<svg", '<svg class="pv"') : "") + "</button>";
 }
-// in an ordered sequence the arrow travels with the next test, so a wrapped row starts with "← next" instead of ending on a dangling arrow
+
 const chips = (ids, ordered) => '<div class="chips">' + ids.map((id, i) => ordered && i ? '<span class="cg"><span class="arr" aria-hidden="true">←</span>' + chip(id, i) + "</span>" : chip(id, ordered ? i : null)).join("") + "</div>";
 function decision(d){
   const yesCls = d.yesGood ? "good" : "bad", noCls = d.yesGood ? "bad" : "good";
@@ -2672,7 +2672,7 @@ function station(rid, n, title, sub, inner, flag){
     (sub ? '<div class="sub">' + fx(sub, { ng: 1 }) + "</div>" : "") + inner + "</div></li>";
 }
 
-// ---------- index of where each test is used ----------
+
 const USES = {};
 const addUse = (id, u) => { (USES[id] = USES[id] || []).push(u); };
 REGIONS.forEach(r => {
@@ -2681,7 +2681,7 @@ REGIONS.forEach(r => {
 });
 const regionName = id => (REGIONS.find(r => r.id === id) || { name: "מסגרת כללית" }).name;
 
-// ---------- general ----------
+
 function renderGeneral(){
   scope();
   let html = '<section role="tabpanel" id="p-general" aria-labelledby="t-general" hidden><div class="region-head"><h2>מסגרת כללית</h2><p class="lede">' + fx(GENERAL.intro) + '</p></div><ol class="spine">';
@@ -2695,7 +2695,7 @@ function renderGeneral(){
   return html + "</ol></section>";
 }
 
-// ---------- region ----------
+
 function pathHTML(r, pi, ji, p){
   const id = r.id + "-" + pi + "-" + ji;
   scope();
@@ -2705,7 +2705,7 @@ function pathHTML(r, pi, ji, p){
   let about = "";
   if(ab){
     about = '<details class="about"><summary><span class="i" aria-hidden="true">i</span>מה זה? — הסבר מורחב</summary><div class="about-b"><p>' + fx(ab.t) + "</p>" +
-      (ab.g ? '<span class="gen">הסבר משלים: במצגת הפתולוגיה מופיעה בשם בלבד.</span>' : "") + "</div></details>";
+      "</div></details>";
   }
   if(p.clue) step("", "מה שומעים ורואים", "<p>" + fx(p.clue) + "</p>");
   if(p.tests && p.tests.length){
@@ -2741,7 +2741,7 @@ function renderRegion(r){
     nPaths + " פתולוגיות</span><span>" + (rt.safety.length + rt.clinical.length) + " מבדקים</span><span>שאלון: " + fx(r.q.name, { ng: 1 }) + "</span></div></div><ol class=\"spine\">";
   let n = 1;
   scope();
-  html += station(r.id, n++, "קבלת מטופל ואנמנזה", "לפי מסגרת נושא 1", "<p>" + fx(r.anam) + "</p>");
+  html += station(r.id, n++, "קבלת מטופל ואנמנזה", "לפי המסגרת הכללית", "<p>" + fx(r.anam) + "</p>");
   scope();
   let rf = decision({ q: r.s1.q, yes: r.s1.yes, no: "המשך לבדיקה קלינית" });
   rf += '<div class="checks-label">איך מסננים</div><div class="checks">' + r.s1.checks.map((c, i) => {
@@ -2789,7 +2789,7 @@ function renderRegion(r){
   return html + "</ol></section>";
 }
 
-// ---------- mount ----------
+
 const TABS = [["general", "מסגרת כללית", "8 שלבים"], ...REGIONS.map(r => [r.id, r.name, r.s3.patterns.reduce((a, p) => a + p.paths.length, 0) + " פתולוגיות"])];
 $("#tabs").innerHTML = TABS.map(([id, name, cnt]) => '<button class="reg" role="tab" type="button" id="t-' + id + '" aria-controls="p-' + id + '" aria-selected="false" data-tab="' + id + '"><span>' + esc(name) + '</span><span class="cnt">' + esc(cnt) + "</span></button>").join("");
 $("#main-in").innerHTML = renderGeneral() + REGIONS.map(renderRegion).join("");
@@ -2814,7 +2814,7 @@ function renderOutline(){
   $("#ol-h").textContent = current === "general" ? "שמונת השלבים" : "שלבים ופתולוגיות";
 }
 
-// ---------- panel ----------
+
 let ptest = null;
 const narrowPanel = () => matchMedia("(max-width:1180px)").matches;
 function testRow(id){
@@ -2822,7 +2822,7 @@ function testRow(id){
   return '<button type="button" class="ti" data-test="' + id + '"><span><span class="tn">' + fx(t.n, { ng: 1 }) + "</span>" + (t.ev ? '<span class="te">' + fx(t.ev, { ng: 1 }) + "</span>" : "") +
     "</span>" + (t.v ? '<span class="tv">' + PLAY + "סרטון</span>" : "") + "</button>";
 }
-// ---------- rich text: [label](url) links + patient/therapist colouring ----------
+
 const LINK = /\[([^\]]+)\]\((https?:\/\/(?:[^()\s]|\([^()\s]*\))+)\)/g;
 function rich(s){
   if(!s) return "";
@@ -2838,13 +2838,13 @@ const WHO = /(^|[^א-ת])((?:ו?ה|[ולבכמש])?(מטופל|מטפל)(?:ים|
 const who = h => h.replace(WHO, (a, pre, w, base) => pre + '<span class="who ' + (base === "מטופל" ? "pt" : "th") + '">' + w + "</span>");
 const ROLE = { pt: "מטופל", th: "מטפל" };
 const roleTag = r => '<span class="role ' + r + '">' + ROLE[r] + "</span>";
-// remembered open/closed state of the secondary sections
+
 const moreOpen = k => store.get("uqmap-more-" + k) === "1";
 function more(k, label, body){
   return '<details class="more" data-more="' + k + '"' + (moreOpen(k) ? " open" : "") + "><summary>" + label + "</summary><div>" + body + "</div></details>";
 }
 const ytId = u => (String(u || "").match(/(?:[?&]v=|youtu\.be\/|\/shorts\/|\/embed\/)([\w-]{11})/) || [])[1];
-// Click-to-load player: a thumbnail until the first click, so nothing from YouTube loads before it's wanted.
+
 function ytFrame(id){
   return '<iframe src="https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&rel=0&playsinline=1" title="סרטון הדגמה" ' +
     'allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>';
@@ -2880,7 +2880,7 @@ function testDetail(id){
   const t = T[id], x = TX[id] || {}, uses = USES[id] || [];
   let h = '<div class="pbox">' + evGuide() + '<button type="button" class="back" data-back>→ כל המבדקים' + (current === "general" ? "" : " · " + esc(regionName(current))) + "</button>" +
     '<div class="thead"><h3>' + fx(t.n) + "</h3>" + (x.img ? '<figure class="tfig"><img src="' + esc(x.img.src) + '" width="' + x.img.w + '" height="' + x.img.h + '" alt="' + esc(x.img.alt || t.n) + '" decoding="async"></figure>' : "") + (x.aim ? '<p class="aim">' + rich(x.aim) + "</p>" : "") + "</div>" + videoBox(t);
-  // execution — who does what, in order
+
   if(x.steps){
     h += '<section class="ps"><h4>ביצוע</h4><div class="rolecards">' +
       (x.pt ? '<div class="rc pt">' + roleTag("pt") + "<p>" + who(rich(x.pt)) + "</p></div>" : "") +
@@ -2901,7 +2901,6 @@ function testDetail(id){
   if(t.note) h += '<p class="plain">' + fx(t.note) + "</p>";
   if(x.pair && x.pair.length) h += '<section class="ps"><h4>משלבים עם</h4>' + chips(x.pair.filter(k => T[k]), false) + "</section>";
   if(uses.length) h += '<section class="ps"><h4>מופיע במפה</h4><div class="uses">' + uses.map(u => '<button type="button" data-' + (u.kind === "path" ? "path" : "chk") + '="' + u.id + '">' + fx(u.name) + ' <span class="ur">· ' + esc(regionName(u.rid)) + "</span></button>").join("") + "</div></section>";
-  if(t.gen && !x.steps) h += '<p class="gen">תיאור משלים: במצגת המבדק מופיע בשם בלבד.</p>';
   return h + "</div>";
 }
 function renderPanel(){
@@ -2929,7 +2928,7 @@ function openTest(id){
   $("#panel").scrollTop = 0; showPanel();
 }
 
-// ---------- navigation ----------
+
 function flash(el){ el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); }
 function show(id, scroll){
   if(!TABS.some(t => t[0] === id)) id = "general";
@@ -2970,7 +2969,7 @@ function goStation(id){
   el.scrollIntoView({ behavior: "smooth", block: "start" }); flash(el.querySelector(".card"));
 }
 
-// scroll spy for the outline
+
 let spyRaf = 0;
 function spy(){
   cancelAnimationFrame(spyRaf);
@@ -2984,7 +2983,7 @@ function spy(){
 }
 window.addEventListener("scroll", spy, { passive: true });
 
-// ---------- search ----------
+
 const norm = s => String(s || "").toLowerCase().replace(/[״"׳'’`]/g, "").replace(/[־–—\-_\/.,:;()+←↓·]/g, " ").replace(/\s+/g, " ").trim();
 const IDX = [];
 REGIONS.forEach(r => {
@@ -3083,7 +3082,7 @@ $("#q").addEventListener("keydown", e => {
   else if(e.key === "Escape"){ if(!$("#results").hidden) closeResults(); else { $("#q").value = ""; $("#q").blur(); } }
 });
 
-// ---------- tooltip for abbreviations ----------
+
 const tip = $("#tip");
 document.addEventListener("mouseover", e => {
   const a = e.target.closest && e.target.closest("abbr.ab[data-k]");
@@ -3098,13 +3097,13 @@ document.addEventListener("mouseover", e => {
 });
 window.addEventListener("scroll", () => { tip.hidden = true; }, { passive: true, capture: true });
 
-// ---------- toggles ----------
+
 const THEMES = ["light", "comfort", "dark"];
 const sysDark = () => matchMedia("(prefers-color-scheme: dark)").matches;
 function effTheme(){ const t = root.getAttribute("data-theme"); return THEMES.includes(t) ? t : (sysDark() ? "dark" : "light"); }
 function syncTheme(){ const t = effTheme(); THEMES.forEach(x => $("#th-" + x).setAttribute("aria-pressed", String(t === x))); }
 function setTheme(t){ root.setAttribute("data-theme", t); store.set("uqmap-theme", t); syncTheme(); }
-// the eye-comfort view is the default unless the reader chose otherwise (or the system is in dark mode)
+
 const savedTheme = store.get("uqmap-theme");
 if(THEMES.includes(savedTheme)) root.setAttribute("data-theme", savedTheme);
 else if(!sysDark()) root.setAttribute("data-theme", "comfort");
@@ -3116,7 +3115,7 @@ try{ new MutationObserver(syncTheme).observe(root, { attributes: true, attribute
 syncTheme();
 document.addEventListener("toggle", e => { const d = e.target; if(d.matches && d.matches("details.more[data-more]")) store.set("uqmap-more-" + d.dataset.more, d.open ? "1" : "0"); }, true);
 
-// ---------- events ----------
+
 document.addEventListener("click", e => {
   const t = e.target;
   if(!t.closest(".search")) closeResults();
