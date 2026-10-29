@@ -1,0 +1,1718 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f5c5c">
+<title>עוזר קליני</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>try{var t=localStorage.getItem('uqmap-theme');if(t==='light'||t==='comfort'||t==='dark')document.documentElement.dataset.theme=t;else if(!matchMedia('(prefers-color-scheme: dark)').matches)document.documentElement.dataset.theme='comfort'}catch(e){}</script>
+<style>
+/* themes: light (default), dark, comfort ("נוח לעין": warm paper, softer contrast, less blue light).
+   data-theme on <html> forces one; without it the system setting decides between light and dark. */
+:root{
+  --bg:#f5f3ee; --surface:#ffffff; --surface-2:#eeebe4; --ink:#1c2321; --ink-2:#5a6360; --line:#dbd6cc;
+  --accent:#0f5c5c; --accent-ink:#ffffff; --accent-soft:#dbeae7;
+  --rec:#c0352a; --rec-soft:#f8dfdb; --warn:#9a5800; --warn-soft:#fbeccf; --ok:#2c6a3d; --ok-soft:#dcefe0;
+  --hl-done:#d4f0db; --hl-done-ink:#1d5a2f; --hl-rec:#ffe2b8; --hl-rec-ink:#7a4300; --hl-must:#ffd3cc; --hl-must-ink:#8e1f15;
+  --radius:14px; --shadow:0 1px 2px rgba(0,0,0,.05),0 6px 18px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme]){
+    --bg:#111514; --surface:#1a201f; --surface-2:#222928; --ink:#e7ecea; --ink-2:#a1aba8; --line:#2e3735;
+    --accent:#5fb3a8; --accent-ink:#0a1413; --accent-soft:#1c3431;
+    --rec:#ef6a5e; --rec-soft:#3b201e; --warn:#e6b05a; --warn-soft:#382c16; --ok:#7bc38d; --ok-soft:#1b3222;
+    --hl-done:#1f3d29; --hl-done-ink:#a6e3b5; --hl-rec:#47331a; --hl-rec-ink:#f3c27c; --hl-must:#4d2420; --hl-must-ink:#ffb1a8;
+    --shadow:none;
+  }
+}
+:root[data-theme=dark]{
+  --bg:#111514; --surface:#1a201f; --surface-2:#222928; --ink:#e7ecea; --ink-2:#a1aba8; --line:#2e3735;
+  --accent:#5fb3a8; --accent-ink:#0a1413; --accent-soft:#1c3431;
+  --rec:#ef6a5e; --rec-soft:#3b201e; --warn:#e6b05a; --warn-soft:#382c16; --ok:#7bc38d; --ok-soft:#1b3222;
+  --hl-done:#1f3d29; --hl-done-ink:#a6e3b5; --hl-rec:#47331a; --hl-rec-ink:#f3c27c; --hl-must:#4d2420; --hl-must-ink:#ffb1a8;
+  --shadow:none;
+}
+:root[data-theme=comfort]{
+  --bg:#f0dcc0; --surface:#faecd8; --surface-2:#f3e1c6; --ink:#33271b; --ink-2:#735e45; --line:#e4cba8;
+  --accent:#3e6b5f; --accent-ink:#fbf6ea; --accent-soft:#dde3cf;
+  --rec:#b04a3c; --rec-soft:#f1d6c8; --warn:#8a5a1c; --warn-soft:#f2dfb8; --ok:#4c6b38; --ok-soft:#dfe5c6;
+  --hl-done:#d8e6c4; --hl-done-ink:#3c5a26; --hl-rec:#f5d9a8; --hl-rec-ink:#714815; --hl-must:#f0c9bb; --hl-must-ink:#86321f;
+  --shadow:0 1px 2px rgba(60,40,10,.06);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+body{font:16px/1.55 Heebo,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;-webkit-text-size-adjust:100%;padding-bottom:env(safe-area-inset-bottom)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+h1,h2,h3{margin:0;line-height:1.25}
+a{color:var(--accent)}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px}
+.top{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:10px;min-height:56px;padding-top:env(safe-area-inset-top)}
+.top h1{font-size:20px;font-weight:700;flex:1}
+.top .title{flex:1;min-width:0}
+.top .title b{display:block;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top .title span{font-size:13px;color:var(--ink-2)}
+.icon-btn{border:0;background:transparent;width:40px;height:40px;border-radius:10px;display:grid;place-items:center;color:var(--ink)}
+.icon-btn:active{background:var(--surface-2)}
+.icon-btn svg{width:22px;height:22px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin:14px 0;box-shadow:var(--shadow)}
+.card h2{font-size:17px;margin-bottom:12px}
+.muted{color:var(--ink-2);font-size:14px}
+.small{font-size:13px}
+label.lbl{display:block;font-size:14px;color:var(--ink-2);margin:10px 0 4px}
+.inp{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:11px 12px;outline:none}
+.inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+textarea.inp{resize:vertical;min-height:84px}
+.ltr{direction:ltr;text-align:left}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:11px 16px;font-weight:500;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.block{width:100%}
+.btn.danger{color:var(--rec);border-color:var(--rec)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn svg{width:18px;height:18px}
+.row{display:flex;gap:10px;align-items:center}
+.row > *{flex:1}
+.check{display:flex;gap:10px;align-items:flex-start;margin:14px 0 4px;font-size:15px}
+.check input{width:20px;height:20px;margin-top:2px;accent-color:var(--accent)}
+.banner{border-radius:12px;padding:12px 14px;margin:14px 0;font-size:15px}
+.banner.warn{background:var(--warn-soft);color:var(--warn)}
+.banner.info{background:var(--accent-soft);color:var(--accent)}
+.list{list-style:none;margin:0;padding:0}
+.list li{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.list li:first-child{border-top:0}
+.list li .grow{flex:1;min-width:0}
+.list li b{display:block}
+/* session */
+.top .wrap.sub{display:block;min-height:0;padding-top:0}
+.recbar{display:flex;align-items:center;gap:12px;padding:6px 0 8px}
+.recbar .chips{flex:none;flex-direction:column;gap:4px}
+.recbar .chip{padding:3px 12px;font-size:13px}
+.recbtn{width:56px;height:56px;border-radius:50%;border:0;background:var(--rec);color:#fff;display:grid;place-items:center;flex:none;box-shadow:0 4px 14px rgba(192,53,42,.35)}
+.recbtn svg{width:28px;height:28px}
+.recbtn.on{animation:pulse 1.6s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(192,53,42,.5)}70%{box-shadow:0 0 0 14px rgba(192,53,42,0)}100%{box-shadow:0 0 0 0 rgba(192,53,42,0)}}
+.rec-meta{flex:1;min-width:0}
+.rec-meta .timer{font-variant-numeric:tabular-nums;font-size:22px;font-weight:700;line-height:1.2}
+.rec-meta .state{font-size:13px;color:var(--ink-2)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:14px}
+.chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip.miss{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+a.chip{text-decoration:none;color:var(--accent);display:inline-block}
+.status{font-size:13px;color:var(--ink-2);min-height:20px;padding-bottom:4px;overflow-wrap:anywhere}
+.status.err{color:var(--rec)}
+.kbt{width:100%;border-collapse:collapse;margin:10px 0 4px;font-size:12.5px}.kbt th,.kbt td{border-bottom:1px solid var(--line);padding:4px 3px;text-align:right}.kbt th{color:var(--ink-2);font-weight:600}
+.tabs{display:flex;border-bottom:1px solid var(--line);gap:4px}
+.tabs button{flex:1;border:0;background:none;padding:10px 4px;font-weight:500;color:var(--ink-2);border-bottom:3px solid transparent}
+.tabs button.on{color:var(--accent);border-bottom-color:var(--accent)}
+.tabbody{padding-bottom:110px}
+.sec{margin:16px 0}
+.sec > h3{font-size:16px;display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.sec > h3 .cnt{font-size:12px;font-weight:500;color:var(--ink-2);background:var(--surface-2);border-radius:999px;padding:1px 8px}
+.field{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0;transition:background .6s}
+.field.flash{background:var(--accent-soft)}
+.field label{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:14px;color:var(--ink-2)}
+.field textarea{width:100%;border:0;background:transparent;resize:none;outline:none;padding:4px 0 0;min-height:28px;line-height:1.5;overflow:hidden}
+.badge{font-size:11px;border-radius:6px;padding:1px 6px;font-weight:500}
+.badge.ai{background:var(--accent-soft);color:var(--accent)}
+.badge.man{background:var(--surface-2);color:var(--ink-2)}
+.badge.chk{background:var(--warn-soft);color:var(--warn)}
+.fmeta{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.fmeta button{border:0;background:none;padding:2px 0;font-size:13px;color:var(--accent)}
+.quote{font-size:13px;color:var(--ink-2);background:var(--surface-2);border-radius:8px;padding:6px 8px;margin-top:6px}
+.seg{padding:8px 0;border-bottom:1px dashed var(--line)}
+.seg .t{font-size:12px;color:var(--ink-2);margin-left:6px;font-variant-numeric:tabular-nums}
+.seg.manual{background:var(--surface-2);border-radius:8px;padding:8px}
+.stage-mark{margin:14px 0 4px;font-size:13px;font-weight:700;color:var(--accent)}
+.interim{color:var(--ink-2);font-style:italic;padding:8px 0}
+.actions{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--line);z-index:15;padding-bottom:env(safe-area-inset-bottom)}
+.actions .wrap{display:flex;gap:10px;padding-top:10px;padding-bottom:10px}
+.actions .btn{flex:1}
+.analysis{line-height:1.65}
+.analysis h2,.analysis h3,.analysis h4{margin:18px 0 6px;font-size:17px}
+.analysis ul{padding-inline-start:20px;margin:6px 0}
+.analysis p{margin:6px 0}
+/* status highlights in the analysis: done / recommended / must */
+.hl{border-radius:5px;padding:1px 4px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.hl-done{background:var(--hl-done);color:var(--hl-done-ink)}
+.hl-rec{background:var(--hl-rec);color:var(--hl-rec-ink)}
+.hl-must{background:var(--hl-must);color:var(--hl-must-ink);font-weight:500}
+.legend{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0;font-size:13px}
+/* segmented theme picker */
+.seg-pick{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.seg-pick button{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 4px;font-size:14px}
+.seg-pick button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+/* form fields flow into columns when there is room */
+.fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr));column-gap:12px;align-items:start}
+.side-h{font-size:15px;margin:0;padding:12px 0 6px;display:flex;gap:8px;align-items:center;position:sticky;top:0;background:var(--bg);z-index:1;border-bottom:1px solid var(--line)}
+/* tablet */
+@media (min-width:760px){
+  .wrap{max-width:1060px;padding:0 24px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 18px;align-items:start}
+  .cols2{columns:2;column-gap:18px;padding-top:16px}
+  .cols2 > .card{display:inline-block;width:100%;margin:0 0 18px}
+  .recbar .chips{flex-direction:row}
+  .recbar .chip{padding:6px 16px;font-size:14px}
+  .toast{bottom:96px}
+}
+/* wide tablet / landscape: transcript stays visible beside the form */
+.split{display:block}
+@media (min-width:1000px){
+  .wrap{max-width:1440px}
+  .split{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(340px,1fr);gap:28px;align-items:start}
+  .side{position:sticky;top:calc(var(--hdr,170px) + 6px);max-height:calc(100dvh - var(--hdr,170px) - 92px);overflow:auto;
+        border-inline-start:1px solid var(--line);padding:0 18px 16px 4px;overscroll-behavior:contain}
+  .tabs{max-width:520px}
+  .tabs [data-tab=transcript]{display:none}
+}
+.toast{position:fixed;left:16px;right:16px;bottom:90px;margin:auto;max-width:520px;background:var(--ink);color:var(--bg);border-radius:12px;padding:12px 14px;z-index:50;font-size:15px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.toast.err{background:var(--rec);color:#fff}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+details.help{margin-top:8px}
+details.help summary{color:var(--accent);font-size:14px;cursor:pointer}
+.hr{height:1px;background:var(--line);margin:16px 0}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toastHost"></div>
+<script>
+'use strict';
+/* ============================================================
+   עוזר קליני — Clinic Assistant
+   Recording → Hebrew speech recognition → form auto-fill (Claude API)
+   → clinical analysis grounded in the therapist's Drive knowledge base
+   → per-patient folders in Google Drive.
+   Everything runs on the phone; keys stay in this browser's storage.
+   ============================================================ */
+
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pad = n => String(n).padStart(2, '0');
+
+/* ---------------- storage ---------------- */
+const K = { settings: 'ca.settings', patients: 'ca.patients', session: 'ca.session', kb: 'ca.kbcache', usage: 'ca.usage' };
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { toast('שמירה מקומית נכשלה: ' + e.message, true); return false; } },
+  del(k) { try { localStorage.removeItem(k); } catch { } }
+};
+
+// Lesson summaries in the therapist's Drive: "link | regions | parts". No regions = every analysis.
+// The upper-quadrant decision map comes from the athletic-therapy-map site (settings.siteKB), not from this list.
+const KB_DEFAULT = `# רביע עליון — סיכומי הקורס
+https://docs.google.com/document/d/1y-rbmEH-RaofY5U_KjCob3AphPuvQDhNE6__4wUn0H4/edit | צוואר וראש, כתף
+https://docs.google.com/document/d/1w4WaEasDHYIM2dgv5NZfQLvgeyCBrlUV3xN1T0IcuH0/edit | צוואר וראש, כתף, מרפק, שורש כף יד וכף יד
+https://docs.google.com/document/d/1tFbneN26GslZvhsnilawMrSOmhXCLYj-PnKmsLA2V74/edit | מרפק, שורש כף יד וכף יד
+https://docs.google.com/document/d/1kNxMopGomXkwtlg90lpF09tVIiEvaqpTIT4u0BWxiwo/edit | צוואר וראש, כתף, מרפק, שורש כף יד וכף יד
+# גב, אגן וגפה תחתונה — קורס הקיץ
+https://docs.google.com/document/d/1cHNuHIddG73-fnsHg-wrYPMjRr78MfnbUyMVrsJcH-Y/edit | גב תחתון, ירך ואגן
+https://drive.google.com/file/d/1Qnq6m5gDKvckqx76C1QwntHN6x49Y496/view | גב תחתון, ירך ואגן
+https://drive.google.com/file/d/1daHzXbqlaiBStT5CLSIwlY5nAjaojk0v/view | ירך ואגן
+https://drive.google.com/file/d/1b_fyv28PrL5X-IhDH14XkiJo7i9dsU5y/view | ירך ואגן
+https://docs.google.com/document/d/1Wpnv9mjXH4rwsvOhqNcqrXiG5OmiX3zOH7S-Ko0-h9M/edit | ברך
+https://docs.google.com/document/d/1Tk-9SRI2QJpll-XmWNoviEWIIEhONBtETIQwK49mm3g/edit | ברך
+https://docs.google.com/document/d/16ZhbOBQzKvjcRrqB9GmVf5mVWANtNsCAQo-xUwLjMOk/edit | קרסול וכף רגל, ברך
+https://docs.google.com/document/d/1h1fhVIq_TlFwe4x_IcWYUectECUTekzhvOUbGb4Q5Ic/edit | קרסול וכף רגל
+# מאגר המבדקים — כל אזור מקבל רק את החלקים שלו
+https://drive.google.com/file/d/17KujdVmoq22YEX7vTiF1nWE6RvNuFnhX/view | גב תחתון, ירך ואגן, ברך, קרסול וכף רגל, אחר | חלק א, חלק ב
+https://drive.google.com/file/d/17KujdVmoq22YEX7vTiF1nWE6RvNuFnhX/view | גב תחתון, ירך ואגן | חלק ג
+https://drive.google.com/file/d/17KujdVmoq22YEX7vTiF1nWE6RvNuFnhX/view | ירך ואגן | חלק ד
+https://drive.google.com/file/d/17KujdVmoq22YEX7vTiF1nWE6RvNuFnhX/view | ברך | חלק ה
+https://drive.google.com/file/d/17KujdVmoq22YEX7vTiF1nWE6RvNuFnhX/view | קרסול וכף רגל | חלק ו
+# כללי — לכל ניתוח: חשיבה קלינית, עצמות ושברים, שרירים
+https://drive.google.com/file/d/1zUknvWbO_UMJhgj0ZYFrefFlM8oy945P/view
+https://drive.google.com/file/d/1FF0nX8mUgek0E7EspDHfmqcWOE9tbM8Q/view
+https://drive.google.com/file/d/1eZYbwtAfj7o2ZMRjeb6fJQ5doWqe3oZH/view`;
+const KB_OLD_DEFAULT = 'https://docs.google.com/document/d/1w69Gy6xERTPrLEa3kJpLsPf4nL0DCDsy_zpxN8VGBvE/edit\nhttps://docs.google.com/document/d/1Tk-9SRI2QJpll-XmWNoviEWIIEhONBtETIQwK49mm3g/edit | ברך';
+
+const DEFAULT_SETTINGS = {
+  apiKey: '', extractModel: 'claude-sonnet-5-5', analysisModel: 'claude-opus-5-5',
+  clientId: '', rootFolderName: 'מטופלים', rootFolderId: '',
+  kbDocs: KB_DEFAULT, extraKB: '', siteKB: true, kbBudget: 350, kbVer: 2,
+  autoFill: true, fillChars: 600, continuous: true, lang: 'he-IL'
+};
+const storedSettings = LS.get(K.settings, null);
+let settings = { ...DEFAULT_SETTINGS, ...(storedSettings || {}) };
+if (storedSettings && (storedSettings.kbVer || 1) < 2) { // version 1 kept the knowledge base as two Google Docs; the site now covers the decision map
+  if (String(settings.kbDocs || '').trim() === KB_OLD_DEFAULT || !String(settings.kbDocs || '').trim()) settings.kbDocs = KB_DEFAULT;
+  settings.kbVer = 2; LS.set(K.settings, settings);
+}
+let patients = LS.get(K.patients, []);
+let session = LS.get(K.session, null);
+let usage = LS.get(K.usage, { total: 0 });
+const saveSettings = () => LS.set(K.settings, settings);
+const savePatients = () => LS.set(K.patients, patients);
+let saveTimer = null;
+function saveSession(now = false) {
+  clearTimeout(saveTimer);
+  const go = () => { if (session) LS.set(K.session, session); else LS.del(K.session); };
+  if (now) go(); else saveTimer = setTimeout(go, 400);
+}
+
+/* ---------------- domain: regions & form ---------------- */
+const REGIONS = ['צוואר וראש', 'כתף', 'מרפק', 'שורש כף יד וכף יד', 'גב תחתון', 'ירך ואגן', 'ברך', 'קרסול וכף רגל', 'אחר'];
+const TYPES = ['הערכה ראשונית', 'מפגש מעקב'];
+const STAGES = [
+  { id: 'anamnesis', label: 'אנמנזה', sections: ['followup', 'details', 'complaint', 'associated', 'function', 'history', 'flags'] },
+  { id: 'exam', label: 'בדיקה', sections: ['exam'] },
+  { id: 'summary', label: 'סיכום', sections: ['summary'] }
+];
+
+// key = shows in the "missing" checklist; critical = AI-filled value is flagged for the therapist to confirm
+const FORM = [
+  { id: 'followup', title: 'מעקב', only: 'מפגש מעקב', fields: [
+    { id: 'changes', label: 'מה השתנה מאז המפגש הקודם', key: 1 },
+    { id: 'lead_sign', label: 'שינוי בסימן הסובייקטיבי המוביל', key: 1 },
+    { id: 'adherence', label: 'תרגול ביתי — היענות', key: 1 },
+    { id: 'response', label: 'תגובה לטיפול הקודם' }
+  ]},
+  { id: 'details', title: 'פרטים אישיים', fields: [
+    { id: 'name', label: 'שם פרטי ומשפחה' },
+    { id: 'age', label: 'גיל', key: 1 },
+    { id: 'sex', label: 'מין' },
+    { id: 'address', label: 'כתובת' },
+    { id: 'occupation', label: 'מקצוע', key: 1 },
+    { id: 'marital', label: 'מצב משפחתי' },
+    { id: 'dominant_hand', label: 'יד / רגל דומיננטית' },
+    { id: 'referral', label: 'סיבת פנייה / הפניה' }
+  ]},
+  { id: 'complaint', title: 'תלונה עיקרית', fields: [
+    { id: 'chief_complaint', label: 'תלונה עיקרית', key: 1 },
+    { id: 'location', label: 'פיזור — מיקום והקרנה', key: 1 },
+    { id: 'onset', label: 'התחלה (Onset)', key: 1 },
+    { id: 'mechanism', label: 'מנגנון פגיעה', key: 1 },
+    { id: 'progression', label: 'התקדמות' },
+    { id: 'duration', label: 'משך הזמן', key: 1 },
+    { id: 'vas_max', label: 'עוצמת כאב מירבית (0–10)', key: 1, critical: 1 },
+    { id: 'vas_now', label: 'עוצמת כאב עכשיו (0–10)', key: 1, critical: 1 },
+    { id: 'daily_pattern', label: 'משך היום — דפוס יומי, נוקשות בוקר' },
+    { id: 'night', label: 'שנת לילה וכאב לילי', key: 1, critical: 1 },
+    { id: 'pain_type', label: 'סוג הכאב (עצבי / וסקולרי / נקודתי / מפושט)' },
+    { id: 'quality', label: 'אופי הכאב (חד, שורף, לוחץ, עמום)' },
+    { id: 'easing', label: 'מקל', key: 1 },
+    { id: 'aggravating', label: 'מחמיר', key: 1 },
+    { id: 'concordant', label: 'הסימן התואם (Concordant Sign)' }
+  ]},
+  { id: 'associated', title: 'סימפטומים נלווים', fields: [
+    { id: 'swelling', label: 'נפיחות' },
+    { id: 'mechanical', label: 'קליקים / תפיסות / נעילות' },
+    { id: 'instability', label: 'חוסר יציבות' },
+    { id: 'neuro_symptoms', label: 'נימול / הקרנה / חולשה', critical: 1 }
+  ]},
+  { id: 'function', title: 'תפקוד ומטרות', fields: [
+    { id: 'function_limits', label: 'הגבלות תפקודיות — יומיום, עבודה, ספורט', key: 1 },
+    { id: 'psfs', label: 'PSFS — 3 פעילויות ודירוג 0–10' },
+    { id: 'goals', label: 'מטרות המטופל', key: 1 },
+    { id: 'expectations', label: 'ציפיות מהטיפול' }
+  ]},
+  { id: 'history', title: 'היסטוריה', fields: [
+    { id: 'medications', label: 'תרופות', key: 1, critical: 1 },
+    { id: 'medical_history', label: 'היסטוריה (טראומה, ניתוח, שברים, נקעים, כאבים, מחלות)', key: 1 },
+    { id: 'comorbidities', label: 'מחלות רקע' },
+    { id: 'physical_history', label: 'היסטוריה גופנית (ספורט, תחביבים, עיסוק פיזי)', key: 1 },
+    { id: 'imaging', label: 'הדמיה ותיעוד רפואי' }
+  ]},
+  { id: 'flags', title: 'דגלים', fields: [
+    { id: 'red_flags', label: 'דגלים אדומים — מה נשאל ומה עלה', key: 1, critical: 1 },
+    { id: 'yellow_flags', label: 'דגלים צהובים — פחד מתנועה, סטרס, ציפיות' }
+  ]},
+  { id: 'exam', title: 'בדיקה פיזיקלית', fields: [
+    { id: 'observation', label: 'תצפית — יציבה, הליכה, נפיחות, אטרופיה', key: 1 },
+    { id: 'palpation', label: 'מישוש' },
+    { id: 'arom', label: 'AROM', key: 1, critical: 1 },
+    { id: 'prom', label: 'PROM + End Feel', critical: 1 },
+    { id: 'mmt', label: 'MMT (0–5)', critical: 1 },
+    { id: 'neuro_exam', label: 'נוירולוגית — דרמטומים, מיוטומים, רפלקסים, ULTT / LLTT', critical: 1 },
+    { id: 'special_tests', label: 'מבדקים מיוחדים (שם — צד — תוצאה)', key: 1, critical: 1 },
+    { id: 'functional_tests', label: 'מבחנים תפקודיים' }
+  ]},
+  { id: 'summary', title: 'סיכום המפגש', fields: [
+    { id: 'therapist_impression', label: 'התרשמות המטפל (כפי שנאמרה)' },
+    { id: 'treatment_given', label: 'טיפול שניתן במפגש' },
+    { id: 'home_program', label: 'תוכנית ביתית / תרגילים' },
+    { id: 'plan_next', label: 'המשך ותיאום' }
+  ]}
+];
+const FIELD = {};
+FORM.forEach(sec => sec.fields.forEach(f => { FIELD[f.id] = { ...f, section: sec.id }; }));
+const sectionsFor = s => FORM.filter(sec => !sec.only || sec.only === s.type);
+const fieldsFor = s => sectionsFor(s).flatMap(sec => sec.fields);
+
+/* ---------------- UI helpers ---------------- */
+const ICON = {
+  gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+  back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>',
+  mic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"/></svg>',
+  stop: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>',
+  drive: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>',
+  eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+  map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6.5v13.5L9 17.5l6 2.5 6-2.5V4l-6 2.5z"/><path d="M9 4v13.5M15 6.5V20"/></svg>',
+  spark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg>'
+};
+let toastTimer = null;
+function toast(msg, err = false, ms = 3800) {
+  const host = $('#toastHost');
+  host.innerHTML = `<div class="toast ${err ? 'err' : ''}" role="status">${esc(msg)}</div>`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { host.innerHTML = ''; }, ms);
+}
+/* ---------------- theme ---------------- */
+const THEMES = [['auto', 'אוטומטי'], ['light', 'בהיר'], ['comfort', 'נוח לעין'], ['dark', 'כהה']];
+const THEME_BG = { light: '#f5f3ee', dark: '#111514', comfort: '#f0dcc0' };
+const DARK_MQ = matchMedia('(prefers-color-scheme: dark)');
+// one theme for the whole site: the map and the app share localStorage 'uqmap-theme'
+const THEME_KEY = 'uqmap-theme';
+function getTheme() { try { const t = localStorage.getItem(THEME_KEY); return ['light', 'comfort', 'dark'].includes(t) ? t : 'auto'; } catch { return 'auto'; } }
+function applyTheme() {
+  const t = getTheme(), root = document.documentElement;
+  const eff = t !== 'auto' ? t : (DARK_MQ.matches ? 'dark' : 'comfort'); // same default as the map
+  if (t === 'auto' && eff === 'dark') delete root.dataset.theme; else root.dataset.theme = eff;
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content', THEME_BG[eff]);
+}
+function setTheme(t) {
+  try { if (t === 'auto') localStorage.removeItem(THEME_KEY); else localStorage.setItem(THEME_KEY, t); } catch { }
+  applyTheme();
+  $$('.seg-pick [data-theme]').forEach(b => b.classList.toggle('on', b.dataset.theme === t));
+}
+window.addEventListener('storage', e => { if (e.key === THEME_KEY) applyTheme(); });
+DARK_MQ.addEventListener?.('change', applyTheme);
+function autosize(t) { t.style.height = 'auto'; t.style.height = (t.scrollHeight + 2) + 'px'; }
+const fmtDate = iso => { const d = new Date(iso); return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}`; };
+const fmtStamp = iso => { const d = new Date(iso); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const fmtClock = ms => { const s = Math.floor(ms / 1000); return `${pad(Math.floor(s / 60))}:${pad(s % 60)}`; };
+
+/* ---------------- Claude API ---------------- */
+const PRICE = { // $ per MTok: [input, output, cache-read multiplier]
+  'claude-opus-5-5': [4, 20, 0.05], 'claude-sonnet-5-5': [2, 10, 0.05], 'claude-haiku-5-5': [0.1, 0.5, 0.1], 'claude-fable-5-1': [10, 50, 0.025]
+};
+function costOf(model, u) {
+  if (!u) return 0;
+  const p = PRICE[model] || [4, 20, 0.1];
+  return ((u.input_tokens || 0) * p[0] + (u.cache_creation_input_tokens || 0) * p[0] * 1.25 +
+    (u.cache_read_input_tokens || 0) * p[0] * p[2] + (u.output_tokens || 0) * p[1]) / 1e6;
+}
+function trackUsage(model, u) {
+  if (!u) return 0;
+  const cost = costOf(model, u);
+  usage.total = (usage.total || 0) + cost; LS.set(K.usage, usage);
+  if (session) { session.cost = (session.cost || 0) + cost; saveSession(); }
+  return cost;
+}
+function apiErrText(status, msg) {
+  if (status === 401) return 'מפתח ה-API לא תקין (401)';
+  if (status === 403) return 'אין הרשאה למודל או לחשבון (403): ' + msg;
+  if (status === 429) return 'יותר מדי בקשות / אין יתרה (429): ' + msg;
+  if (status === 529 || status === 503) return 'השירות עמוס כרגע, נסה שוב בעוד רגע';
+  return `שגיאת API ${status}: ${msg}`;
+}
+async function callClaude(body, { onText, signal } = {}) {
+  if (!settings.apiKey) throw new Error('חסר מפתח Claude API — הוסף אותו בהגדרות');
+  const stream = !!onText;
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST', signal,
+    headers: {
+      'content-type': 'application/json', 'x-api-key': settings.apiKey,
+      'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({ ...body, stream })
+  });
+  if (!resp.ok) {
+    let msg = resp.statusText;
+    try { const j = await resp.json(); msg = j.error?.message || msg; } catch { }
+    const err = new Error(apiErrText(resp.status, msg)); err.status = resp.status; err.raw = msg; throw err;
+  }
+  if (!stream) { const j = await resp.json(); trackUsage(body.model, j.usage); return j; }
+  const reader = resp.body.getReader(); const dec = new TextDecoder();
+  let buf = '', text = '', u = {}, stop = null;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    let i;
+    while ((i = buf.indexOf('\n\n')) >= 0) {
+      const chunk = buf.slice(0, i); buf = buf.slice(i + 2);
+      const data = chunk.split('\n').filter(l => l.startsWith('data:')).map(l => l.slice(5).trim()).join('');
+      if (!data) continue;
+      let ev; try { ev = JSON.parse(data); } catch { continue; }
+      if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta') { text += ev.delta.text; onText(text); }
+      else if (ev.type === 'message_start') u = { ...(ev.message?.usage || {}) };
+      else if (ev.type === 'message_delta') { if (ev.usage) u = { ...u, ...ev.usage }; stop = ev.delta?.stop_reason || stop; }
+      else if (ev.type === 'error') throw new Error(ev.error?.message || 'שגיאה בזרם התשובה');
+    }
+  }
+  const cost = trackUsage(body.model, u);
+  return { text, stop_reason: stop, usage: u, cost };
+}
+async function countTokens(body) {
+  const r = await fetch('https://api.anthropic.com/v1/messages/count_tokens', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json', 'x-api-key': settings.apiKey,
+      'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error('count_tokens ' + r.status);
+  return (await r.json()).input_tokens;
+}
+// thinking setting per model family for low-latency extraction
+function lowLatency(model) {
+  if (model.startsWith('claude-sonnet')) return { thinking: { type: 'between_tools' }, effort: 'low' };
+  if (model.startsWith('claude-haiku')) return { thinking: { type: 'disabled' }, effort: 'low' };
+  return { effort: 'low' };
+}
+// one retry without optional parameters if the API rejects them
+async function callWithFallback(body, opts) {
+  try { return await callClaude(body, opts); }
+  catch (e) {
+    if (e.status === 400 && /thinking|effort|output_config|format/i.test(e.raw || '')) {
+      const b = { ...body }; delete b.thinking;
+      if (b.output_config) { const oc = { ...b.output_config }; delete oc.effort; b.output_config = oc; }
+      try { return await callClaude(b, opts); }
+      catch (e2) {
+        if (e2.status === 400 && b.output_config?.format) { const b2 = { ...b }; delete b2.output_config; return await callClaude(b2, opts); }
+        throw e2;
+      }
+    }
+    throw e;
+  }
+}
+function parseJsonLoose(t) {
+  try { return JSON.parse(t); } catch { }
+  const m = t.match(/```(?:json)?\s*([\s\S]*?)```/); if (m) { try { return JSON.parse(m[1]); } catch { } }
+  const a = t.indexOf('{'), b = t.lastIndexOf('}');
+  if (a >= 0 && b > a) { try { return JSON.parse(t.slice(a, b + 1)); } catch { } }
+  return null;
+}
+
+/* ---------------- form auto-fill ---------------- */
+function fillSchema(s) {
+  return {
+    type: 'object', additionalProperties: false, required: ['updates'],
+    properties: {
+      updates: {
+        type: 'array',
+        items: {
+          type: 'object', additionalProperties: false, required: ['id', 'value', 'quote', 'uncertain'],
+          properties: {
+            id: { type: 'string', enum: fieldsFor(s).map(f => f.id) },
+            value: { type: 'string' }, quote: { type: 'string' }, uncertain: { type: 'boolean' }
+          }
+        }
+      }
+    }
+  };
+}
+function extractSystem(s) {
+  const lines = sectionsFor(s).map(sec => `## ${sec.title}\n` + sec.fields.map(f => `- ${f.id} — ${f.label}`).join('\n')).join('\n');
+  return `You fill a structured clinical form for a sports therapist (ספורט-תרפיסט) in Israel, from a live Hebrew transcript of a clinical session.
+
+The transcript is automatic speech recognition from a phone microphone: no speaker labels, frequent recognition errors, English clinical terms often written phonetically in Hebrew letters (e.g. "לכמן" = Lachman, "אי רום" = AROM, "וי איי אס" = VAS). Two speakers: the therapist (asks questions, says exam findings out loud) and the patient (answers). Infer who is speaking from context. Lines may start with a stage marker such as [שלב: בדיקה].
+
+Rules:
+1. Record only what was actually said in the transcript. Never fill a field from general knowledge, never infer a diagnosis, never invent a test result.
+2. Return an update only for fields whose content changes because of the NEW transcript. "value" is the complete new content of that field: merge the current value with the new information. If the patient corrected something said earlier, replace it and keep a short note such as "(תוקן: קודם נאמר 5)".
+3. Write values in short, telegraphic clinical Hebrew. Keep standard English terms (VAS, AROM, MMT, Lachman, ULTT). Numbers as digits. Always state the side (ימין / שמאל / דו-צדדי) when it was said.
+4. Pain intensity fields: the number 0–10 first, then short context, e.g. "7 (בירידה במדרגות)".
+5. special_tests: one line per test — "שם המבדק — צד — חיובי/שלילי — הערה".
+6. red_flags: one line per screening question that was actually asked, with the answer, e.g. "ירידה לא מוסברת במשקל: לא". Do not list questions that were not asked.
+7. Fields marked LOCKED were edited by the therapist — never return updates for them.
+8. "quote": a short exact snippet (up to 15 words) from the transcript that supports the value. "uncertain": true when the recognition is garbled or it is unclear who said it.
+9. Ignore small talk, logistics, scheduling and anything that does not belong to a field. If nothing new belongs in the form, return an empty updates array.
+
+Form fields (id — label):
+${lines}`;
+}
+function buildTranscript(segs) {
+  let out = '', last = null;
+  for (const g of segs) {
+    if (g.stage !== last) { out += `\n[שלב: ${STAGES.find(x => x.id === g.stage)?.label || g.stage}]\n`; last = g.stage; }
+    out += g.text + (g.manual ? ' (הוקלד ידנית)' : '') + '\n';
+  }
+  return out.trim();
+}
+function currentValues(s) {
+  const o = {};
+  for (const f of fieldsFor(s)) {
+    const v = s.fields[f.id];
+    if (v && v.value) o[f.id] = (v.locked ? '[LOCKED] ' : '') + v.value;
+  }
+  return o;
+}
+let filling = false, lastFillAt = 0, fillAbort = null;
+function pendingChars() {
+  if (!session) return 0;
+  return session.segments.slice(session.processed).reduce((a, g) => a + g.text.length, 0);
+}
+function maybeFill(force = false) {
+  if (!session || filling || !settings.apiKey) return;
+  const chars = pendingChars();
+  if (!chars) { if (force) setFillStatus('אין טקסט חדש למילוי'); return; }
+  if (!force) {
+    if (!settings.autoFill) return;
+    const enough = chars >= (+settings.fillChars || 600);
+    const stale = chars >= 40 && Date.now() - lastFillAt > 45000;
+    if (!enough && !stale) return;
+  }
+  runFill();
+}
+async function runFill() {
+  const s = session; if (!s) return;
+  filling = true;
+  const upto = s.segments.length;
+  const fresh = s.segments.slice(s.processed, upto);
+  const context = s.segments.slice(Math.max(0, s.processed - 8), s.processed);
+  setFillStatus('<span class="spin"></span> ממלא את הטופס…', false, true);
+  const user = `אזור: ${s.region} | סוג מפגש: ${s.type}
+
+CURRENT FORM VALUES (JSON):
+${JSON.stringify(currentValues(s), null, 1)}
+
+EARLIER TRANSCRIPT (already processed — context only):
+${buildTranscript(context) || '(אין)'}
+
+NEW TRANSCRIPT (process this):
+${buildTranscript(fresh)}`;
+  const ll = lowLatency(settings.extractModel);
+  const body = {
+    model: settings.extractModel, max_tokens: 6000,
+    system: [{ type: 'text', text: extractSystem(s), cache_control: { type: 'ephemeral' } }],
+    messages: [{ role: 'user', content: user }],
+    output_config: { effort: ll.effort, format: { type: 'json_schema', schema: fillSchema(s) } }
+  };
+  if (ll.thinking) body.thinking = ll.thinking;
+  fillAbort = new AbortController();
+  try {
+    const res = await callWithFallback(body, { signal: fillAbort.signal });
+    if (session !== s) return;
+    const txt = (res.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+    const json = parseJsonLoose(txt);
+    if (!json) throw new Error('התשובה לא הייתה JSON תקין');
+    const n = applyUpdates(json.updates || []);
+    s.processed = upto; lastFillAt = Date.now(); saveSession(true);
+    const d = new Date();
+    setFillStatus(n ? `עודכנו ${n} שדות · ${pad(d.getHours())}:${pad(d.getMinutes())}` : `אין מידע חדש לטופס · ${pad(d.getHours())}:${pad(d.getMinutes())}`);
+  } catch (e) {
+    if (e.name !== 'AbortError') setFillStatus('מילוי נכשל: ' + e.message, true);
+    lastFillAt = Date.now(); // back off before the next automatic attempt
+  } finally {
+    filling = false; fillAbort = null;
+  }
+}
+function applyUpdates(updates) {
+  let n = 0;
+  for (const u of updates) {
+    const def = FIELD[u.id]; if (!def) continue;
+    const cur = session.fields[u.id];
+    if (cur && cur.locked) continue;
+    const val = String(u.value || '').trim(); if (!val) continue;
+    if (cur && cur.value === val) continue;
+    session.fields[u.id] = { value: val, source: 'ai', quote: String(u.quote || '').trim(), needsCheck: !!(def.critical || u.uncertain), locked: false, at: Date.now() };
+    n++;
+    refreshField(u.id, true);
+  }
+  if (n) { refreshMissing(); refreshCounts(); }
+  return n;
+}
+
+/* ---------------- speech recognition ---------------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, recording = false, recSince = 0, interim = '', committedW = [], firstAdd = true, recSid = 0, wakeLock = null;
+const rawLog = []; // last recognition events, for diagnosing browser-specific duplicates
+/* word-level merging — tested against desktop, Android-cumulative, resend, overlap and revision patterns */
+const normW = w => w.replace(/[.,!?;:״"׳'()\[\]\-–—…]/g, '').toLowerCase();
+const toWords = s => String(s || '').trim().split(/\s+/).filter(Boolean);
+function prefixLen(P, N) { let i = 0; while (i < P.length && i < N.length && P[i] === N[i]) i++; return i; }
+function newWords(prev, next, { revision = true, minContained = 1 } = {}) {
+  const P = prev.map(normW), N = next.map(normW);
+  if (!N.length) return [];
+  const i = prefixLen(P, N);
+  if (i === P.length) return next.slice(i);
+  if (revision && i >= Math.max(2, Math.ceil(P.length * 0.5))) return next.slice(P.length);
+  if (N.length >= minContained && (' ' + P.join(' ') + ' ').includes(' ' + N.join(' ') + ' ')) return [];
+  for (let k = Math.min(P.length, N.length); k >= 2; k--) {
+    if (P.slice(-k).join(' ') === N.slice(0, k).join(' ')) return next.slice(k);
+  }
+  return next;
+}
+// replaces when `next` extends or revises `acc`, otherwise appends only the new words
+function absorb(acc, next) {
+  const add = newWords(acc, next);
+  const i = prefixLen(acc.map(normW), next.map(normW));
+  if (i === acc.length || i >= Math.max(2, Math.ceil(acc.length * 0.5))) return { acc: next.length >= acc.length ? next : acc, add };
+  return { acc: acc.concat(add), add };
+}
+function transcriptTail(n = 60) {
+  if (!session) return [];
+  const out = [];
+  for (let i = session.segments.length - 1; i >= 0 && out.length < n; i--) out.unshift(...toWords(session.segments[i].text));
+  return out.slice(-n);
+}
+const IS_LOCAL_FILE = !window.isSecureContext || /^(file|content):/.test(location.protocol);
+const IS_SAMSUNG = /SamsungBrowser/i.test(navigator.userAgent);
+function envProblem() {
+  if (IS_LOCAL_FILE) return 'האפליקציה פתוחה כקובץ מהטלפון, לא מכתובת https. במצב כזה הדפדפן חוסם את המיקרופון ואת ההתחברות ל-Google. העלה את התיקייה לאחסון (שלב 2 בהוראות) ופתח את הכתובת ב-Chrome.';
+  if (IS_SAMSUNG) return 'זה דפדפן Samsung Internet. זיהוי הדיבור נבדק רק ב-Chrome — פתח את אותה כתובת ב-Chrome.';
+  return '';
+}
+function startRec() {
+  if (IS_LOCAL_FILE) { toast(envProblem(), true, 9000); return; }
+  if (!SR) { toast('הדפדפן הזה לא תומך בזיהוי דיבור. פתח ב-Chrome באנדרואיד, או הקלד/הדבק טקסט בלשונית "תמלול".', true, 6000); return; }
+  if (!session.consent) { toast('חסר אישור הסכמת המטופל להקלטה', true); return; }
+  recording = true; recSince = Date.now();
+  spawnRec(); grabWakeLock(); renderRecState();
+}
+function stopRec() {
+  recording = false;
+  if (session && recSince) { session.recordedMs = (session.recordedMs || 0) + (Date.now() - recSince); recSince = 0; saveSession(); }
+  try { rec && rec.stop(); } catch { }
+  releaseWakeLock(); renderRecState();
+  setTimeout(() => maybeFill(true), 900);
+}
+function spawnRec() {
+  rec = new SR();
+  rec.lang = settings.lang || 'he-IL';
+  rec.interimResults = true;
+  rec.continuous = !!settings.continuous;
+  rec.maxAlternatives = 1;
+  committedW = []; firstAdd = true; recSid++;
+  rec.onresult = onRecResult;
+  rec.onerror = e => {
+    if (e.error === 'no-speech' || e.error === 'aborted') return;
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+      recording = false; renderRecState();
+      toast(envProblem() || (e.error === 'service-not-allowed'
+        ? 'שירות זיהוי הדיבור לא זמין בדפדפן הזה. פתח ב-Chrome ובדוק שאפליקציית Google מותקנת ומעודכנת.'
+        : 'האתר חסום למיקרופון. ב-Chrome: סמל המנעול ליד הכתובת ← הרשאות ← מיקרופון ← אפשר.'), true, 9000);
+      return;
+    }
+    if (e.error === 'network') { toast('אין חיבור לשירות זיהוי הדיבור — בדוק אינטרנט', true); return; }
+    if (e.error === 'audio-capture') { recording = false; renderRecState(); toast('המיקרופון תפוס או לא זמין', true); return; }
+    toast('שגיאת זיהוי: ' + e.error, true);
+  };
+  rec.onend = () => {
+    interim = ''; renderInterim();
+    if (recording) setTimeout(() => { if (recording) { try { spawnRec(); } catch { } } }, 250);
+  };
+  try { rec.start(); } catch { }
+}
+// Browsers deliver results differently (separate finals, Android's cumulative repeats, re-sends after a restart);
+// everything is reduced to "which words are actually new" before it reaches the transcript.
+function onRecResult(e) {
+  const finals = []; let inter = '';
+  for (let i = 0; i < e.results.length; i++) {
+    const r = e.results[i];
+    if (r.isFinal) finals.push(r[0].transcript.trim()); else inter += r[0].transcript;
+  }
+  let added = '';
+  if (finals.length) {
+    let cand = [];
+    for (const f of finals) if (f) cand = absorb(cand, toWords(f)).acc;
+    const step = absorb(committedW, cand);
+    committedW = step.acc;
+    let add = step.add;
+    // a restarted recognizer often re-sends what was already written — check against the transcript tail
+    if (add.length && (firstAdd || add.length >= 4)) add = newWords(transcriptTail(), add, { revision: false, minContained: firstAdd ? 1 : 4 });
+    if (add.length) { firstAdd = false; added = add.join(' '); addSegment(added); }
+  }
+  rawLog.push({ t: Date.now(), sid: recSid, finals, interim: inter, added });
+  if (rawLog.length > 400) rawLog.shift();
+  interim = inter.trim(); renderInterim();
+}
+function addSegment(text, manual = false) {
+  if (!session || !text.trim()) return;
+  const g = { t: Date.now(), stage: session.stage, text: text.trim() };
+  if (manual) g.manual = true;
+  session.segments.push(g);
+  saveSession();
+  appendSegmentUI(g, session.segments.length - 1);
+  refreshTabLabels();
+  maybeFill();
+}
+async function grabWakeLock() {
+  try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch { }
+}
+function releaseWakeLock() { try { wakeLock && wakeLock.release(); } catch { } wakeLock = null; }
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && recording) { grabWakeLock(); try { rec && rec.start(); } catch { } }
+});
+window.addEventListener('beforeunload', e => { if (recording) { e.preventDefault(); e.returnValue = ''; } });
+
+/* ---------------- Google Drive ---------------- */
+const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly';
+let gToken = null, gExp = 0;
+try { const t = JSON.parse(sessionStorage.getItem('ca.gtoken') || 'null'); if (t && t.exp > Date.now()) { gToken = t.token; gExp = t.exp; } } catch { }
+function getToken(interactive = true) {
+  return new Promise((resolve, reject) => {
+    if (gToken && Date.now() < gExp - 60000) return resolve(gToken);
+    if (!settings.clientId) return reject(new Error('חסר Google Client ID בהגדרות'));
+    if (!window.google?.accounts?.oauth2) return reject(new Error('ספריית ההתחברות של Google לא נטענה — בדוק אינטרנט ורענן'));
+    if (!interactive) return reject(new Error('נדרשת התחברות ל-Google'));
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: settings.clientId, scope: SCOPES,
+      callback: r => {
+        if (r.error) return reject(new Error(r.error_description || r.error));
+        gToken = r.access_token; gExp = Date.now() + (r.expires_in || 3600) * 1000;
+        try { sessionStorage.setItem('ca.gtoken', JSON.stringify({ token: gToken, exp: gExp })); } catch { }
+        resolve(gToken);
+      },
+      error_callback: e => reject(new Error(e?.type === 'popup_closed' ? 'חלון ההתחברות נסגר' : (e?.message || 'ההתחברות ל-Google נכשלה')))
+    });
+    client.requestAccessToken({ prompt: '' });
+  });
+}
+async function gfetch(url, opts = {}) {
+  const token = await getToken();
+  const r = await fetch(url, { ...opts, headers: { ...(opts.headers || {}), Authorization: 'Bearer ' + token } });
+  if (r.status === 401) { gToken = null; try { sessionStorage.removeItem('ca.gtoken'); } catch { } }
+  if (!r.ok) {
+    let msg = r.statusText; try { const j = await r.json(); msg = j.error?.message || msg; } catch { }
+    const err = new Error(`Drive ${r.status}: ${msg}`); err.status = r.status; throw err;
+  }
+  return r;
+}
+const DAPI = 'https://www.googleapis.com/drive/v3/files';
+const qEsc = s => String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+async function driveFind(q) {
+  const r = await gfetch(`${DAPI}?q=${encodeURIComponent(q)}&fields=files(id,name)&spaces=drive&pageSize=10`);
+  return (await r.json()).files || [];
+}
+async function driveFolder(name, parent, tag) {
+  const meta = { name, mimeType: 'application/vnd.google-apps.folder', appProperties: { ca: tag } };
+  if (parent) meta.parents = [parent];
+  const r = await gfetch(DAPI + '?fields=id', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(meta) });
+  return (await r.json()).id;
+}
+async function folderAlive(id) {
+  try { const r = await gfetch(`${DAPI}/${id}?fields=id,trashed`); const j = await r.json(); return !j.trashed; } catch { return false; }
+}
+async function ensureRoot() {
+  if (settings.rootFolderId && await folderAlive(settings.rootFolderId)) return settings.rootFolderId;
+  const found = await driveFind(`mimeType='application/vnd.google-apps.folder' and appProperties has { key='ca' and value='root' } and trashed=false`);
+  const id = found[0]?.id || await driveFolder(settings.rootFolderName || 'מטופלים', null, 'root');
+  settings.rootFolderId = id; saveSettings();
+  return id;
+}
+async function ensurePatientFolder(root, name) {
+  const p = patients.find(x => x.name === name);
+  if (p?.folderId && await folderAlive(p.folderId)) return p.folderId;
+  const found = await driveFind(`name='${qEsc(name)}' and '${root}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+  const id = found[0]?.id || await driveFolder(name, root, 'patient');
+  upsertPatient({ name, folderId: id });
+  return id;
+}
+async function upsertDoc(id, name, html, parent) {
+  const boundary = 'ca' + Math.random().toString(36).slice(2);
+  const meta = id ? { name } : { name, mimeType: 'application/vnd.google-apps.document', parents: [parent] };
+  const body = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${boundary}\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n${html}\r\n--${boundary}--`;
+  const url = id ? `https://www.googleapis.com/upload/drive/v3/files/${id}?uploadType=multipart&fields=id` : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id`;
+  try {
+    const r = await gfetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': `multipart/related; boundary=${boundary}` }, body });
+    return (await r.json()).id;
+  } catch (e) {
+    if (id && (e.status === 404 || e.status === 403)) return upsertDoc(null, name, html, parent);
+    throw e;
+  }
+}
+/* ---------------- knowledge base ----------------
+   Two sources, both read at analysis time:
+   1. the athletic-therapy-map site (public GitHub repo) → per-region decision map (kb-site.js)
+   2. lesson summaries in the therapist's own Drive (Google Docs, docx, PDF, text) — private, read with drive.readonly
+   Texts are cached in Cache Storage (not localStorage, which is small and holds the sessions). */
+const KB_CACHE = 'ca-kb-v1', KB_PARSER = 2;
+// the decision map is the home page of the same site (this app lives in /app/)
+const SITE_SRC = new URL('../index.html', location.href).href;
+const MAP_URL = new URL('../', location.href).href;
+const MT = { gdoc: 'application/vnd.google-apps.document', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', pdf: 'application/pdf' };
+const kbMem = new Map();
+const kbKeyUrl = k => new URL('./__kb/' + encodeURIComponent(k), location.href).href;
+async function kbGet(k) {
+  if (kbMem.has(k)) return kbMem.get(k);
+  try { const r = await (await caches.open(KB_CACHE)).match(kbKeyUrl(k)); if (r) { const v = await r.json(); kbMem.set(k, v); return v; } } catch { }
+  return null;
+}
+async function kbPut(k, v) {
+  kbMem.set(k, v);
+  try { await (await caches.open(KB_CACHE)).put(kbKeyUrl(k), new Response(JSON.stringify(v), { headers: { 'content-type': 'application/json' } })); } catch { }
+}
+const libs = {};
+function loadScript(src) {
+  return libs[src] ||= new Promise((res, rej) => {
+    const s = document.createElement('script'); s.src = src; s.onload = res;
+    s.onerror = () => { delete libs[src]; rej(new Error(`הקובץ ${src} לא נטען — ודא שכל קבצי האפליקציה הועלו לאתר`)); };
+    document.head.appendChild(s);
+  });
+}
+function pdfLib() {
+  return libs.pdf ||= import(new URL('pdf.min.js', location.href).href).then(m => {
+    m.GlobalWorkerOptions.workerSrc = new URL('pdf.worker.min.js', location.href).href; return m;
+  }).catch(e => { delete libs.pdf; throw new Error('ספריית ה-PDF לא נטענה (pdf.min.js): ' + e.message); });
+}
+
+// --- site ---
+async function loadSite(refresh = false) {
+  await loadScript('json5.min.js'); await loadScript('kb-site.js');
+  const old = await kbGet('site');
+  if (old && !refresh && Date.now() - old.at < 36e5) return old; // re-read hourly, so map edits reach the analysis the same day
+  try {
+    const r = await fetch(SITE_SRC, { cache: 'no-store' });
+    if (!r.ok) throw new Error('האתר ' + r.status);
+    const v = { data: SiteKB.parseSite(await r.text(), JSON5), src: 'האתר', at: Date.now() };
+    await kbPut('site', v); return v;
+  } catch (e) {
+    if (old) return { ...old, stale: true };
+    throw new Error('מפת הדרך לא נטענה: ' + e.message);
+  }
+}
+
+// --- Drive documents ---
+function docIdFrom(s) {
+  const m = String(s).match(/\/d\/([a-zA-Z0-9_-]{20,})/) || String(s).match(/[?&]id=([a-zA-Z0-9_-]{20,})/) || String(s).match(/^([a-zA-Z0-9_-]{20,})$/);
+  return m ? m[1] : null;
+}
+const splitList = s => s ? s.split(/[,،]/).map(t => t.trim()).filter(Boolean) : null;
+function parseKbDocs(text = settings.kbDocs) {
+  return String(text || '').split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#')).map(l => {
+    const [link, tags, parts] = l.split('|').map(x => (x || '').trim());
+    const id = docIdFrom(link);
+    return id ? { id, regions: splitList(tags), parts: splitList(parts) } : { bad: link };
+  });
+}
+const regionMatch = (regions, region) => !regions || regions.some(r => region.includes(r) || r.includes(region));
+const BIDI = /[‎‏‪-‮⁦-⁩]/g;
+function cleanText(t) {
+  return String(t || '')
+    .replace(/^\[[^\]]+\]:\s*<?data:[^\s>]*>?\s*$/gm, '')      // markdown image definitions (base64)
+    .replace(/!\[[^\]]*\]\((?:data:[^)]*|[^)]*)\)/g, '')       // inline images
+    .replace(/!\[[^\]]*\]\[[^\]]*\]/g, '')                      // reference images
+    .replace(/data:[a-z]+\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]{100,}/gi, '')
+    .replace(BIDI, '').replace(/ /g, ' ').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+function htmlToText(html) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const out = [];
+  const txt = n => n.textContent.replace(/\s+/g, ' ').trim();
+  const list = (el, depth) => {
+    for (const li of el.children) {
+      if (li.tagName !== 'LI') continue;
+      const c = li.cloneNode(true); c.querySelectorAll('ul,ol').forEach(x => x.remove());
+      const t = txt(c); if (t) out.push('  '.repeat(depth) + '- ' + t);
+      li.querySelectorAll(':scope > ul, :scope > ol').forEach(x => list(x, depth + 1));
+    }
+  };
+  for (const el of doc.body.children) {
+    const tag = el.tagName;
+    if (/^H[1-6]$/.test(tag)) { const t = txt(el); if (t) out.push('', '#'.repeat(+tag[1]) + ' ' + t); }
+    else if (tag === 'UL' || tag === 'OL') list(el, 0);
+    else if (tag === 'TABLE') {
+      for (const tr of el.querySelectorAll('tr')) {
+        if (tr.closest('table') !== el) continue;
+        const cells = [...tr.children].map(txt);
+        if (cells.some(Boolean)) out.push('| ' + cells.join(' | ') + ' |');
+      }
+      out.push('');
+    } else { const t = txt(el); if (t) out.push(t, ''); }
+  }
+  return out.join('\n');
+}
+async function pdfToText(buf) {
+  const pdfjs = await pdfLib();
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(buf), isEvalSupported: false }).promise;
+  let out = '';
+  for (let p = 1; p <= doc.numPages; p++) {
+    const tc = await (await doc.getPage(p)).getTextContent();
+    let line = '', prev = null;
+    for (const it of tc.items) {
+      if (prev && it.str && line && !/\s$/.test(line) && !/^\s/.test(it.str)) {
+        const x1 = prev.transform[4], w1 = prev.width, x2 = it.transform[4], w2 = it.width;
+        const gap = Math.min(Math.abs(x2 - (x1 + w1)), Math.abs(x1 - (x2 + w2)));
+        if (Math.abs(prev.transform[5] - it.transform[5]) > 2 || gap > 0.8) line += ' ';
+      }
+      line += it.str;
+      if (it.str) prev = it;
+      if (it.hasEOL) { out += line.trimEnd() + '\n'; line = ''; prev = null; }
+    }
+    out += line + '\n\n';
+  }
+  doc.destroy?.();
+  return out;
+}
+async function driveDocText(id, meta) {
+  const media = () => gfetch(`${DAPI}/${id}?alt=media`);
+  if (meta.mimeType === MT.gdoc) {
+    try { return await (await gfetch(`${DAPI}/${id}/export?mimeType=text%2Fmarkdown`)).text(); }
+    catch { return await (await gfetch(`${DAPI}/${id}/export?mimeType=text%2Fplain`)).text(); }
+  }
+  if (meta.mimeType === MT.docx) {
+    await loadScript('mammoth.browser.min.js');
+    const r = await mammoth.convertToHtml({ arrayBuffer: await (await media()).arrayBuffer() });
+    return htmlToText(r.value);
+  }
+  if (meta.mimeType === MT.pdf) return pdfToText(await (await media()).arrayBuffer());
+  if (/^text\//.test(meta.mimeType) || /json|markdown/.test(meta.mimeType)) return (await media()).text();
+  if (meta.mimeType.startsWith('application/vnd.google-apps.')) return (await gfetch(`${DAPI}/${id}/export?mimeType=text%2Fplain`)).text();
+  throw new Error(`"${meta.name}": סוג קובץ לא נתמך (${meta.mimeType}) — אפשר Google Docs, ‏docx, ‏PDF או טקסט`);
+}
+// cached per file id; re-read when the file changed in Drive
+async function fetchDoc(id, refresh = false) {
+  const c = await kbGet('doc:' + id);
+  if (c && !refresh && c.ver === KB_PARSER && Date.now() - c.checked < 12 * 36e5) return c;
+  let meta;
+  try { meta = await (await gfetch(`${DAPI}/${id}?fields=name,mimeType,modifiedTime`)).json(); }
+  catch (e) {
+    if (c && e.status !== 404) return { ...c, stale: true };
+    throw new Error(e.status === 404 ? `קובץ לא נמצא או אין גישה (${id.slice(0, 8)}…)` : e.message);
+  }
+  if (c && !refresh && c.ver === KB_PARSER && c.modified === meta.modifiedTime) { const v = { ...c, checked: Date.now() }; await kbPut('doc:' + id, v); return v; }
+  let text;
+  try { text = cleanText(await driveDocText(id, meta)); }
+  catch (e) { throw new Error(`"${meta.name}": ${e.message}`); }
+  if (!text) throw new Error(`"${meta.name}": לא נמצא בו טקסט`);
+  const v = { title: meta.name.replace(/\.(docx|pdf|txt|md)$/i, '').trim(), text, modified: meta.modifiedTime, checked: Date.now(), ver: KB_PARSER };
+  await kbPut('doc:' + id, v);
+  return v;
+}
+// keep only named parts of a document, e.g. "חלק ה": from that heading to the next heading of the same kind
+const headNorm = s => s.replace(BIDI, '').replace(/^[\s#*>|_•·\-–—]+/, '').replace(/[׳'״"*]/g, '').replace(/\s+/g, ' ').trim();
+const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function pickParts(text, parts) {
+  const lines = text.split('\n'), heads = lines.map(headNorm);
+  const found = [], missing = [];
+  for (const p of parts) {
+    const key = headNorm(p), fam = key.split(' ')[0];
+    const keyRe = new RegExp('^' + reEsc(key) + '(?=$|[\\s—–\\-:.)])');
+    const famRe = new RegExp('^' + reEsc(fam) + ' (?:[א-ת]|\\d{1,2}|[IVX]{1,4})(?=$|[\\s—–\\-:.)])');
+    let best = '';
+    for (let i = 0; i < lines.length; i++) {
+      if (heads[i].length > 140 || !keyRe.test(heads[i])) continue;
+      let j = i + 1;
+      while (j < lines.length && !(heads[j].length <= 140 && famRe.test(heads[j]))) j++;
+      const seg = lines.slice(i, j).join('\n');
+      if (seg.length > best.length) best = seg;
+    }
+    if (best) found.push(best.trim()); else missing.push(p);
+  }
+  return { text: found.join('\n\n'), missing };
+}
+// everything the analysis of one region gets, in priority order, within the character budget
+async function loadKB(region, refresh = false, onStep = () => { }) {
+  const docs = [], problems = [];
+  if (settings.siteKB) {
+    onStep('מפת הדרך מהאתר');
+    try {
+      const st = await loadSite(refresh);
+      docs.push({ title: 'מפת דרך — שיקום שמרני', text: SiteKB.regionText(st.data, region) });
+      if (st.stale) problems.push('מפת הדרך לא נטענה עכשיו — נעשה שימוש בעותק שמור');
+    } catch (e) { problems.push(e.message); }
+  }
+  const entries = parseKbDocs();
+  entries.filter(d => d.bad).forEach(d => problems.push('שורה לא מזוהה: ' + d.bad.slice(0, 40)));
+  const wanted = entries.filter(d => d.id && regionMatch(d.regions, region))
+    .map((d, i) => ({ ...d, i })).sort((a, b) => ((a.regions ? 0 : 1) - (b.regions ? 0 : 1)) || a.i - b.i);
+  if (wanted.length && !settings.clientId) problems.push('Drive לא מחובר — הסיכומים לא נטענו');
+  else for (const [k, d] of wanted.entries()) {
+    try {
+      onStep(`סיכומים מ-Drive ${k + 1}/${wanted.length}`);
+      const c = await fetchDoc(d.id, refresh);
+      let text = c.text, title = c.title;
+      if (d.parts) {
+        const r = pickParts(text, d.parts);
+        if (r.missing.length) problems.push(`"${c.title}": לא נמצא ${r.missing.join(', ')}${r.text ? '' : ' — נטען המסמך כולו'}`);
+        if (r.text) { text = r.text; title += ' — ' + d.parts.join(', '); }
+      }
+      if (c.stale) problems.push(`"${c.title}": Drive לא זמין — עותק שמור`);
+      docs.push({ title, text });
+    } catch (e) { problems.push(e.message); }
+  }
+  if (settings.extraKB.trim()) docs.push({ title: 'ידע נוסף (הגדרות)', text: settings.extraKB.trim() });
+  const budget = Math.max(20, +settings.kbBudget || 350) * 1000, kept = [], skipped = [];
+  let used = 0;
+  for (const d of docs) {
+    if (used >= budget) { skipped.push(d.title); continue; }
+    if (used + d.text.length > budget) { d.text = d.text.slice(0, budget - used) + '\n[…קוצר — תקרת בסיס הידע…]'; problems.push(`"${d.title}" קוצר`); }
+    used += d.text.length; kept.push(d);
+  }
+  if (skipped.length) problems.push('לא נכנסו בגלל תקרת התווים: ' + skipped.join(', '));
+  return { docs: kept, problems, chars: used };
+}
+const kChars = n => n < 10000 ? (n / 1000).toFixed(1) + 'K' : Math.round(n / 1000) + 'K';
+const kbBlock = docs => docs.map(d => `<document title="${d.title.replace(/"/g, '')}">\n${d.text}\n</document>`).join('\n\n');
+
+/* ---------------- analysis ---------------- */
+const ANALYSIS_SYSTEM = `You are a clinical-reasoning assistant for a sports therapist (ספורט-תרפיסט) in Israel. You receive (1) the therapist's own knowledge base, (2) the session form, (3) the raw speech-recognition transcript (no speaker labels, recognition errors).
+
+The knowledge base has up to three kinds of documents:
+- "מפת דרך — שיקום שמרני": the therapist's verified decision map (his own site, built from open verified sources). A general 8-stage framework and principles for every region; for neck, shoulder, elbow and wrist/hand also the region chapter — red-flag screening, classification paths, test order with LR values, treatment, prognosis, and test cards.
+- Lesson summaries from the therapist's courses, chosen for this region, plus general lessons (clinical reasoning, bone, muscle).
+- Parts of the therapist's clinical tests compendium (מאגר מבדקים).
+
+Write a working analysis in Hebrew that helps the therapist decide what to do next. It is a draft for the therapist's judgement: "הבחנה, לא אבחנה".
+
+Rules:
+- Ground the reasoning in the knowledge base first: its stages, red-flag rules, test order, clusters and LR values where they apply. Name the source you used, e.g. "(מפת דרך — כתף, SAPS)" or "(סיכום שיעור 8)".
+- Where the decision map covers the region, follow its order of stages. If two sources disagree, prefer the decision map and point out the disagreement in one line.
+- If the knowledge base does not cover this region or question, say so once and mark statements from general knowledge with "(ידע כללי)".
+- Use only findings that appear in the form or transcript. Never invent results. If the form and transcript disagree, say so.
+- Concise and telegraphic. Keep standard English clinical terms.
+- If anything suggests stopping and referring, put it in the first line in bold.
+
+Colour-code the status of tests, questions and screening items with these inline markers (the app renders them as coloured highlights):
+- [[done: …]] green — already done in this session, with its result. Example: [[done: Hawkins-Kennedy ימין — חיובי]]
+- [[rec: …]] orange — recommended to test or ask next. Example: [[rec: Painful arc]]
+- [[must: …]] red — must test, ask or rule out before going on or treating: red flags, serious differentials, safety. Example: [[must: לשלול כאב לילה לא מכני]]
+Wrap a short phrase (the item and a few words), never a whole paragraph, and never nest markers. Use them mostly in דגלים, מבדקים and מידע חסר; in other sections only where the status matters.
+
+Structure, with these exact headings:
+## סיכום קליני
+3–5 lines.
+## דגלים
+Red flags: what was asked, what came up, what was NOT asked and still needs asking. Yellow flags.
+## השערות עבודה
+Leading hypothesis + 1–2 alternatives. For each: בעד / נגד / מה יכריע.
+## מבדקים
+What was done and how to read it (cluster, LR). What to test next, in order from gentle to provocative. What not to do yet (irritability, acute stage).
+## מידע חסר
+Questions not asked or key fields still empty.
+## כיוון טיפולי ומטרות
+Baseline measures for follow-up, short / medium / long-term goals, treatment principles for the current stage.
+## מתי להפנות
+Case-specific referral criteria.`;
+function formAsText(s) {
+  return sectionsFor(s).map(sec => `### ${sec.title}\n` + sec.fields.map(f => {
+    const v = s.fields[f.id];
+    return `- ${f.label}: ${v?.value ? v.value + (v.needsCheck ? ' [לא אומת]' : '') : '—'}`;
+  }).join('\n')).join('\n\n');
+}
+let analysisAbort = null;
+async function runAnalysis() {
+  const s = session; if (!s) return;
+  if (!settings.apiKey) { toast('חסר מפתח Claude API — הוסף בהגדרות', true); return; }
+  const out = $('#analysisOut'), st = $('#analysisStatus'), btn = $('#analysisBtn');
+  btn.disabled = true;
+  st.innerHTML = '<span class="spin"></span> טוען בסיס ידע…';
+  let kb = { docs: [], problems: [], chars: 0 };
+  try { kb = await loadKB(s.region, false, step => { st.innerHTML = `<span class="spin"></span> טוען בסיס ידע: ${esc(step)}…`; }); }
+  catch (e) { kb.problems.push(e.message); }
+  const transcript = buildTranscript(s.segments);
+  const tr = transcript.length > 120000 ? '[…תחילת התמלול קוצרה…]\n' + transcript.slice(-120000) : transcript;
+  const content = [];
+  // the knowledge base is the long, stable part — cached, so a re-run within a few minutes costs a fraction
+  if (kb.docs.length) content.push({ type: 'text', text: `<knowledge_base>\n${kbBlock(kb.docs)}\n</knowledge_base>`, cache_control: { type: 'ephemeral' } });
+  content.push({ type: 'text', text: `אזור: ${s.region}\nסוג מפגש: ${s.type}\nתאריך: ${fmtDate(s.startedAt)}\n\n<form>\n${formAsText(s)}\n</form>\n\n<transcript>\n${tr || '(אין תמלול)'}\n</transcript>\n\nכתוב את הניתוח לפי המבנה.` });
+  const kbLine = kb.docs.length ? `בסיס ידע (${Math.round(kb.chars / 1000)}K תווים): ${kb.docs.map(d => esc(d.title)).join(' · ')}` : 'בלי בסיס ידע';
+  st.innerHTML = `<span class="spin"></span> חושב… <div class="small muted">${kbLine}</div>`;
+  analysisAbort = new AbortController();
+  try {
+    const res = await callClaude({
+      model: settings.analysisModel, max_tokens: 16000,
+      system: ANALYSIS_SYSTEM, messages: [{ role: 'user', content }]
+    }, { signal: analysisAbort.signal, onText: t => { out.innerHTML = md(t); } });
+    if (session !== s) return;
+    s.analysis = res.text; s.analysisAt = Date.now(); s.analysisKB = kb.docs.map(d => d.title);
+    saveSession(true);
+    out.innerHTML = md(res.text); renderTestLinks();
+    st.innerHTML = (res.stop_reason === 'max_tokens' ? '⚠ התשובה נקטעה באורך המקסימלי. ' : '') +
+      `נוצר ${new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })} · עלות ≈ $${(res.cost || 0).toFixed(2)}` +
+      `<div class="small muted">${kbLine}</div>` +
+      (kb.problems.length ? `<div class="small" style="color:var(--warn)">${kb.problems.map(esc).join('<br>')}</div>` : '');
+  } catch (e) {
+    if (e.name !== 'AbortError') st.innerHTML = `<span style="color:var(--rec)">${esc(e.message)}</span>`;
+  } finally {
+    btn.disabled = false; btn.textContent = 'הפק ניתוח מחדש'; analysisAbort = null;
+  }
+}
+// status highlights: [[done: …]] green, [[rec: …]] orange, [[must: …]] red. In Drive documents inline colours are used.
+const HL = { done: ['#d4f0db', '#1d5a2f'], rec: ['#ffe2b8', '#7a4300'], must: ['#ffd3cc', '#8e1f15'] };
+const HL_LABEL = { done: 'נבדק', rec: 'מומלץ לבדוק', must: 'חובה לבדוק / לשלול' };
+function hlSpan(kind, text, forDoc) {
+  return forDoc ? `<span style="background-color:${HL[kind][0]};color:${HL[kind][1]}">${text}</span>` : `<mark class="hl hl-${kind}">${text}</mark>`;
+}
+function md(src, forDoc = false) {
+  const lines = esc(src).split('\n');
+  let html = '', list = false;
+  const inline = t => t.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\[\[(done|rec|must):\s*(.+?)\]\]/g, (m, k, x) => hlSpan(k, x, forDoc))
+    .replace(/\[\[(done|rec|must):\s*([^\]]*)\]?$/, (m, k, x) => hlSpan(k, x, forDoc)); // unclosed at line end (while streaming)
+  const close = () => { if (list) { html += '</ul>'; list = false; } };
+  for (const l of lines) {
+    const h = l.match(/^(#{1,4})\s+(.*)$/);
+    const li = l.match(/^\s*(?:[-*•]|\d+[.)])\s+(.*)$/);
+    if (h) { close(); const lv = Math.min(h[1].length + 1, 4); html += `<h${lv}>${inline(h[2])}</h${lv}>`; }
+    else if (li) { if (!list) { html += '<ul>'; list = true; } html += `<li>${inline(li[1])}</li>`; }
+    else if (!l.trim()) close();
+    else { close(); html += `<p>${inline(l)}</p>`; }
+  }
+  close();
+  return html;
+}
+
+/* ---------------- documents for Drive ---------------- */
+const rtl = h => h.replace(/<(p|h[1-6]|li|ul)>/g, '<$1 dir="rtl" style="direction:rtl;text-align:right">');
+function sessionDocHtml(s) {
+  const v = id => s.fields[id]?.value;
+  let h = `<h1>מפגש — ${esc(s.patientName)}</h1>`;
+  h += `<p>תאריך: ${fmtStamp(s.startedAt)} · אזור: ${esc(s.region)} · ${esc(s.type)}</p>`;
+  for (const sec of sectionsFor(s)) {
+    h += `<h2>${esc(sec.title)}</h2>`;
+    for (const f of sec.fields) {
+      const val = v(f.id);
+      const chk = s.fields[f.id]?.needsCheck ? ' [לא אומת]' : '';
+      h += `<p><b>${esc(f.label)}:</b> ${val ? esc(val).replace(/\n/g, '<br>') + chk : '—'}</p>`;
+    }
+  }
+  if (s.analysis) {
+    h += `<h2>ניתוח קליני — טיוטה לשיקול דעת המטפל</h2>`;
+    if (/\[\[(done|rec|must):/.test(s.analysis)) h += `<p>מקרא: ${Object.keys(HL_LABEL).map(k => hlSpan(k, HL_LABEL[k], true)).join(' · ')}</p>`;
+    h += md(s.analysis, true);
+    if (s.analysisKB?.length) h += `<p><i>בסיס ידע: ${esc(s.analysisKB.join(', '))}</i></p>`;
+  }
+  h += `<p><i>הופק בעוזר קליני. שדות שמולאו אוטומטית מתוך תמלול — יש לאמת מול המטופל.</i></p>`;
+  return `<html><head><meta charset="utf-8"></head><body dir="rtl">${rtl(h)}</body></html>`;
+}
+function transcriptDocHtml(s) {
+  let h = `<h1>תמלול — ${esc(s.patientName)} — ${fmtStamp(s.startedAt)}</h1>`, last = null;
+  for (const g of s.segments) {
+    if (g.stage !== last) { h += `<h2>${esc(STAGES.find(x => x.id === g.stage)?.label || g.stage)}</h2>`; last = g.stage; }
+    const d = new Date(g.t);
+    h += `<p>[${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}] ${esc(g.text)}${g.manual ? ' (הוקלד)' : ''}</p>`;
+  }
+  return `<html><head><meta charset="utf-8"></head><body dir="rtl">${rtl(h)}</body></html>`;
+}
+async function saveToDrive() {
+  const s = session; if (!s) return;
+  const btn = $('#saveBtn'); if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spin"></span> שומר…'; }
+  try {
+    const root = await ensureRoot();
+    const folder = await ensurePatientFolder(root, s.patientName);
+    const stamp = fmtStamp(s.startedAt);
+    s.docId = await upsertDoc(s.docId, `מפגש ${stamp} — ${s.patientName}`, sessionDocHtml(s), folder);
+    if (s.segments.length) s.transcriptDocId = await upsertDoc(s.transcriptDocId, `תמלול ${stamp} — ${s.patientName}`, transcriptDocHtml(s), folder);
+    s.folderId = folder; s.savedAt = Date.now();
+    upsertPatient({ name: s.patientName, folderId: folder, region: s.region, last: s.startedAt });
+    saveSession(true);
+    toast('נשמר ב-Drive: מטופלים › ' + s.patientName);
+  } catch (e) {
+    toast('השמירה נכשלה: ' + e.message, true, 7000);
+  } finally {
+    renderSaveBtn();
+  }
+}
+function downloadCopy() {
+  const s = session; if (!s) return;
+  const blob = new Blob([sessionDocHtml(s).replace('</body>', transcriptDocHtml(s).replace(/^[\s\S]*?<body dir="rtl">|<\/body>[\s\S]*$/g, '') + '</body>')], { type: 'text/html' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `מפגש ${fmtStamp(s.startedAt).replace(':', '-')} ${s.patientName}.html`;
+  a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+function upsertPatient(p) {
+  const i = patients.findIndex(x => x.name === p.name);
+  if (i >= 0) patients[i] = { ...patients[i], ...Object.fromEntries(Object.entries(p).filter(([, v]) => v)) };
+  else patients.unshift(p);
+  patients.sort((a, b) => String(b.last || '').localeCompare(String(a.last || '')));
+  savePatients();
+}
+
+/* ---------------- views ---------------- */
+let view = session ? 'session' : 'home', tab = 'form';
+function go(v) { view = v; render(); window.scrollTo(0, 0); }
+function render() {
+  if (view === 'settings') return renderSettings();
+  if (view === 'session' && session) return renderSession();
+  return renderHome();
+}
+
+function renderHome() {
+  const needSetup = !settings.apiKey || !settings.clientId;
+  $('#app').innerHTML = `
+  <header class="top"><div class="wrap"><h1>עוזר קליני</h1>
+    <a class="icon-btn" href="${MAP_URL}" aria-label="מפת הדרך" title="מפת הדרך">${ICON.map}</a>
+    <button class="icon-btn" data-act="cycleTheme" aria-label="מצב תצוגה">${ICON.eye}</button>
+    <button class="icon-btn" data-act="settings" aria-label="הגדרות">${ICON.gear}</button></div></header>
+  <main class="wrap">
+    ${envProblem() ? `<div class="banner warn">${esc(envProblem())}</div>` : ''}
+    ${needSetup ? `<div class="banner warn">כדי להתחיל צריך להגדיר מפתח Claude API ו-Google Client ID. <a href="#" data-act="settings">להגדרות</a></div>` : ''}
+    ${session ? `<div class="card"><h2>מפגש פתוח</h2>
+      <p class="muted">${esc(session.patientName)} · ${esc(session.region)} · ${fmtStamp(session.startedAt)}${session.savedAt ? ' · נשמר ב-Drive' : ' · <b>לא נשמר עדיין</b>'}</p>
+      <div class="row" style="margin-top:10px"><button class="btn primary" data-act="resume">המשך מפגש</button><button class="btn danger" data-act="discard">סגור מפגש</button></div></div>` : ''}
+    <div class="grid2">
+    <div class="card">
+      <h2>מפגש חדש</h2>
+      <label class="lbl" for="pName">שם המטופל</label>
+      <input id="pName" class="inp" list="pList" autocomplete="off" placeholder="שם פרטי ומשפחה">
+      <datalist id="pList">${patients.map(p => `<option value="${esc(p.name)}">`).join('')}</datalist>
+      <div class="row">
+        <div><label class="lbl" for="pRegion">אזור</label>
+          <select id="pRegion" class="inp">${REGIONS.map(r => `<option>${r}</option>`).join('')}</select></div>
+        <div><label class="lbl" for="pType">סוג</label>
+          <select id="pType" class="inp">${TYPES.map(r => `<option>${r}</option>`).join('')}</select></div>
+      </div>
+      <label class="check"><input type="checkbox" id="pConsent"><span>המטופל/ת הסכים/ה להקלטת המפגש ולתמלולו לצורך תיעוד</span></label>
+      <button class="btn primary block" style="margin-top:12px" data-act="start">התחל מפגש</button>
+    </div>
+    ${patients.length ? `<div class="card"><h2>מטופלים</h2><ul class="list">
+      ${patients.slice(0, 30).map(p => `<li><div class="grow"><b>${esc(p.name)}</b><span class="muted small">${esc(p.region || '')}${p.last ? ' · ' + fmtDate(p.last) : ''}</span></div>
+        <button class="btn" data-act="pick" data-name="${esc(p.name)}" data-region="${esc(p.region || '')}">מעקב</button></li>`).join('')}
+    </ul></div>` : ''}
+    </div>
+    <p class="muted small" style="text-align:center;margin:24px 0">עלות API מצטברת (הערכה): $${(usage.total || 0).toFixed(2)}</p>
+  </main>`;
+}
+
+function renderSession() {
+  const s = session;
+  $('#app').innerHTML = `
+  <header class="top"><div class="wrap">
+    <button class="icon-btn" data-act="home" aria-label="חזרה">${ICON.back}</button>
+    <div class="title"><b>${esc(s.patientName)}</b><span>${esc(s.region)} · ${esc(s.type)}</span></div>
+    <a class="icon-btn" href="${mapLink(s.region)}" target="_blank" rel="noopener" aria-label="מפת הדרך לאזור" title="מפת הדרך לאזור">${ICON.map}</a>
+    <button class="icon-btn" data-act="cycleTheme" aria-label="מצב תצוגה">${ICON.eye}</button>
+    <button class="icon-btn" data-act="settings" aria-label="הגדרות">${ICON.gear}</button>
+  </div>
+  <div class="wrap sub">
+    <div class="recbar">
+      <button class="recbtn" id="recBtn" data-act="rec" aria-label="הקלטה">${ICON.mic}</button>
+      <div class="rec-meta"><div class="timer" id="timer">00:00</div><div class="state" id="recState">מוכן להקלטה</div></div>
+      <div class="chips" id="stageChips">${STAGES.map(x => `<button class="chip ${s.stage === x.id ? 'on' : ''}" data-act="stage" data-stage="${x.id}">${x.label}</button>`).join('')}</div>
+    </div>
+    <div class="status" id="fillStatus"></div>
+    <nav class="tabs" id="tabs">
+      <button data-act="tab" data-tab="form">טופס</button>
+      <button data-act="tab" data-tab="transcript">תמלול</button>
+      <button data-act="tab" data-tab="analysis">ניתוח</button>
+    </nav>
+  </div></header>
+  <div class="wrap split">
+    <main class="tabbody" id="tabBody"></main>
+    ${wide ? `<aside class="side" id="sidePane" aria-label="תמלול"></aside>` : ''}
+  </div>
+  <footer class="actions"><div class="wrap">
+    <button class="btn" data-act="fillNow">${ICON.spark} מלא עכשיו</button>
+    <button class="btn primary" id="saveBtn" data-act="save"></button>
+  </div></footer>`;
+  renderRecState(); renderSaveBtn(); renderTab(); renderSide(); refreshTabLabels(); tickTimer();
+  setFillStatus(lastStatus.html, lastStatus.err, lastStatus.raw);
+  measureHeader();
+}
+// wide screens (tablet landscape): the transcript lives in a side pane, tabs are form / analysis
+const WIDE_MQ = matchMedia('(min-width: 1000px)');
+let wide = WIDE_MQ.matches;
+WIDE_MQ.addEventListener?.('change', e => { wide = e.matches; if (view === 'session' && session) renderSession(); });
+function renderSide() {
+  const side = $('#sidePane'); if (!side) return;
+  side.innerHTML = `<h3 class="side-h">תמלול <span class="cnt muted small" id="sideCount">${session.segments.length}</span></h3>` + transcriptHtml();
+  renderInterim();
+  side.scrollTop = side.scrollHeight;
+}
+function measureHeader() {
+  const h = $('.top'); if (h) document.documentElement.style.setProperty('--hdr', h.offsetHeight + 'px');
+}
+window.addEventListener('resize', measureHeader);
+// map deep links: "../#shoulder" opens a region, "../#shoulder&t=hk" also opens a test card
+const MAP_TAB = { 'צוואר וראש': 'neck', 'כתף': 'shoulder', 'מרפק': 'elbow', 'שורש כף יד וכף יד': 'hand' };
+function mapLink(region, testId) { return MAP_URL + '#' + (MAP_TAB[region] || 'general') + (testId ? '&t=' + testId : ''); }
+function testAliases(name) {
+  const out = new Set();
+  for (let part of String(name).replace(/[–—]/g, '—').split(/—|&| \/ /)) {
+    part = part.replace(/\(.*?\)/g, '').replace(/\b(Test|Sign|Score)\b/gi, '').replace(/['’]s\b/g, '').replace(/\s+/g, ' ').trim();
+    if (/[A-Za-z]/.test(part) && part.replace(/[^A-Za-z]/g, '').length >= 3) out.add(part);
+    const acr = part.match(/^([A-Z]{3,5})(?![A-Za-z])/); if (acr) out.add(acr[1]); // e.g. ULTT 1-3 is also just ULTT
+  }
+  return [...out];
+}
+// tests the analysis mentions, as chips that open their card on the map (region of this session first)
+async function renderTestLinks() {
+  const box = $('#testLinks'); if (!box || !session?.analysis || !settings.siteKB) { if (box) box.innerHTML = ''; return; }
+  let st; try { st = await loadSite(); } catch { return; }
+  const T = st.data.T || {}, text = session.analysis.replace(/[–—‐-]/g, '-');
+  const inRegion = new Set(); const r = st.data.REGIONS.find(x => x.id === MAP_TAB[session.region]);
+  if (r) JSON.stringify(r, (k, v) => { if (k === 'tests' && Array.isArray(v)) v.forEach(t => inRegion.add(t)); return v; });
+  const homeOf = id => { if (inRegion.has(id)) return session.region; for (const reg of st.data.REGIONS) if (JSON.stringify(reg).includes('"' + id + '"')) return Object.keys(MAP_TAB).find(k => MAP_TAB[k] === reg.id); return null; };
+  const found = [];
+  for (const [id, t] of Object.entries(T)) {
+    const hit = testAliases(t.n).some(a => new RegExp('(^|[^A-Za-z])' + a.replace(/[–—‐-]/g, '-').replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/-/g, '[-\\s]?') + '(?![A-Za-z])', 'i').test(text));
+    if (hit) found.push([id, t.n]);
+  }
+  box.innerHTML = found.length ? `<div class="card" style="padding:12px"><div class="muted small" style="margin-bottom:8px">מבדקים שהוזכרו — פתיחת הכרטיס במפה:</div>
+    <div class="chips">${found.map(([id, n]) => `<a class="chip" href="${mapLink(homeOf(id) || session.region, id)}" target="_blank" rel="noopener">${esc(n)}</a>`).join('')}</div></div>` : '';
+}
+function renderTab() {
+  if (wide && tab === 'transcript') tab = 'form';
+  $$('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  const body = $('#tabBody'); if (!body) return;
+  if (tab === 'form') body.innerHTML = formHtml();
+  else if (tab === 'transcript') body.innerHTML = transcriptHtml();
+  else { body.innerHTML = analysisHtml(); renderTestLinks(); }
+  if (tab === 'form') $$('#tabBody textarea').forEach(autosize);
+  if (tab === 'transcript') { renderInterim(); }
+}
+function refreshTabLabels() {
+  if (!session || !$('#tabs')) return;
+  const all = fieldsFor(session), filled = all.filter(f => session.fields[f.id]?.value).length;
+  $('#tabs [data-tab="form"]').textContent = `טופס (${filled}/${all.length})`;
+  $('#tabs [data-tab="transcript"]').textContent = `תמלול (${session.segments.length})`;
+  const sc = $('#sideCount'); if (sc) sc.textContent = session.segments.length;
+}
+function missingKeys(s) {
+  const st = STAGES.find(x => x.id === s.stage) || STAGES[0];
+  return sectionsFor(s).filter(sec => st.sections.includes(sec.id)).flatMap(sec => sec.fields).filter(f => f.key && !s.fields[f.id]?.value);
+}
+function missingHtml() {
+  const m = missingKeys(session);
+  if (!m.length) return `<div class="banner info" id="missing">כל שדות המפתח בשלב הזה מולאו</div>`;
+  return `<div class="card" id="missing" style="padding:12px"><div class="muted small" style="margin-bottom:8px">עוד לא נאמר בשלב הזה:</div>
+    <div class="chips">${m.map(f => `<button class="chip miss" data-act="jump" data-fid="${f.id}">${esc(f.label.split(' — ')[0].split(' (')[0])}</button>`).join('')}</div></div>`;
+}
+function fieldHtml(f) {
+  const v = session.fields[f.id] || {};
+  const badges = [
+    v.value && v.locked ? '<span class="badge man">נערך ידנית</span>' : '',
+    v.value && v.source === 'ai' && !v.locked ? '<span class="badge ai">מולא אוטומטית</span>' : '',
+    v.value && v.needsCheck ? '<span class="badge chk">לאמת</span>' : ''
+  ].join('');
+  return `<div class="field" id="f-${f.id}">
+    <label for="t-${f.id}">${esc(f.label)} ${badges}</label>
+    <textarea id="t-${f.id}" data-fid="${f.id}" rows="1" placeholder="—">${esc(v.value || '')}</textarea>
+    ${v.value && (v.quote || v.needsCheck || v.locked) ? `<div class="fmeta">
+      ${v.quote ? `<button data-act="quote" data-fid="${f.id}">מקור</button>` : ''}
+      ${v.needsCheck ? `<button data-act="confirm" data-fid="${f.id}">✓ אומת</button>` : ''}
+      ${v.locked ? `<button data-act="unlock" data-fid="${f.id}">אפשר מילוי אוטומטי</button>` : ''}
+    </div><div class="quote" id="q-${f.id}" hidden>«${esc(v.quote || '')}»</div>` : ''}
+  </div>`;
+}
+function formHtml() {
+  const s = session;
+  return missingHtml() + sectionsFor(s).map(sec => {
+    const n = sec.fields.filter(f => s.fields[f.id]?.value).length;
+    return `<section class="sec" id="sec-${sec.id}"><h3>${esc(sec.title)} <span class="cnt" id="cnt-${sec.id}">${n}/${sec.fields.length}</span></h3><div class="fields">${sec.fields.map(fieldHtml).join('')}</div></section>`;
+  }).join('');
+}
+function refreshField(id, flash = false) {
+  if (tab !== 'form') return;
+  const el = $('#f-' + id); if (!el) return;
+  const ta = $('#t-' + id);
+  if (ta && document.activeElement === ta) return;
+  const tmp = document.createElement('div'); tmp.innerHTML = fieldHtml(FIELD[id]);
+  const fresh = tmp.firstElementChild; el.replaceWith(fresh);
+  autosize($('#t-' + id));
+  if (flash) { fresh.classList.add('flash'); setTimeout(() => fresh.classList.remove('flash'), 1400); }
+}
+function refreshMissing() {
+  const el = $('#missing'); if (!el || tab !== 'form') return;
+  const tmp = document.createElement('div'); tmp.innerHTML = missingHtml(); el.replaceWith(tmp.firstElementChild);
+}
+function refreshCounts() {
+  refreshTabLabels();
+  if (tab !== 'form') return;
+  for (const sec of sectionsFor(session)) {
+    const c = $('#cnt-' + sec.id); if (c) c.textContent = `${sec.fields.filter(f => session.fields[f.id]?.value).length}/${sec.fields.length}`;
+  }
+}
+function segHtml(g, i, prevStage) {
+  const d = new Date(g.t);
+  const mark = g.stage !== prevStage ? `<div class="stage-mark">${esc(STAGES.find(x => x.id === g.stage)?.label || '')}</div>` : '';
+  return `${mark}<div class="seg ${g.manual ? 'manual' : ''}" data-i="${i}"><span class="t">${pad(d.getHours())}:${pad(d.getMinutes())}</span>${esc(g.text)}</div>`;
+}
+function transcriptHtml() {
+  const s = session; let prev = null;
+  const segs = s.segments.map((g, i) => { const h = segHtml(g, i, prev); prev = g.stage; return h; }).join('');
+  return `<div id="segList">${segs || '<p class="muted" id="noSegs">עוד אין תמלול. לחץ על המיקרופון כדי להתחיל, או הקלד/הדבק טקסט למטה.</p>'}</div>
+    <div class="interim" id="interim"></div>
+    <div class="card" style="padding:12px">
+      <label class="lbl" for="manualText" style="margin-top:0">הוספה ידנית — הקלדה, הכתבה במקלדת, או הדבקת תמלול מהקלטה</label>
+      <textarea id="manualText" class="inp" placeholder="למשל: Lachman ימין חיובי, end feel רך"></textarea>
+      <button class="btn block" style="margin-top:8px" data-act="addManual">הוסף לתמלול</button>
+    </div>
+    <p class="muted small">ממתין למילוי: <span id="pend">${pendingChars()}</span> תווים · עלות המפגש (הערכה): $${(s.cost || 0).toFixed(3)}</p>
+    <button class="btn block" style="margin-bottom:12px" data-act="copyLog">העתק לוג זיהוי דיבור (לאבחון תקלות)</button>`;
+}
+function appendSegmentUI(g, i) {
+  const list = $('#segList'); if (!list) return;
+  $('#noSegs')?.remove();
+  const prev = i > 0 ? session.segments[i - 1].stage : null;
+  list.insertAdjacentHTML('beforeend', segHtml(g, i, prev));
+  const p = $('#pend'); if (p) p.textContent = pendingChars();
+  const side = $('#sidePane');
+  if (side) { if (side.scrollHeight - side.scrollTop - side.clientHeight < 160) side.scrollTop = side.scrollHeight; }
+  else if (recording) list.lastElementChild?.scrollIntoView({ block: 'nearest' });
+}
+function renderInterim() { const el = $('#interim'); if (el) el.textContent = interim ? interim + '…' : ''; }
+function analysisHtml() {
+  const s = session;
+  return `<div class="card" style="padding:12px">
+    <p class="muted small" style="margin:0 0 10px">הניתוח נשען על הטופס, התמלול ובסיס הידע שלך לאזור "${esc(s.region)}": ${settings.siteKB ? 'מפת הדרך + ' : ''}${parseKbDocs().filter(d => d.id && regionMatch(d.regions, s.region)).length} סיכומים מ-Drive. זו טיוטה לשיקול דעת — הבחנה, לא אבחנה.</p>
+    <button class="btn primary block" id="analysisBtn" data-act="analyze">${s.analysis ? 'הפק ניתוח מחדש' : 'הפק ניתוח'}</button>
+    <div class="status" id="analysisStatus" style="margin-top:8px">${s.analysisAt ? 'נוצר ' + new Date(s.analysisAt).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' }) : ''}</div>
+  </div>
+  <div class="legend">${Object.keys(HL_LABEL).map(k => `<mark class="hl hl-${k}">${HL_LABEL[k]}</mark>`).join('')}</div>
+  <div class="analysis" id="analysisOut">${s.analysis ? md(s.analysis) : ''}</div>
+  <div id="testLinks"></div>
+  <button class="btn block" style="margin:18px 0" data-act="download">הורד עותק של המפגש (HTML)</button>`;
+}
+function renderRecState() {
+  const b = $('#recBtn'); if (!b) return;
+  b.classList.toggle('on', recording);
+  b.innerHTML = recording ? ICON.stop : ICON.mic;
+  b.setAttribute('aria-label', recording ? 'עצור הקלטה' : 'התחל הקלטה');
+  const st = $('#recState');
+  if (st) st.textContent = recording ? 'מקליט · ' + (STAGES.find(x => x.id === session.stage)?.label || '') : (SR ? 'מוכן להקלטה' : 'זיהוי דיבור לא נתמך בדפדפן הזה');
+}
+function renderSaveBtn() {
+  const b = $('#saveBtn'); if (!b || !session) return;
+  b.disabled = false;
+  b.innerHTML = `${ICON.drive} ${session.savedAt ? 'עדכן ב-Drive' : 'שמור ל-Drive'}`;
+}
+let lastStatus = { html: '', err: false, raw: false };
+function setFillStatus(text, err = false, raw = false) {
+  lastStatus = { html: text, err, raw };
+  const el = $('#fillStatus'); if (!el) return;
+  el.className = 'status' + (err ? ' err' : '');
+  if (raw) el.innerHTML = text; else el.textContent = text;
+}
+function tickTimer() {
+  const el = $('#timer'); if (!el || !session) return;
+  const ms = (session.recordedMs || 0) + (recording && recSince ? Date.now() - recSince : 0);
+  el.textContent = fmtClock(ms);
+}
+setInterval(() => { tickTimer(); if (view === 'session') maybeFill(); }, 1000);
+
+function renderSettings() {
+  const st = settings;
+  const modelOpts = (cur) => ['claude-haiku-5-5', 'claude-sonnet-5-5', 'claude-opus-5-5', 'claude-fable-5-1'].map(m => `<option ${m === cur ? 'selected' : ''}>${m}</option>`).join('');
+  $('#app').innerHTML = `
+  <header class="top"><div class="wrap">
+    <button class="icon-btn" data-act="back" aria-label="חזרה">${ICON.back}</button><h1>הגדרות</h1></div></header>
+  <main class="wrap cols2" style="padding-bottom:40px">
+    <div class="card"><h2>תצוגה</h2>
+      <div class="seg-pick" role="group" aria-label="מצב תצוגה">${THEMES.map(([id, label]) => `<button data-act="theme" data-theme="${id}" class="${getTheme() === id ? 'on' : ''}">${label}</button>`).join('')}</div>
+      <p class="muted small" style="margin:8px 0 0">"אוטומטי" — נוח לעין, וכהה כשהמכשיר במצב כהה. אותה בחירה חלה גם על המפה. "נוח לעין" — רקע נייר חם וניגודיות רכה, לעבודה ארוכה. אפשר להחליף גם בכפתור ☀ למעלה.</p>
+    </div>
+    <div class="card"><h2>Claude API</h2>
+      <label class="lbl" for="sKey">מפתח API</label>
+      <input id="sKey" class="inp ltr" type="password" autocomplete="off" placeholder="sk-ant-…" value="${esc(st.apiKey)}">
+      <div class="row">
+        <div><label class="lbl" for="sExt">מודל למילוי הטופס</label><select id="sExt" class="inp ltr">${modelOpts(st.extractModel)}</select></div>
+        <div><label class="lbl" for="sAna">מודל לניתוח</label><select id="sAna" class="inp ltr">${modelOpts(st.analysisModel)}</select></div>
+      </div>
+      <button class="btn block" style="margin-top:12px" data-act="testKey">בדוק מפתח</button>
+      <p class="muted small">המפתח נשמר רק בדפדפן הזה בטלפון.</p>
+    </div>
+    <div class="card"><h2>Google Drive</h2>
+      <label class="lbl" for="sCid">OAuth Client ID</label>
+      <input id="sCid" class="inp ltr" autocomplete="off" placeholder="…apps.googleusercontent.com" value="${esc(st.clientId)}">
+      <label class="lbl" for="sRoot">שם תיקיית המטופלים</label>
+      <input id="sRoot" class="inp" value="${esc(st.rootFolderName)}">
+      <button class="btn block" style="margin-top:12px" data-act="testDrive">התחבר ובדוק</button>
+    </div>
+    <div class="card"><h2>בסיס ידע לניתוח</h2>
+      <label class="check"><input type="checkbox" id="sSite" ${st.siteKB ? 'checked' : ''}><span>מפת הדרך (דף הבית של האתר) — מסגרת כללית לכל אזור, ופרק מלא לצוואר, כתף, מרפק ושורש כף יד</span></label>
+      <label class="lbl" for="sKb">סיכומים ב-Drive — קישור בכל שורה (Google Docs, ‏docx, ‏PDF). <span class="ltr">קישור | אזורים | חלקים</span>. בלי אזורים — לכל ניתוח. שורה שמתחילה ב-# היא הערה.</label>
+      <textarea id="sKb" class="inp ltr" style="min-height:160px;font-size:12px">${esc(st.kbDocs)}</textarea>
+      <button class="btn block" style="margin-top:8px" data-act="kbDefault">החזר לרשימה המוכנה</button>
+      <label class="lbl" for="sBudget">תקרת בסיס ידע לניתוח אחד (אלפי תווים)</label>
+      <input id="sBudget" class="inp" type="number" min="20" step="10" value="${esc(st.kbBudget)}">
+      <label class="lbl" for="sExtra">ידע נוסף (טקסט חופשי, אופציונלי)</label>
+      <textarea id="sExtra" class="inp">${esc(st.extraKB)}</textarea>
+      <button class="btn block" style="margin-top:12px" data-act="refreshKb">רענן ובדוק את בסיס הידע</button>
+      <div class="status" id="kbStatus"></div>
+    </div>
+    <div class="card"><h2>הקלטה ומילוי</h2>
+      <label class="check"><input type="checkbox" id="sAuto" ${st.autoFill ? 'checked' : ''}><span>מילוי אוטומטי תוך כדי הקלטה</span></label>
+      <label class="lbl" for="sChars">למלא אחרי כמה תווים חדשים</label>
+      <input id="sChars" class="inp" type="number" min="80" step="20" value="${esc(st.fillChars)}">
+      <label class="check"><input type="checkbox" id="sCont" ${st.continuous ? 'checked' : ''}><span>זיהוי רציף (בטל אם מופיעות כפילויות בתמלול)</span></label>
+    </div>
+    <div class="card"><h2>נתונים</h2>
+      <p class="muted small">עלות API מצטברת (הערכה): $${(usage.total || 0).toFixed(2)}</p>
+      <button class="btn block danger" data-act="wipe">מחק את כל הנתונים המקומיים</button>
+      <p class="muted small">מוחק מפתחות, רשימת מטופלים ומפגש פתוח מהטלפון. קבצים ב-Drive לא נמחקים.</p>
+    </div>
+  </main>`;
+  const bind = (id, key, fn = v => v) => { const el = $('#' + id); el.addEventListener('change', () => { settings[key] = fn(el.type === 'checkbox' ? el.checked : el.value); saveSettings(); }); };
+  bind('sKey', 'apiKey', v => v.trim()); bind('sExt', 'extractModel'); bind('sAna', 'analysisModel');
+  bind('sCid', 'clientId', v => v.trim()); bind('sRoot', 'rootFolderName', v => v.trim() || 'מטופלים');
+  bind('sKb', 'kbDocs'); bind('sExtra', 'extraKB'); bind('sSite', 'siteKB'); bind('sBudget', 'kbBudget', v => Math.max(20, +v || 350)); bind('sAuto', 'autoFill'); bind('sChars', 'fillChars', v => Math.max(80, +v || 600)); bind('sCont', 'continuous');
+}
+
+/* ---------------- events ---------------- */
+let prevView = 'home';
+document.addEventListener('click', async e => {
+  const t = e.target.closest('[data-act]'); if (!t) return;
+  const act = t.dataset.act;
+  if (t.tagName === 'A') e.preventDefault();
+  switch (act) {
+    case 'settings': prevView = view === 'settings' ? prevView : view; go('settings'); break;
+    case 'back': go(session && prevView === 'session' ? 'session' : 'home'); break;
+    case 'home': go('home'); break;
+    case 'resume': go('session'); break;
+    case 'discard':
+      if (session && !session.savedAt && !confirm('המפגש לא נשמר ב-Drive. לסגור בכל זאת? הנתונים יימחקו מהטלפון.')) return;
+      if (recording) stopRec();
+      session = null; saveSession(true); render(); break;
+    case 'pick': $('#pName').value = t.dataset.name; if (t.dataset.region) $('#pRegion').value = t.dataset.region; $('#pType').value = 'מפגש מעקב'; $('#pName').scrollIntoView({ block: 'center' }); break;
+    case 'start': startSession(); break;
+    case 'rec': recording ? stopRec() : startRec(); break;
+    case 'stage':
+      session.stage = t.dataset.stage; saveSession();
+      $$('#stageChips .chip').forEach(c => c.classList.toggle('on', c.dataset.stage === session.stage));
+      renderRecState(); refreshMissing(); break;
+    case 'tab': tab = t.dataset.tab; renderTab(); break;
+    case 'jump': { const el = $('#f-' + t.dataset.fid); if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); $('#t-' + t.dataset.fid)?.focus({ preventScroll: true }); } break; }
+    case 'quote': { const q = $('#q-' + t.dataset.fid); if (q) q.hidden = !q.hidden; break; }
+    case 'confirm': { const f = session.fields[t.dataset.fid]; if (f) { f.needsCheck = false; saveSession(); refreshField(t.dataset.fid); } break; }
+    case 'unlock': { const f = session.fields[t.dataset.fid]; if (f) { f.locked = false; saveSession(); refreshField(t.dataset.fid); } break; }
+    case 'fillNow':
+      if (!settings.apiKey) { toast('חסר מפתח Claude API — הוסף בהגדרות', true); return; }
+      if (filling) { toast('מילוי כבר רץ'); return; }
+      maybeFill(true); break;
+    case 'addManual': { const ta = $('#manualText'); if (ta.value.trim()) { addSegment(ta.value, true); ta.value = ''; } break; }
+    case 'analyze': runAnalysis(); break;
+    case 'download': downloadCopy(); break;
+    case 'copyLog': {
+      const dump = JSON.stringify({ ua: navigator.userAgent, continuous: settings.continuous, lang: settings.lang, events: rawLog }, null, 1);
+      try { await navigator.clipboard.writeText(dump); toast(`הלוג הועתק (${rawLog.length} אירועים) — הדבק אותו בצ'אט`); }
+      catch {
+        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([dump], { type: 'application/json' }));
+        a.download = 'speech-log.json'; a.click(); toast('הלוג ירד כקובץ speech-log.json');
+      }
+      break;
+    }
+    case 'save':
+      if (!settings.clientId) { toast('חסר Google Client ID בהגדרות', true); return; }
+      saveToDrive(); break;
+    case 'testKey': testKey(t); break;
+    case 'testDrive': testDrive(t); break;
+    case 'refreshKb': refreshKb(t); break;
+    case 'theme': setTheme(t.dataset.theme); break;
+    case 'cycleTheme': {
+      const ids = THEMES.map(x => x[0]), next = ids[(ids.indexOf(getTheme()) + 1) % ids.length];
+      setTheme(next); toast('תצוגה: ' + THEMES.find(x => x[0] === next)[1], false, 1400); break;
+    }
+    case 'kbDefault':
+      if (settings.kbDocs.trim() !== KB_DEFAULT && !confirm('להחליף את הרשימה הנוכחית ברשימה המוכנה?')) return;
+      settings.kbDocs = KB_DEFAULT; saveSettings(); $('#sKb').value = KB_DEFAULT; toast('הרשימה המוכנה הוחזרה'); break;
+    case 'wipe':
+      if (!confirm('למחוק את כל הנתונים המקומיים?')) return;
+      Object.values(K).forEach(LS.del); try { sessionStorage.clear(); } catch { }
+      try { await caches.delete(KB_CACHE); } catch { }
+      location.reload(); break;
+  }
+});
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.matches('#tabBody textarea[data-fid]')) {
+    autosize(t);
+    const id = t.dataset.fid, val = t.value;
+    session.fields[id] = { ...(session.fields[id] || {}), value: val, source: 'manual', locked: true, needsCheck: false, at: Date.now() };
+    if (!val.trim()) session.fields[id] = { value: '', locked: false };
+    saveSession(); refreshCounts();
+  }
+});
+document.addEventListener('focusout', e => {
+  const t = e.target;
+  if (t.matches('#tabBody textarea[data-fid]')) { const id = t.dataset.fid; setTimeout(() => { refreshField(id); refreshMissing(); }, 180); }
+});
+
+function startSession() {
+  const name = $('#pName').value.trim();
+  if (!name) { toast('הכנס שם מטופל', true); $('#pName').focus(); return; }
+  if (!$('#pConsent').checked) { toast('יש לאשר שהמטופל הסכים להקלטה', true); return; }
+  if (session && !session.savedAt && !confirm('יש מפגש פתוח שלא נשמר ב-Drive. להחליף אותו במפגש חדש?')) return;
+  const p = patients.find(x => x.name === name);
+  session = {
+    id: Date.now().toString(36), patientName: name, region: $('#pRegion').value, type: $('#pType').value,
+    consent: true, startedAt: new Date().toISOString(), stage: 'anamnesis', segments: [], processed: 0,
+    fields: { name: { value: name, source: 'manual', locked: true } }, analysis: '', cost: 0,
+    folderId: p?.folderId || null
+  };
+  upsertPatient({ name, region: session.region, last: session.startedAt });
+  saveSession(true); tab = 'form'; lastStatus = { html: '', err: false, raw: false };
+  go('session');
+}
+async function testKey(btn) {
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> בודק…';
+  try {
+    const r = await callWithFallback({ model: 'claude-haiku-5-5', max_tokens: 20, messages: [{ role: 'user', content: 'ענה במילה אחת: תקין' }], thinking: { type: 'disabled' } });
+    toast('המפתח תקין ✓ ' + ((r.content || []).find(b => b.type === 'text')?.text || ''));
+  } catch (e) { toast(e.message, true, 6000); }
+  finally { btn.disabled = false; btn.textContent = 'בדוק מפתח'; }
+}
+async function testDrive(btn) {
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> מתחבר…';
+  try {
+    await getToken();
+    const id = await ensureRoot();
+    toast('מחובר ✓ תיקיית "' + settings.rootFolderName + '" מוכנה ב-Drive');
+    return id;
+  } catch (e) { toast(e.message, true, 7000); }
+  finally { btn.disabled = false; btn.textContent = 'התחבר ובדוק'; }
+}
+// reads every source again, then shows what each region's analysis would receive and roughly what it costs
+async function refreshKb(btn) {
+  const st = $('#kbStatus'), lines = [];
+  const show = (busy) => { st.innerHTML = lines.join('<br>') + (busy ? `<br><span class="spin"></span> ${esc(busy)}…` : ''); };
+  const ok = s => `<span style="color:var(--ok)">✓</span> ${esc(s)}`, bad = s => `<span style="color:var(--rec)">✗ ${esc(s)}</span>`;
+  if (btn) btn.disabled = true;
+  try {
+    if (settings.siteKB) {
+      show('מפת הדרך מהאתר');
+      try {
+        const s = await loadSite(true);
+        lines.push(ok(`מפת הדרך${s.stale ? ' (עותק שמור — האתר לא זמין)' : ''} · ${Object.keys(s.data.T || {}).length} מבדקים · ${s.data.REGIONS.map(r => r.name || r.id).join(', ')}`));
+      } catch (e) { lines.push(bad(e.message)); }
+    }
+    const entries = parseKbDocs(), seen = new Map();
+    entries.filter(d => d.bad).forEach(d => lines.push(bad('שורה לא מזוהה: ' + d.bad.slice(0, 50))));
+    for (const d of entries.filter(d => d.id)) { if (!seen.has(d.id)) seen.set(d.id, []); seen.get(d.id).push(d); }
+    if (seen.size && !settings.clientId) lines.push(bad('Drive לא מחובר — הוסף Client ID והתחבר כדי לקרוא את הסיכומים'));
+    else {
+      let n = 0;
+      for (const [id, uses] of seen) {
+        show(`קורא מ-Drive ${++n}/${seen.size}`);
+        try {
+          const c = await fetchDoc(id, true);
+          const where = uses.map(u => (u.regions ? u.regions.join(', ') : 'כל האזורים') + (u.parts ? ` [${u.parts.join(', ')}]` : '')).join(' ; ');
+          const miss = uses.filter(u => u.parts).flatMap(u => pickParts(c.text, u.parts).missing);
+          lines.push(ok(`${c.title} — ${kChars(c.text.length)} תווים · ${where}`) + (miss.length ? ' ' + bad('לא נמצא: ' + [...new Set(miss)].join(', ')) : ''));
+        } catch (e) { lines.push(bad(e.message)); }
+      }
+    }
+    // per-region totals (from the cache just filled)
+    const p = PRICE[settings.analysisModel] || [4, 20];
+    const rows = [];
+    for (const region of REGIONS) {
+      show('מחשב היקף לכל אזור: ' + region);
+      const kb = await loadKB(region);
+      let tok = null;
+      if (settings.apiKey && kb.docs.length) {
+        try { tok = await countTokens({ model: settings.analysisModel, system: ANALYSIS_SYSTEM, messages: [{ role: 'user', content: kbBlock(kb.docs) }] }); } catch { }
+      }
+      rows.push(`<tr><td>${esc(region)}</td><td>${kb.docs.length}</td><td>${kChars(kb.chars)}</td><td>${tok ? Math.round(tok / 1000) + 'K' : '—'}</td><td>${tok ? '$' + (tok * p[0] / 1e6).toFixed(2) : '—'}</td></tr>`);
+    }
+    lines.push(`<table class="kbt"><tr><th>אזור</th><th>מסמכים</th><th>תווים</th><th>טוקנים</th><th>קלט ≈</th></tr>${rows.join('')}</table>` +
+      `<span class="small muted">עלות הקלט בלבד, במודל ${esc(settings.analysisModel)}. התשובה עצמה (כולל חשיבה) מוסיפה בדרך כלל $0.05–0.30.</span>`);
+    show();
+  } catch (e) { lines.push(bad(e.message)); show(); }
+  finally { if (btn) btn.disabled = false; }
+}
+
+/* ---------------- boot ---------------- */
+LS.del(K.kb); // v1 kept document texts in localStorage; they now live in Cache Storage
+applyTheme();
+render();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => { });
+</script>
+</body>
+</html>

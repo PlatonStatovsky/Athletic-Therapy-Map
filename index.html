@@ -491,6 +491,10 @@ p.evd{margin:0; color:var(--ev); font-weight:700; font-size:calc(15px * var(--fs
   .seg.tsize button{padding:4px 8px; min-width:30px}
 }
 @media (prefers-reduced-motion: reduce){ .flash{animation:none} }
+/* link to the clinic assistant (app/) */
+.applink{flex:0 0 auto; display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:999px;
+  background:var(--accent); color:var(--on-accent); font-weight:600; font-size:14px; text-decoration:none; white-space:nowrap}
+.applink:hover{filter:brightness(1.08)} .applink:focus-visible{outline:2px solid var(--bar-ink); outline-offset:2px}
 </style>
 </head>
 <body>
@@ -510,6 +514,7 @@ p.evd{margin:0; color:var(--ev); font-weight:700; font-size:calc(15px * var(--fs
       <div class="results" id="results" role="listbox" aria-label="תוצאות חיפוש" hidden></div>
     </div>
     <div class="tools">
+      <a class="applink" href="app/" title="תיעוד מפגש, מילוי טופס וניתוח קליני">עוזר קליני</a>
       <span class="tlabel" id="fs-l">גודל טקסט</span>
       <div class="seg tsize" role="group" aria-labelledby="fs-l">
         <button type="button" data-fs="1" aria-pressed="true" title="רגיל" aria-label="טקסט רגיל"><span style="font-size:13px">א</span></button>
@@ -3879,9 +3884,12 @@ function measure(){ const h = $("#bar").offsetHeight; root.style.setProperty("--
 window.addEventListener("resize", () => { measure(); if(!narrowPanel()) hidePanel(); });
 measure();
 
-let start = (location.hash || "").slice(1);
+let start = (location.hash || "").slice(1), startTest = "";
+const deep = start.match(/^([\w-]*)&t=([\w-]+)$/); // "#shoulder&t=hk" — a region plus a test card (links from app/)
+if(deep){ start = deep[1]; startTest = deep[2]; }
 if(!start) start = store.get("uqmap-tab") || "";
 show(start || "general");
+if(startTest) openTest(startTest);
 })();
 </script>
 </body>
