@@ -126,6 +126,13 @@ a.chip{text-decoration:none;color:var(--accent);display:inline-block}
 .badge.ai{background:var(--accent-soft);color:var(--accent)}
 .badge.man{background:var(--surface-2);color:var(--ink-2)}
 .badge.chk{background:var(--warn-soft);color:var(--warn)}
+.badge.bad{background:var(--rec-soft);color:var(--rec)}
+.spk{display:inline-block;font-size:11px;font-weight:600;border-radius:6px;padding:0 6px;margin-left:6px;background:var(--surface-2);color:var(--ink-2)}
+.spk.s1{background:var(--accent-soft);color:var(--accent)}
+.spk.s2{background:var(--warn-soft);color:var(--warn)}
+.audio-part{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line)}
+.audio-part:first-child{border-top:0}
+.audio-part audio{width:100%;height:36px}
 .fmeta{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
 .fmeta button{border:0;background:none;padding:2px 0;font-size:13px;color:var(--accent)}
 .quote{font-size:13px;color:var(--ink-2);background:var(--surface-2);border-radius:8px;padding:6px 8px;margin-top:6px}
@@ -240,7 +247,7 @@ const KB_OLD_DEFAULT = 'https://docs.google.com/document/d/1w69Gy6xERTPrLEa3kJpL
 const DEFAULT_SETTINGS = {
   apiKey: '', extractModel: 'claude-sonnet-5-5', analysisModel: 'claude-opus-5-5',
   clientId: '', rootFolderName: 'מטופלים', rootFolderId: '',
-  kbDocs: KB_DEFAULT, extraKB: '', siteKB: true, kbBudget: 350, kbVer: 2,
+  kbDocs: KB_DEFAULT, extraKB: '', siteKB: true, kbBudget: 350, kbVer: 2, engine: 'browser', accessCode: '', saveAudio: true,
   autoFill: true, fillChars: 600, continuous: true, lang: 'he-IL'
 };
 const storedSettings = LS.get(K.settings, null);
@@ -467,11 +474,10 @@ async function countTokens(body) {
   if (!r.ok) throw new Error('count_tokens ' + r.status);
   return (await r.json()).input_tokens;
 }
-// thinking setting per model family for low-latency extraction
-function lowLatency(model) {
-  if (model.startsWith('claude-sonnet')) return { thinking: { type: 'between_tools' }, effort: 'low' };
-  if (model.startsWith('claude-haiku')) return { thinking: { type: 'disabled' }, effort: 'low' };
-  return { effort: 'low' };
+// form filling runs in the background, so accuracy matters more than speed
+function fillParams(model) {
+  if (model.startsWith('claude-haiku')) return { thinking: { type: 'disabled' }, effort: 'medium' };
+  return { effort: 'medium' };
 }
 // one retry without optional parameters if the API rejects them
 async function callWithFallback(body, opts) {
@@ -515,22 +521,59 @@ function fillSchema(s) {
     }
   };
 }
+// how Hebrew speech recognition tends to write English clinical terms (heard → meaning)
+const ASR_GLOSSARY = `מבדק / מבדקים ← "מזדכים", "מזדקים", "מבדכים"
+MMT ← "אם אם טי", "אמ טי", "הם אמיתי", "אמאמטי"
+ROM / AROM / PROM ← "רום", "אי רום", "איי רום", "פי רום", "פרום"
+VAS ← "ואס", "וי איי אס"
+Empty Can (Jobe) ← "אמפטי קן", "אמפטי קאן", "אמפטן", "ג'וב"
+Full Can ← "פול קן", "פולקן", "פול קאן"
+Neer ← "ניר", "נייר"
+Hawkins-Kennedy ← "הוקינס", "הוקינס קנדי"
+Painful Arc ← "פיינפול ארק", "פיינפול"
+Drop Arm ← "דרופ ארם", "דרופ"
+Speed's ← "ספיד", "ספידס"
+Yergason ← "ירגסון"
+O'Brien ← "אובריין", "או בריין"
+Apprehension / Relocation ← "אפריהנשן", "רילוקיישן"
+Lift-off / Belly press ← "ליפט אוף", "בלי פרס"
+Spurling ← "ספרלינג", "ספורלינג"
+ULTT ← "יו אל טי טי"
+Lachman ← "לכמן", "לחמן"
+Anterior / Posterior Drawer ← "אנטריור דרואר", "מגירה קדמית", "מגירה אחורית"
+McMurray ← "מקמארי", "מק מורי"
+Thessaly ← "תסלי"
+FABER / FADIR ← "פייבר", "פדיר", "פיידר"
+SLR ← "אס אל אר", "הרמת רגל ישרה"
+Phalen / Tinel / Finkelstein ← "פאלן", "טינל", "פינקלשטיין"
+Mill's / Cozen's ← "מילס", "קוזנס"`;
+let siteTestNames = []; // test names from the decision map, filled once the map is loaded
+function loadTestNames() {
+  if (siteTestNames.length) return;
+  loadSite().then(st => { siteTestNames = Object.values(st.data.T || {}).map(t => t.n).filter(Boolean); }).catch(() => { });
+}
 function extractSystem(s) {
   const lines = sectionsFor(s).map(sec => `## ${sec.title}\n` + sec.fields.map(f => `- ${f.id} — ${f.label}`).join('\n')).join('\n');
+  const names = siteTestNames.length ? `\n\nTest names used in the therapist's decision map (prefer these spellings):\n${siteTestNames.join(' · ')}` : '';
   return `You fill a structured clinical form for a sports therapist (ספורט-תרפיסט) in Israel, from a live Hebrew transcript of a clinical session.
 
-The transcript is automatic speech recognition from a phone microphone: no speaker labels, frequent recognition errors, English clinical terms often written phonetically in Hebrew letters (e.g. "לכמן" = Lachman, "אי רום" = AROM, "וי איי אס" = VAS). Two speakers: the therapist (asks questions, says exam findings out loud) and the patient (answers). Infer who is speaking from context. Lines may start with a stage marker such as [שלב: בדיקה].
+The transcript is automatic speech recognition: frequent recognition errors, dropped words, English clinical terms written phonetically in Hebrew letters. Lines may start with a stage marker such as [שלב: בדיקה] and, when the recognizer separates voices, a speaker label such as [דובר 1]. Two speakers: the therapist (asks questions, says exam findings out loud) and the patient (answers). Often the therapist dictates alone.
 
 Rules:
-1. Record only what was actually said in the transcript. Never fill a field from general knowledge, never infer a diagnosis, never invent a test result.
-2. Return an update only for fields whose content changes because of the NEW transcript. "value" is the complete new content of that field: merge the current value with the new information. If the patient corrected something said earlier, replace it and keep a short note such as "(תוקן: קודם נאמר 5)".
-3. Write values in short, telegraphic clinical Hebrew. Keep standard English terms (VAS, AROM, MMT, Lachman, ULTT). Numbers as digits. Always state the side (ימין / שמאל / דו-צדדי) when it was said.
-4. Pain intensity fields: the number 0–10 first, then short context, e.g. "7 (בירידה במדרגות)".
-5. special_tests: one line per test — "שם המבדק — צד — חיובי/שלילי — הערה".
-6. red_flags: one line per screening question that was actually asked, with the answer, e.g. "ירידה לא מוסברת במשקל: לא". Do not list questions that were not asked.
-7. Fields marked LOCKED were edited by the therapist — never return updates for them.
-8. "quote": a short exact snippet (up to 15 words) from the transcript that supports the value. "uncertain": true when the recognition is garbled or it is unclear who said it.
-9. Ignore small talk, logistics, scheduling and anything that does not belong to a field. If nothing new belongs in the form, return an empty updates array.
+1. Record only what is actually in the transcript. Every test name, number, side and finding you write must be traceable to specific words in it. Never fill a field from general knowledge, never infer a diagnosis, never add a test that was not named.
+2. Recognition errors: map a garbled term to a clinical term only when the sounds clearly match (see the list below), and then set "uncertain": true. If you cannot tell, write what was heard in quotes followed by "?" — e.g. "פולקן" (Full Can?). Never replace a heard term with a different test.
+3. Do not reconstruct words or numbers that recognition dropped. E.g. "מתוך 5 בצד ימין" without the first number → "?/5 ימין" with "uncertain": true — never guess the missing number.
+4. Return an update only for fields whose content changes because of the NEW transcript. "value" is the complete new content of that field: merge the current value with the new information. When the speaker explicitly corrects an earlier value, replace it and add "(תוקן)" — only if both the old and the new value appear in the transcript.
+5. Write values in short, telegraphic clinical Hebrew. Keep standard English terms (VAS, AROM, MMT, Lachman, ULTT). Numbers as digits. State the side (ימין / שמאל / דו-צדדי) only when it was said.
+6. Pain intensity fields: the number 0–10 first, then short context, e.g. "7 (בירידה במדרגות)".
+7. special_tests: one line per test that was actually named — "שם המבדק — צד — חיובי/שלילי — הערה". A test that was not named never appears.
+8. red_flags: one line per screening question actually asked, with the answer. A general statement such as "אין דגלים אדומים" is recorded as said, without inventing which questions were asked.
+9. Fields marked LOCKED were edited by the therapist — never return updates for them.
+10. "quote": copy the supporting words exactly as they appear in the NEW TRANSCRIPT, up to 15 words — no paraphrase and no correction of recognition errors. "uncertain": true when the recognition is garbled, a term was mapped through the list below, or it is unclear who said it.
+11. Ignore small talk, logistics and anything that does not belong to a field. If nothing new belongs in the form, return an empty updates array.
+
+Common recognition errors (meaning ← as heard):
+${ASR_GLOSSARY}${names}
 
 Form fields (id — label):
 ${lines}`;
@@ -539,7 +582,7 @@ function buildTranscript(segs) {
   let out = '', last = null;
   for (const g of segs) {
     if (g.stage !== last) { out += `\n[שלב: ${STAGES.find(x => x.id === g.stage)?.label || g.stage}]\n`; last = g.stage; }
-    out += g.text + (g.manual ? ' (הוקלד ידנית)' : '') + '\n';
+    out += (g.speaker != null ? `[דובר ${g.speaker}] ` : '') + g.text + (g.manual ? ' (הוקלד ידנית)' : '') + '\n';
   }
   return out.trim();
 }
@@ -585,7 +628,7 @@ ${buildTranscript(context) || '(אין)'}
 
 NEW TRANSCRIPT (process this):
 ${buildTranscript(fresh)}`;
-  const ll = lowLatency(settings.extractModel);
+  const ll = fillParams(settings.extractModel);
   const body = {
     model: settings.extractModel, max_tokens: 6000,
     system: [{ type: 'text', text: extractSystem(s), cache_control: { type: 'ephemeral' } }],
@@ -600,7 +643,7 @@ ${buildTranscript(fresh)}`;
     const txt = (res.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
     const json = parseJsonLoose(txt);
     if (!json) throw new Error('התשובה לא הייתה JSON תקין');
-    const n = applyUpdates(json.updates || []);
+    const n = applyUpdates(json.updates || [], buildTranscript(context.concat(fresh)));
     s.processed = upto; lastFillAt = Date.now(); saveSession(true);
     const d = new Date();
     setFillStatus(n ? `עודכנו ${n} שדות · ${pad(d.getHours())}:${pad(d.getMinutes())}` : `אין מידע חדש לטופס · ${pad(d.getHours())}:${pad(d.getMinutes())}`);
@@ -611,15 +654,25 @@ ${buildTranscript(fresh)}`;
     filling = false; fillAbort = null;
   }
 }
-function applyUpdates(updates) {
+// the model must quote the transcript; a quote that is not there marks the value as suspect
+const normQ = t => String(t || '').replace(/[\u0591-\u05C7]/g, '').replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+function quoteFound(quote, hay) {
+  const q = normQ(quote); if (!q) return false;
+  if (hay.includes(q)) return true;
+  const words = q.split(' ').filter(w => w.length > 1); if (!words.length) return false;
+  return words.filter(w => hay.includes(w)).length / words.length >= 0.75;
+}
+function applyUpdates(updates, transcriptText = '') {
   let n = 0;
+  const hay = normQ(transcriptText);
   for (const u of updates) {
     const def = FIELD[u.id]; if (!def) continue;
     const cur = session.fields[u.id];
     if (cur && cur.locked) continue;
     const val = String(u.value || '').trim(); if (!val) continue;
     if (cur && cur.value === val) continue;
-    session.fields[u.id] = { value: val, source: 'ai', quote: String(u.quote || '').trim(), needsCheck: !!(def.critical || u.uncertain), locked: false, at: Date.now() };
+    const verified = !hay || quoteFound(u.quote, hay);
+    session.fields[u.id] = { value: val, source: 'ai', quote: String(u.quote || '').trim(), needsCheck: !!(def.critical || u.uncertain || !verified), unverified: !verified, locked: false, at: Date.now() };
     n++;
     refreshField(u.id, true);
   }
@@ -667,21 +720,51 @@ function envProblem() {
   if (IS_SAMSUNG) return 'זה דפדפן Samsung Internet. זיהוי הדיבור נבדק רק ב-Chrome — פתח את אותה כתובת ב-Chrome.';
   return '';
 }
-function startRec() {
+const useSoniox = () => settings.engine === 'soniox';
+async function startRec() {
   if (IS_LOCAL_FILE) { toast(envProblem(), true, 9000); return; }
-  if (!SR) { toast('הדפדפן הזה לא תומך בזיהוי דיבור. פתח ב-Chrome באנדרואיד, או הקלד/הדבק טקסט בלשונית "תמלול".', true, 6000); return; }
   if (!session.consent) { toast('חסר אישור הסכמת המטופל להקלטה', true); return; }
+  if (useSoniox()) {
+    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { toast('הדפדפן הזה לא תומך בהקלטה', true); return; }
+    recording = true; recSince = Date.now(); grabWakeLock(); renderRecState();
+    try { await sonioxStart(); }
+    catch (e) { recording = false; recSince = 0; closeMic(); releaseWakeLock(); renderRecState(); toast(micErrText(e), true, 8000); }
+    return;
+  }
+  if (!SR) { toast('הדפדפן הזה לא תומך בזיהוי דיבור. פתח ב-Chrome, או בחר בהגדרות את מנוע Soniox, או הקלד/הדבק טקסט בלשונית "תמלול".', true, 7000); return; }
   recording = true; recSince = Date.now();
   spawnRec(); grabWakeLock(); renderRecState();
+  // the recording is saved alongside the browser's recognizer; some phones give the microphone to only one of them
+  if (settings.saveAudio && !noAudioWithSR()) openMic().then(st => { if (recording) startSaver(st); else closeMic(); })
+    .catch(e => toast('ההקלטה לא נשמרת: ' + micErrText(e), true, 6000));
 }
 function stopRec() {
   recording = false;
   if (session && recSince) { session.recordedMs = (session.recordedMs || 0) + (Date.now() - recSince); recSince = 0; saveSession(); }
-  try { rec && rec.stop(); } catch { }
+  if (useSoniox()) sonioxStop(); else { try { rec && rec.stop(); } catch { } }
+  stopSaver(); setTimeout(() => { if (!recording) closeMic(); }, 4500);
   releaseWakeLock(); renderRecState();
-  setTimeout(() => maybeFill(true), 900);
+  setTimeout(() => { maybeFill(true); renderAudioBox(); }, useSoniox() ? 4800 : 900);
+}
+function micErrText(e) {
+  if (e?.name === 'NotAllowedError') return 'האתר חסום למיקרופון. סמל המנעול ליד הכתובת ← הרשאות ← מיקרופון ← אפשר.';
+  if (e?.name === 'NotFoundError') return 'לא נמצא מיקרופון במכשיר';
+  if (e?.name === 'NotReadableError') return 'המיקרופון תפוס על ידי אפליקציה אחרת';
+  return e?.message || String(e);
+}
+const noAudioWithSR = () => { try { return localStorage.getItem('ca.noAudioWithSR') === '1'; } catch { return false; } };
+// Edge (and sometimes Chrome) can keep a recognizer open that no longer returns anything; restart it when it goes quiet
+const IS_ANDROID = /Android/i.test(navigator.userAgent);
+let lastRecEvent = 0;
+const WATCHDOG_MS = 12000;
+function restartRec(reason) {
+  if (!recording || useSoniox()) return;
+  rawLog.push({ t: Date.now(), sid: recSid, restart: reason });
+  lastRecEvent = Date.now();
+  try { rec && rec.abort(); } catch { }
 }
 function spawnRec() {
+  lastRecEvent = Date.now();
   rec = new SR();
   rec.lang = settings.lang || 'he-IL';
   rec.interimResults = true;
@@ -699,9 +782,19 @@ function spawnRec() {
       return;
     }
     if (e.error === 'network') { toast('אין חיבור לשירות זיהוי הדיבור — בדוק אינטרנט', true); return; }
-    if (e.error === 'audio-capture') { recording = false; renderRecState(); toast('המיקרופון תפוס או לא זמין', true); return; }
+    if (e.error === 'audio-capture') {
+      if (saver) { // this device can't share the microphone between recognition and recording — keep recognition
+        stopSaver(); closeMic();
+        try { localStorage.setItem('ca.noAudioWithSR', '1'); } catch { }
+        toast('במכשיר הזה הדפדפן לא מאפשר לזהות דיבור ולהקליט יחד. הזיהוי ממשיך בלי שמירת הקלטה. לשמירת הקלטה בחר בהגדרות את מנוע Soniox.', true, 9000);
+        return;
+      }
+      recording = false; renderRecState(); toast('המיקרופון תפוס או לא זמין', true); return;
+    }
     toast('שגיאת זיהוי: ' + e.error, true);
   };
+  rec.onstart = () => { lastRecEvent = Date.now(); };
+  rec.onspeechstart = () => { lastRecEvent = Date.now(); };
   rec.onend = () => {
     interim = ''; renderInterim();
     if (recording) setTimeout(() => { if (recording) { try { spawnRec(); } catch { } } }, 250);
@@ -711,6 +804,7 @@ function spawnRec() {
 // Browsers deliver results differently (separate finals, Android's cumulative repeats, re-sends after a restart);
 // everything is reduced to "which words are actually new" before it reaches the transcript.
 function onRecResult(e) {
+  lastRecEvent = Date.now();
   const finals = []; let inter = '';
   for (let i = 0; i < e.results.length; i++) {
     const r = e.results[i];
@@ -730,11 +824,14 @@ function onRecResult(e) {
   rawLog.push({ t: Date.now(), sid: recSid, finals, interim: inter, added });
   if (rawLog.length > 400) rawLog.shift();
   interim = inter.trim(); renderInterim();
+  // an empty final is how Edge says "heard nothing" — it tends to hang right after, so start a fresh session
+  if (finals.length && !finals[finals.length - 1] && !inter.trim()) setTimeout(() => restartRec('empty-final'), 150);
 }
-function addSegment(text, manual = false) {
+function addSegment(text, manual = false, extra = {}) {
   if (!session || !text.trim()) return;
   const g = { t: Date.now(), stage: session.stage, text: text.trim() };
   if (manual) g.manual = true;
+  if (extra.speaker != null) g.speaker = extra.speaker;
   session.segments.push(g);
   saveSession();
   appendSegmentUI(g, session.segments.length - 1);
@@ -746,9 +843,184 @@ async function grabWakeLock() {
 }
 function releaseWakeLock() { try { wakeLock && wakeLock.release(); } catch { } wakeLock = null; }
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && recording) { grabWakeLock(); try { rec && rec.start(); } catch { } }
+  if (document.visibilityState === 'visible' && recording) { grabWakeLock(); if (!useSoniox()) { try { rec && rec.start(); } catch { } } }
 });
 window.addEventListener('beforeunload', e => { if (recording) { e.preventDefault(); e.returnValue = ''; } });
+
+/* ---------------- audio recording ----------------
+   The session audio is kept on the device (IndexedDB, in 5-second pieces so a crash loses little)
+   and uploaded to the patient's Drive folder with the session. Each start/stop of the recording is one part. */
+const AUDIO_DB = 'ca-audio';
+let mic = null, saver = null;
+function audioDb() {
+  return audioDb.p ||= new Promise((res, rej) => {
+    const r = indexedDB.open(AUDIO_DB, 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('chunks', { autoIncrement: true }).createIndex('sid', 'sid');
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => { audioDb.p = null; rej(r.error); };
+  });
+}
+async function audioPut(row) {
+  const db = await audioDb();
+  return new Promise((res, rej) => { const tx = db.transaction('chunks', 'readwrite'); tx.objectStore('chunks').add(row); tx.oncomplete = res; tx.onerror = () => rej(tx.error); });
+}
+async function audioParts(sid) {
+  const db = await audioDb();
+  const rows = await new Promise((res, rej) => { const q = db.transaction('chunks').objectStore('chunks').index('sid').getAll(sid); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); });
+  const parts = new Map();
+  for (const r of rows) {
+    if (!parts.has(r.part)) parts.set(r.part, { part: r.part, mime: r.mime, blobs: [], start: r.t, end: r.t });
+    const p = parts.get(r.part); p.blobs.push(r.blob); p.end = r.t;
+  }
+  return [...parts.values()].sort((a, b) => a.part - b.part).map(p => ({ part: p.part, mime: p.mime, start: p.start, blob: new Blob(p.blobs, { type: p.mime }), ms: p.end - p.start + 5000 }));
+}
+async function audioDelete(sid) {
+  try {
+    const db = await audioDb();
+    await new Promise(res => {
+      const tx = db.transaction('chunks', 'readwrite'), st = tx.objectStore('chunks');
+      const c = st.index('sid').openKeyCursor(IDBKeyRange.only(sid));
+      c.onsuccess = () => { const cur = c.result; if (cur) { st.delete(cur.primaryKey); cur.continue(); } };
+      tx.oncomplete = res; tx.onerror = res;
+    });
+  } catch { }
+}
+const pickMime = () => ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'].find(m => window.MediaRecorder?.isTypeSupported?.(m)) || '';
+async function openMic() {
+  if (mic && mic.active) return mic;
+  mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+  return mic;
+}
+function closeMic() { try { mic && mic.getTracks().forEach(t => t.stop()); } catch { } mic = null; }
+function newRecorder(stream) {
+  const mime = pickMime();
+  return new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 32000 } : {});
+}
+function startSaver(stream) {
+  if (!window.MediaRecorder || !session || saver) return;
+  const s = session, sid = s.id;
+  s.audioParts = (s.audioParts || 0) + 1; const part = s.audioParts; saveSession(true);
+  const r = newRecorder(stream);
+  r.ondataavailable = e => { if (e.data && e.data.size) audioPut({ sid, part, t: Date.now(), mime: r.mimeType || 'audio/webm', blob: e.data }).catch(err => console.warn('audio', err)); };
+  r.start(5000); saver = r;
+}
+function stopSaver() { try { saver && saver.state !== 'inactive' && saver.stop(); } catch { } saver = null; }
+const fmtBytes = n => n > 1e6 ? (n / 1e6).toFixed(1) + 'MB' : Math.max(1, Math.round(n / 1e3)) + 'KB';
+let audioUrls = [];
+async function renderAudioBox() {
+  const box = $('#audioBox'); if (!box || !session) return;
+  audioUrls.forEach(u => URL.revokeObjectURL(u)); audioUrls = [];
+  let parts = []; try { parts = await audioParts(session.id); } catch { }
+  if (!parts.length) { box.innerHTML = settings.saveAudio ? '' : '<p class="muted small">שמירת ההקלטה כבויה בהגדרות.</p>'; return; }
+  box.innerHTML = `<div class="card" style="padding:12px"><div class="muted small" style="margin-bottom:6px">הקלטות המפגש — נשמרות במכשיר עד סגירת המפגש, ועולות ל-Drive עם "שמור ל-Drive"</div>` +
+    parts.map(p => {
+      const url = URL.createObjectURL(p.blob); audioUrls.push(url);
+      const ext = /mp4/.test(p.mime) ? 'm4a' : /ogg/.test(p.mime) ? 'ogg' : 'webm';
+      const up = session.audioIds?.[p.part]?.size === p.blob.size ? ' · ב-Drive ✓' : '';
+      return `<div class="audio-part"><b>חלק ${p.part}</b><span class="muted small">${fmtClock(p.ms)} · ${fmtBytes(p.blob.size)}${up}</span>
+        <a class="btn" style="padding:4px 10px;margin-inline-start:auto" href="${url}" download="הקלטה ${fmtStamp(session.startedAt).replace(':', '-')} חלק ${p.part}.${ext}">הורד</a>
+        <audio controls preload="none" src="${url}"></audio></div>`;
+    }).join('') + '</div>';
+}
+
+/* ---------------- Soniox: continuous cloud transcription ----------------
+   The microphone streams to Soniox over a WebSocket; final tokens become transcript segments at each
+   detected end of utterance or change of speaker. The browser gets a short-lived key from the site's own
+   function (/api/soniox-key on Cloudflare), so the account key never reaches the device. */
+const STT = { ws: null, feeder: null, buf: '', spk: null, lastFinal: 0, retries: 0, noContext: false, stopping: false };
+function clinicalTerms() {
+  const base = ['MMT', 'AROM', 'PROM', 'ROM', 'VAS', 'End Feel', 'Empty Can', 'Full Can', 'Neer', 'Hawkins-Kennedy', 'Painful Arc', 'Drop Arm', "Speed's Test", 'Yergason', "O'Brien", 'Apprehension', 'Relocation', 'Spurling', 'ULTT', 'Lachman', 'McMurray', 'Thessaly', 'FABER', 'FADIR', 'SLR', 'Phalen', 'Tinel', 'Finkelstein', 'PSFS', 'QuickDASH', 'SAPS', 'ACL', 'PCL', 'MCL', 'LCL', 'מבדק', 'מבדקים', 'אנמנזה', 'דגלים אדומים', 'דגלים צהובים'];
+  return [...new Set([...base, ...siteTestNames.map(n => n.split(/ — |\(|&/)[0].trim())])].filter(Boolean).slice(0, 150);
+}
+async function sonioxKey() {
+  let r;
+  try {
+    r = await fetch(new URL('../api/soniox-key', location.href).href, { method: 'POST', headers: { 'content-type': 'application/json', 'x-access-code': settings.accessCode || '' }, body: '{}' });
+  } catch { throw new Error('אין חיבור לשרת של האתר'); }
+  if (r.status === 404 || r.status === 405) throw new Error('מנוע Soniox עובד רק מהכתובת של האתר ב-Cloudflare');
+  if (r.status === 401) throw new Error('קוד הגישה לתמלול שגוי — בדוק בהגדרות');
+  let j = {}; try { j = await r.json(); } catch { }
+  if (!r.ok || !(j.api_key || j.key)) throw new Error('לא התקבל מפתח זמני ל-Soniox' + (j.error ? ': ' + j.error : ` (${r.status})`));
+  return j.api_key || j.key;
+}
+function sttFlush() {
+  const t = STT.buf.replace(/\s+/g, ' ').trim(); STT.buf = '';
+  if (t) addSegment(t, false, { speaker: STT.spk });
+}
+function sttFail(msg) {
+  STT.stopping = true;
+  if (recording) stopRec();
+  toast(msg, true, 9000);
+}
+async function sonioxStart() {
+  STT.stopping = false; STT.retries = 0; STT.buf = ''; STT.spk = null;
+  loadTestNames();
+  const stream = await openMic();
+  if (settings.saveAudio) startSaver(stream);
+  await sonioxConnect(stream, true);
+}
+async function sonioxConnect(stream, first = false) {
+  let key;
+  try { key = await sonioxKey(); }
+  catch (e) { if (first) throw e; sttFail(e.message); return; }
+  if (!recording || STT.stopping) return;
+  const ws = new WebSocket('wss://stt-rt.soniox.com/transcribe-websocket', ['soniox-api-key', key]);
+  STT.ws = ws;
+  ws.onopen = () => {
+    const cfg = { model: 'stt-rt-v5', audio_format: 'auto', language_hints: ['he', 'en'], enable_speaker_diarization: true, enable_endpoint_detection: true };
+    if (!STT.noContext) cfg.context = {
+      general: [{ key: 'domain', value: 'Sports therapy clinical session: anamnesis and physical examination' }, { key: 'language', value: 'Hebrew with English clinical test names' }],
+      terms: clinicalTerms()
+    };
+    ws.send(JSON.stringify(cfg));
+    // a fresh recorder for every connection — each stream has to start with its own container header
+    const fr = newRecorder(stream);
+    fr.ondataavailable = e => { if (e.data && e.data.size && ws.readyState === 1) ws.send(e.data); };
+    fr.start(250); STT.feeder = fr;
+    rawLog.push({ t: Date.now(), soniox: 'open' });
+  };
+  ws.onmessage = ev => {
+    let m; try { m = JSON.parse(ev.data); } catch { return; }
+    if (m.error_code) {
+      rawLog.push({ t: Date.now(), soniox: 'error', code: m.error_code, type: m.error_type, msg: m.error_message });
+      if (m.error_code === 400 && !STT.noContext) { STT.noContext = true; return; } // reconnects without the vocabulary
+      if ([400, 401, 402, 403].includes(m.error_code)) sttFail(m.error_code === 402 ? 'אין יתרה בחשבון Soniox' : `Soniox: ${m.error_message || m.error_code}`);
+      return;
+    }
+    let inter = '';
+    for (const tk of m.tokens || []) {
+      const tx = tk.text || '';
+      if (tx === '<end>' || tx === '<fin>') { if (tk.is_final) sttFlush(); continue; }
+      if (tk.is_final) {
+        if (tk.speaker != null && STT.spk != null && String(tk.speaker) !== String(STT.spk) && STT.buf.trim()) sttFlush();
+        if (tk.speaker != null) STT.spk = tk.speaker;
+        STT.buf += tx; STT.lastFinal = Date.now();
+      } else inter += tx;
+    }
+    if ((m.tokens || []).length) rawLog.push({ t: Date.now(), soniox: 'tokens', n: m.tokens.length, buf: STT.buf.slice(-60), interim: inter.slice(-60) });
+    if (rawLog.length > 400) rawLog.shift();
+    interim = (STT.buf + inter).replace(/\s+/g, ' ').trim(); renderInterim();
+    if (m.finished) sttFlush();
+  };
+  ws.onclose = ev => {
+    try { STT.feeder && STT.feeder.state !== 'inactive' && STT.feeder.stop(); } catch { }
+    STT.feeder = null; sttFlush(); interim = ''; renderInterim();
+    if (recording && !STT.stopping && useSoniox() && STT.ws === ws) {
+      const wait = Math.min(15000, 1000 * 2 ** STT.retries++);
+      rawLog.push({ t: Date.now(), soniox: 'closed', code: ev.code, retryMs: wait });
+      setFillStatus(`החיבור לתמלול נקטע — מתחבר מחדש… (ההקלטה ממשיכה להישמר)`, true);
+      setTimeout(() => { if (recording && !STT.stopping) sonioxConnect(mic || stream); }, wait);
+    }
+  };
+}
+function sonioxStop() {
+  STT.stopping = true;
+  const ws = STT.ws;
+  try { STT.feeder && STT.feeder.state !== 'inactive' && STT.feeder.stop(); } catch { }
+  // let the last piece of audio go out, then tell Soniox the audio ended; it answers with the remaining final words
+  setTimeout(() => { try { ws && ws.readyState === 1 && ws.send(''); } catch { } }, 400);
+  setTimeout(() => { try { ws && ws.readyState < 2 && ws.close(); } catch { } sttFlush(); }, 4000);
+}
 
 /* ---------------- Google Drive ---------------- */
 const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly';
@@ -833,8 +1105,9 @@ async function upsertDoc(id, name, html, parent) {
    Texts are cached in Cache Storage (not localStorage, which is small and holds the sessions). */
 const KB_CACHE = 'ca-kb-v1', KB_PARSER = 2;
 // the decision map is the home page of the same site (this app lives in /app/)
-const SITE_SRC = new URL('../index.html', location.href).href;
-const MAP_URL = new URL('../', location.href).href;
+const HAS_MAP = /\/app\/(index\.html)?$/.test(location.pathname);
+const SITE_SRC = HAS_MAP ? new URL('../index.html', location.href).href : 'https://raw.githubusercontent.com/PlatonStatovsky/athletic-therapy-map/main/index.html';
+const MAP_URL = HAS_MAP ? new URL('../', location.href).href : '';
 const MT = { gdoc: 'application/vnd.google-apps.document', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', pdf: 'application/pdf' };
 const kbMem = new Map();
 const kbKeyUrl = k => new URL('./__kb/' + encodeURIComponent(k), location.href).href;
@@ -878,6 +1151,26 @@ async function loadSite(refresh = false) {
 }
 
 // --- Drive documents ---
+// audio can be larger than a multipart upload allows, so it goes through a resumable upload session
+async function uploadBlob(name, blob, parent, mime, existingId) {
+  const url = existingId ? `https://www.googleapis.com/upload/drive/v3/files/${existingId}?uploadType=resumable&fields=id`
+    : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id';
+  let init;
+  try {
+    init = await gfetch(url, {
+      method: existingId ? 'PATCH' : 'POST',
+      headers: { 'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Type': mime, 'X-Upload-Content-Length': String(blob.size) },
+      body: JSON.stringify(existingId ? { name } : { name, parents: [parent], mimeType: mime })
+    });
+  } catch (e) {
+    if (existingId && (e.status === 404 || e.status === 403)) return uploadBlob(name, blob, parent, mime, null);
+    throw e;
+  }
+  const loc = init.headers.get('Location'); if (!loc) throw new Error('Drive לא החזיר כתובת העלאה');
+  const r = await fetch(loc, { method: 'PUT', headers: { 'Content-Type': mime }, body: blob });
+  if (!r.ok) throw new Error('העלאת ההקלטה נכשלה (' + r.status + ')');
+  return (await r.json()).id;
+}
 function docIdFrom(s) {
   const m = String(s).match(/\/d\/([a-zA-Z0-9_-]{20,})/) || String(s).match(/[?&]id=([a-zA-Z0-9_-]{20,})/) || String(s).match(/^([a-zA-Z0-9_-]{20,})$/);
   return m ? m[1] : null;
@@ -1051,7 +1344,7 @@ const kChars = n => n < 10000 ? (n / 1000).toFixed(1) + 'K' : Math.round(n / 100
 const kbBlock = docs => docs.map(d => `<document title="${d.title.replace(/"/g, '')}">\n${d.text}\n</document>`).join('\n\n');
 
 /* ---------------- analysis ---------------- */
-const ANALYSIS_SYSTEM = `You are a clinical-reasoning assistant for a sports therapist (ספורט-תרפיסט) in Israel. You receive (1) the therapist's own knowledge base, (2) the session form, (3) the raw speech-recognition transcript (no speaker labels, recognition errors).
+const ANALYSIS_SYSTEM = `You are a clinical-reasoning assistant for a sports therapist (ספורט-תרפיסט) in Israel. You receive (1) the therapist's own knowledge base, (2) the session form, (3) the raw speech-recognition transcript (recognition errors; lines may carry [דובר N] speaker labels).
 
 The knowledge base has up to three kinds of documents:
 - "מפת דרך — שיקום שמרני": the therapist's verified decision map (his own site, built from open verified sources). A general 8-stage framework and principles for every region; for neck, shoulder, elbow and wrist/hand also the region chapter — red-flag screening, classification paths, test order with LR values, treatment, prognosis, and test cards.
@@ -1186,7 +1479,7 @@ function transcriptDocHtml(s) {
   for (const g of s.segments) {
     if (g.stage !== last) { h += `<h2>${esc(STAGES.find(x => x.id === g.stage)?.label || g.stage)}</h2>`; last = g.stage; }
     const d = new Date(g.t);
-    h += `<p>[${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}] ${esc(g.text)}${g.manual ? ' (הוקלד)' : ''}</p>`;
+    h += `<p>[${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}] ${g.speaker != null ? `<b>דובר ${esc(g.speaker)}:</b> ` : ''}${esc(g.text)}${g.manual ? ' (הוקלד)' : ''}</p>`;
   }
   return `<html><head><meta charset="utf-8"></head><body dir="rtl">${rtl(h)}</body></html>`;
 }
@@ -1199,10 +1492,19 @@ async function saveToDrive() {
     const stamp = fmtStamp(s.startedAt);
     s.docId = await upsertDoc(s.docId, `מפגש ${stamp} — ${s.patientName}`, sessionDocHtml(s), folder);
     if (s.segments.length) s.transcriptDocId = await upsertDoc(s.transcriptDocId, `תמלול ${stamp} — ${s.patientName}`, transcriptDocHtml(s), folder);
+    let parts = []; try { parts = await audioParts(s.id); } catch { }
+    s.audioIds = s.audioIds || {};
+    for (const p of parts) {
+      if (s.audioIds[p.part]?.size === p.blob.size) continue; // already in Drive, unchanged
+      if (btn) btn.innerHTML = `<span class="spin"></span> מעלה הקלטה${parts.length > 1 ? ' ' + p.part : ''} (${fmtBytes(p.blob.size)})…`;
+      const ext = /mp4/.test(p.mime) ? 'm4a' : /ogg/.test(p.mime) ? 'ogg' : 'webm';
+      const id = await uploadBlob(`הקלטה ${stamp}${parts.length > 1 ? ' חלק ' + p.part : ''} — ${s.patientName}.${ext}`, p.blob, folder, p.mime.split(';')[0], s.audioIds[p.part]?.id);
+      s.audioIds[p.part] = { id, size: p.blob.size };
+    }
     s.folderId = folder; s.savedAt = Date.now();
     upsertPatient({ name: s.patientName, folderId: folder, region: s.region, last: s.startedAt });
     saveSession(true);
-    toast('נשמר ב-Drive: מטופלים › ' + s.patientName);
+    toast('נשמר ב-Drive: מטופלים › ' + s.patientName); renderAudioBox();
   } catch (e) {
     toast('השמירה נכשלה: ' + e.message, true, 7000);
   } finally {
@@ -1238,7 +1540,7 @@ function renderHome() {
   const needSetup = !settings.apiKey || !settings.clientId;
   $('#app').innerHTML = `
   <header class="top"><div class="wrap"><h1>עוזר קליני</h1>
-    <a class="icon-btn" href="${MAP_URL}" aria-label="מפת הדרך" title="מפת הדרך">${ICON.map}</a>
+    ${MAP_URL ? `<a class="icon-btn" href="${MAP_URL}" aria-label="מפת הדרך" title="מפת הדרך">${ICON.map}</a>` : ''}
     <button class="icon-btn" data-act="cycleTheme" aria-label="מצב תצוגה">${ICON.eye}</button>
     <button class="icon-btn" data-act="settings" aria-label="הגדרות">${ICON.gear}</button></div></header>
   <main class="wrap">
@@ -1277,7 +1579,7 @@ function renderSession() {
   <header class="top"><div class="wrap">
     <button class="icon-btn" data-act="home" aria-label="חזרה">${ICON.back}</button>
     <div class="title"><b>${esc(s.patientName)}</b><span>${esc(s.region)} · ${esc(s.type)}</span></div>
-    <a class="icon-btn" href="${mapLink(s.region)}" target="_blank" rel="noopener" aria-label="מפת הדרך לאזור" title="מפת הדרך לאזור">${ICON.map}</a>
+    ${MAP_URL ? `<a class="icon-btn" href="${mapLink(s.region)}" target="_blank" rel="noopener" aria-label="מפת הדרך לאזור" title="מפת הדרך לאזור">${ICON.map}</a>` : ''}
     <button class="icon-btn" data-act="cycleTheme" aria-label="מצב תצוגה">${ICON.eye}</button>
     <button class="icon-btn" data-act="settings" aria-label="הגדרות">${ICON.gear}</button>
   </div>
@@ -1313,7 +1615,7 @@ WIDE_MQ.addEventListener?.('change', e => { wide = e.matches; if (view === 'sess
 function renderSide() {
   const side = $('#sidePane'); if (!side) return;
   side.innerHTML = `<h3 class="side-h">תמלול <span class="cnt muted small" id="sideCount">${session.segments.length}</span></h3>` + transcriptHtml();
-  renderInterim();
+  renderInterim(); renderAudioBox();
   side.scrollTop = side.scrollHeight;
 }
 function measureHeader() {
@@ -1334,7 +1636,7 @@ function testAliases(name) {
 }
 // tests the analysis mentions, as chips that open their card on the map (region of this session first)
 async function renderTestLinks() {
-  const box = $('#testLinks'); if (!box || !session?.analysis || !settings.siteKB) { if (box) box.innerHTML = ''; return; }
+  const box = $('#testLinks'); if (!box || !session?.analysis || !settings.siteKB || !MAP_URL) { if (box) box.innerHTML = ''; return; }
   let st; try { st = await loadSite(); } catch { return; }
   const T = st.data.T || {}, text = session.analysis.replace(/[–—‐-]/g, '-');
   const inRegion = new Set(); const r = st.data.REGIONS.find(x => x.id === MAP_TAB[session.region]);
@@ -1356,7 +1658,7 @@ function renderTab() {
   else if (tab === 'transcript') body.innerHTML = transcriptHtml();
   else { body.innerHTML = analysisHtml(); renderTestLinks(); }
   if (tab === 'form') $$('#tabBody textarea').forEach(autosize);
-  if (tab === 'transcript') { renderInterim(); }
+  if (tab === 'transcript') { renderInterim(); renderAudioBox(); }
 }
 function refreshTabLabels() {
   if (!session || !$('#tabs')) return;
@@ -1380,7 +1682,8 @@ function fieldHtml(f) {
   const badges = [
     v.value && v.locked ? '<span class="badge man">נערך ידנית</span>' : '',
     v.value && v.source === 'ai' && !v.locked ? '<span class="badge ai">מולא אוטומטית</span>' : '',
-    v.value && v.needsCheck ? '<span class="badge chk">לאמת</span>' : ''
+    v.value && v.needsCheck ? '<span class="badge chk">לאמת</span>' : '',
+    v.value && v.unverified ? '<span class="badge bad" title="המודל ציטט מילים שלא נמצאו בתמלול">לא נמצא בתמלול</span>' : ''
   ].join('');
   return `<div class="field" id="f-${f.id}">
     <label for="t-${f.id}">${esc(f.label)} ${badges}</label>
@@ -1423,7 +1726,7 @@ function refreshCounts() {
 function segHtml(g, i, prevStage) {
   const d = new Date(g.t);
   const mark = g.stage !== prevStage ? `<div class="stage-mark">${esc(STAGES.find(x => x.id === g.stage)?.label || '')}</div>` : '';
-  return `${mark}<div class="seg ${g.manual ? 'manual' : ''}" data-i="${i}"><span class="t">${pad(d.getHours())}:${pad(d.getMinutes())}</span>${esc(g.text)}</div>`;
+  return `${mark}<div class="seg ${g.manual ? 'manual' : ''}" data-i="${i}"><span class="t">${pad(d.getHours())}:${pad(d.getMinutes())}</span>${g.speaker != null ? `<span class="spk s${(+g.speaker - 1) % 2 + 1}">דובר ${esc(g.speaker)}</span>` : ''}${esc(g.text)}</div>`;
 }
 function transcriptHtml() {
   const s = session; let prev = null;
@@ -1435,7 +1738,8 @@ function transcriptHtml() {
       <textarea id="manualText" class="inp" placeholder="למשל: Lachman ימין חיובי, end feel רך"></textarea>
       <button class="btn block" style="margin-top:8px" data-act="addManual">הוסף לתמלול</button>
     </div>
-    <p class="muted small">ממתין למילוי: <span id="pend">${pendingChars()}</span> תווים · עלות המפגש (הערכה): $${(s.cost || 0).toFixed(3)}</p>
+    <div id="audioBox"></div>
+    <p class="muted small">ממתין למילוי: <span id="pend">${pendingChars()}</span> תווים · עלות המפגש (הערכה): $${(s.cost || 0).toFixed(3)} · מנוע: ${useSoniox() ? 'Soniox' : 'הדפדפן'}</p>
     <button class="btn block" style="margin-bottom:12px" data-act="copyLog">העתק לוג זיהוי דיבור (לאבחון תקלות)</button>`;
 }
 function appendSegmentUI(g, i) {
@@ -1467,7 +1771,8 @@ function renderRecState() {
   b.innerHTML = recording ? ICON.stop : ICON.mic;
   b.setAttribute('aria-label', recording ? 'עצור הקלטה' : 'התחל הקלטה');
   const st = $('#recState');
-  if (st) st.textContent = recording ? 'מקליט · ' + (STAGES.find(x => x.id === session.stage)?.label || '') : (SR ? 'מוכן להקלטה' : 'זיהוי דיבור לא נתמך בדפדפן הזה');
+  if (st) st.textContent = recording ? 'מקליט · ' + (STAGES.find(x => x.id === session.stage)?.label || '') + (useSoniox() ? ' · Soniox' : '')
+    : (useSoniox() || SR ? 'מוכן להקלטה' : 'זיהוי דיבור לא נתמך בדפדפן הזה');
 }
 function renderSaveBtn() {
   const b = $('#saveBtn'); if (!b || !session) return;
@@ -1486,7 +1791,11 @@ function tickTimer() {
   const ms = (session.recordedMs || 0) + (recording && recSince ? Date.now() - recSince : 0);
   el.textContent = fmtClock(ms);
 }
-setInterval(() => { tickTimer(); if (view === 'session') maybeFill(); }, 1000);
+setInterval(() => {
+  tickTimer(); if (view === 'session') maybeFill();
+  if (recording && !useSoniox() && !IS_ANDROID && rec && Date.now() - lastRecEvent > WATCHDOG_MS) restartRec('watchdog');
+  if (recording && useSoniox() && STT.buf.trim() && Date.now() - STT.lastFinal > 2500) sttFlush();
+}, 1000);
 
 function renderSettings() {
   const st = settings;
@@ -1532,7 +1841,18 @@ function renderSettings() {
       <label class="check"><input type="checkbox" id="sAuto" ${st.autoFill ? 'checked' : ''}><span>מילוי אוטומטי תוך כדי הקלטה</span></label>
       <label class="lbl" for="sChars">למלא אחרי כמה תווים חדשים</label>
       <input id="sChars" class="inp" type="number" min="80" step="20" value="${esc(st.fillChars)}">
-      <label class="check"><input type="checkbox" id="sCont" ${st.continuous ? 'checked' : ''}><span>זיהוי רציף (בטל אם מופיעות כפילויות בתמלול)</span></label>
+      <label class="lbl" for="sEngine">מנוע תמלול</label>
+      <select id="sEngine" class="inp">
+        <option value="browser" ${st.engine !== 'soniox' ? 'selected' : ''}>זיהוי הדיבור של הדפדפן — חינם</option>
+        <option value="soniox" ${st.engine === 'soniox' ? 'selected' : ''}>Soniox — רציף, מדויק יותר, מזהה דוברים (≈$0.12 לשעה)</option>
+      </select>
+      <div id="sonioxBox" ${st.engine === 'soniox' ? '' : 'hidden'}>
+        <label class="lbl" for="sAccess">קוד גישה לתמלול (מוגדר בשרת ב-Cloudflare)</label>
+        <input id="sAccess" class="inp ltr" type="password" autocomplete="off" value="${esc(st.accessCode)}">
+        <p class="muted small">Soniox עובד רק מהכתובת של האתר ב-Cloudflare: מפתח החשבון נשמר שם בשרת, והמכשיר מקבל מפתח זמני לכל חיבור.</p>
+      </div>
+      <label class="check"><input type="checkbox" id="sAudio" ${st.saveAudio ? 'checked' : ''}><span>שמור את ההקלטה (אודיו) — במכשיר עד סגירת המפגש, וב-Drive יחד עם המפגש</span></label>
+      <label class="check"><input type="checkbox" id="sCont" ${st.continuous ? 'checked' : ''}><span>זיהוי רציף בדפדפן (בטל אם מופיעות כפילויות בתמלול)</span></label>
     </div>
     <div class="card"><h2>נתונים</h2>
       <p class="muted small">עלות API מצטברת (הערכה): $${(usage.total || 0).toFixed(2)}</p>
@@ -1543,7 +1863,8 @@ function renderSettings() {
   const bind = (id, key, fn = v => v) => { const el = $('#' + id); el.addEventListener('change', () => { settings[key] = fn(el.type === 'checkbox' ? el.checked : el.value); saveSettings(); }); };
   bind('sKey', 'apiKey', v => v.trim()); bind('sExt', 'extractModel'); bind('sAna', 'analysisModel');
   bind('sCid', 'clientId', v => v.trim()); bind('sRoot', 'rootFolderName', v => v.trim() || 'מטופלים');
-  bind('sKb', 'kbDocs'); bind('sExtra', 'extraKB'); bind('sSite', 'siteKB'); bind('sBudget', 'kbBudget', v => Math.max(20, +v || 350)); bind('sAuto', 'autoFill'); bind('sChars', 'fillChars', v => Math.max(80, +v || 600)); bind('sCont', 'continuous');
+  bind('sKb', 'kbDocs'); bind('sExtra', 'extraKB'); bind('sSite', 'siteKB'); bind('sBudget', 'kbBudget', v => Math.max(20, +v || 350)); bind('sAuto', 'autoFill'); bind('sChars', 'fillChars', v => Math.max(80, +v || 600)); bind('sCont', 'continuous'); bind('sAccess', 'accessCode', v => v.trim()); bind('sAudio', 'saveAudio');
+  bind('sEngine', 'engine'); $('#sEngine').addEventListener('change', e => { $('#sonioxBox').hidden = e.target.value !== 'soniox'; });
 }
 
 /* ---------------- events ---------------- */
@@ -1560,6 +1881,7 @@ document.addEventListener('click', async e => {
     case 'discard':
       if (session && !session.savedAt && !confirm('המפגש לא נשמר ב-Drive. לסגור בכל זאת? הנתונים יימחקו מהטלפון.')) return;
       if (recording) stopRec();
+      if (session) audioDelete(session.id);
       session = null; saveSession(true); render(); break;
     case 'pick': $('#pName').value = t.dataset.name; if (t.dataset.region) $('#pRegion').value = t.dataset.region; $('#pType').value = 'מפגש מעקב'; $('#pName').scrollIntoView({ block: 'center' }); break;
     case 'start': startSession(); break;
@@ -1571,7 +1893,7 @@ document.addEventListener('click', async e => {
     case 'tab': tab = t.dataset.tab; renderTab(); break;
     case 'jump': { const el = $('#f-' + t.dataset.fid); if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); $('#t-' + t.dataset.fid)?.focus({ preventScroll: true }); } break; }
     case 'quote': { const q = $('#q-' + t.dataset.fid); if (q) q.hidden = !q.hidden; break; }
-    case 'confirm': { const f = session.fields[t.dataset.fid]; if (f) { f.needsCheck = false; saveSession(); refreshField(t.dataset.fid); } break; }
+    case 'confirm': { const f = session.fields[t.dataset.fid]; if (f) { f.needsCheck = false; f.unverified = false; saveSession(); refreshField(t.dataset.fid); } break; }
     case 'unlock': { const f = session.fields[t.dataset.fid]; if (f) { f.locked = false; saveSession(); refreshField(t.dataset.fid); } break; }
     case 'fillNow':
       if (!settings.apiKey) { toast('חסר מפתח Claude API — הוסף בהגדרות', true); return; }
@@ -1581,7 +1903,7 @@ document.addEventListener('click', async e => {
     case 'analyze': runAnalysis(); break;
     case 'download': downloadCopy(); break;
     case 'copyLog': {
-      const dump = JSON.stringify({ ua: navigator.userAgent, continuous: settings.continuous, lang: settings.lang, events: rawLog }, null, 1);
+      const dump = JSON.stringify({ ua: navigator.userAgent, engine: settings.engine, continuous: settings.continuous, lang: settings.lang, saveAudio: settings.saveAudio, events: rawLog }, null, 1);
       try { await navigator.clipboard.writeText(dump); toast(`הלוג הועתק (${rawLog.length} אירועים) — הדבק אותו בצ'אט`); }
       catch {
         const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([dump], { type: 'application/json' }));
@@ -1607,6 +1929,7 @@ document.addEventListener('click', async e => {
       if (!confirm('למחוק את כל הנתונים המקומיים?')) return;
       Object.values(K).forEach(LS.del); try { sessionStorage.clear(); } catch { }
       try { await caches.delete(KB_CACHE); } catch { }
+      try { indexedDB.deleteDatabase(AUDIO_DB); } catch { }
       location.reload(); break;
   }
 });
@@ -1639,6 +1962,7 @@ function startSession() {
   };
   upsertPatient({ name, region: session.region, last: session.startedAt });
   saveSession(true); tab = 'form'; lastStatus = { html: '', err: false, raw: false };
+  loadTestNames();
   go('session');
 }
 async function testKey(btn) {

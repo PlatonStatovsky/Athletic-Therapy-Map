@@ -1,7 +1,7 @@
 // Offline shell for עוזר קליני. Same-origin files only: network first, cache as fallback,
 // so a new version on the server is picked up on the next open.
 // The knowledge-base cache (ca-kb-*) belongs to the page and is never touched here.
-const CACHE = 'ca-shell-v3';
+const CACHE = 'ca-shell-v4';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './json5.min.js', './kb-site.js'];
 
 self.addEventListener('install', e => {
