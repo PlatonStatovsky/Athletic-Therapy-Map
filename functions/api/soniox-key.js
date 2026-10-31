@@ -21,4 +21,6 @@ export async function onRequestPost({ request, env }) {
   return json({ api_key: body.api_key, expires_at: body.expires_at });
 }
 
+// a quick check that the secrets reached this deployment (says nothing about their values)
+export const onRequestGet = ({ env }) => json({ ok: true, configured: Boolean(env.SONIOX_API_KEY && env.APP_ACCESS_CODE) });
 export const onRequest = () => json({ error: 'method not allowed' }, 405);
