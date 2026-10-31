@@ -116,7 +116,8 @@ textarea.inp{resize:vertical;min-height:84px}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:14px}
 .chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-/* still not said: every empty field of the stage, most important first, red stepping down with importance */
+/* still not said: every empty field of the stage, most important first, in warm steps from strong to neutral
+   (red is kept for recording, "must rule out" and quotes not found in the transcript) */
 .missing{padding:14px 16px}
 .miss-h{display:flex;align-items:baseline;justify-content:space-between;gap:6px 14px;flex-wrap:wrap;margin-bottom:10px}
 .card.missing h2{font-size:15px;font-weight:600;margin:0}
@@ -125,54 +126,65 @@ textarea.inp{resize:vertical;min-height:84px}
 .miss-key span{display:inline-flex;align-items:center;gap:5px}
 .miss-key i{width:10px;height:10px;border-radius:3px;display:inline-block}
 .missing .chips{gap:6px 5px}
-.chip.miss{border:1px solid transparent;padding:3px 10px;font-size:13.5px;line-height:1.45;transition:border-color .15s}
-.chip.miss-more{border:1px dashed var(--line);background:transparent;color:var(--ink-2);padding:3px 10px;font-size:13.5px;line-height:1.45;display:none}
+.chip.miss{border:1px solid transparent;padding:5px 11px;min-height:34px;font-size:13.5px;line-height:1.45;transition:border-color .15s}
+.chip.miss-more{border:1px dashed var(--ink-2);background:transparent;color:var(--ink-2);padding:5px 11px;min-height:34px;font-size:13.5px;line-height:1.45;display:none}
 /* phone: the "useful" level folds into one chip so the form still starts on the first screen */
 @media (max-width:639px){
+  .tabs{gap:0}
+  .tabs button{font-size:14.5px;padding:10px 2px}
   .missing:not(.open) .chip.miss.i3{display:none}
   .missing:not(.open) .chip.miss-more{display:inline-block}
 }
-.chip.miss.i1,.miss-key .i1 i{background:var(--hl-must);color:var(--hl-must-ink)}
+.chip.miss.i1,.miss-key .i1 i{background:var(--hl-rec);color:var(--hl-rec-ink)}
 .chip.miss.i1{font-weight:600}
-.chip.miss.i2,.miss-key .i2 i{background:var(--hl-must);background:color-mix(in srgb,var(--hl-must) 48%,var(--surface));color:var(--hl-must-ink)}
-.chip.miss.i3,.miss-key .i3 i{background:var(--surface-2);background:color-mix(in srgb,var(--hl-must) 14%,var(--surface));color:var(--ink-2)}
-.chip.miss.i3{border-color:var(--line);border-color:color-mix(in srgb,var(--hl-must) 45%,var(--surface))}
-.miss-key .i3 i{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--hl-must) 45%,var(--surface))}
-@media (hover:hover){.chip.miss:hover{border-color:var(--hl-must-ink)}}
+.chip.miss.i2,.miss-key .i2 i{background:var(--hl-rec);background:color-mix(in srgb,var(--hl-rec) 45%,var(--surface));color:var(--hl-rec-ink)}
+.chip.miss.i3,.miss-key .i3 i{background:var(--surface);color:var(--ink-2)}
+.chip.miss.i3{border-color:var(--line)}
+.miss-key i{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--hl-rec-ink) 35%,transparent)}
+.miss-key .i3 i{box-shadow:inset 0 0 0 1px var(--ink-2)}
+@media (hover:hover){.chip.miss:hover{border-color:var(--hl-rec-ink)}}
 a.chip{text-decoration:none;color:var(--accent);display:inline-block}
 .status{font-size:13px;color:var(--ink-2);padding:0 0 6px;overflow-wrap:anywhere;order:-1}
 .status:empty{display:none}
 .status.err{color:var(--hl-must-ink)}
 .kbt{width:100%;border-collapse:collapse;margin:10px 0 4px;font-size:12.5px}.kbt th,.kbt td{border-bottom:1px solid var(--line);padding:4px 3px;text-align:right}.kbt th{color:var(--ink-2);font-weight:600}
 .tabs{display:flex;border-bottom:1px solid var(--line);gap:4px}
-.tabs button{flex:1;border:0;background:none;padding:10px 4px;font-weight:500;color:var(--ink-2);border-bottom:3px solid transparent}
+.tabs button{flex:1 1 auto;border:0;background:none;padding:10px 4px;font-weight:500;color:var(--ink-2);border-bottom:3px solid transparent;white-space:nowrap;min-height:44px}
+.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:6px}
 .tabs button.on{color:var(--accent);border-bottom-color:var(--accent)}
-.tabbody{padding-bottom:110px}
+.tabbody{padding-bottom:96px}
 .sec{margin:16px 0}
 .sec > h3{font-size:16px;display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .sec > h3 .cnt{font-size:12px;font-weight:500;color:var(--ink-2);background:var(--surface-2);border-radius:999px;padding:1px 8px}
 .field{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0;transition:background .6s}
 .field.flash{background:var(--accent-soft)}
+.field:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.field.empty{display:flex;align-items:center;gap:10px;padding:6px 12px;min-height:46px}
+.field.empty label{flex:0 1 auto;font-size:14px}
+.field.empty textarea{flex:1;min-width:60px;padding:0;min-height:24px}
+.field.hit{animation:hit 1.6s ease-out}
+@keyframes hit{0%,40%{border-color:var(--hl-rec-ink);box-shadow:0 0 0 3px var(--hl-rec)}100%{box-shadow:0 0 0 0 transparent}}
+.field textarea::placeholder,.inp::placeholder{color:var(--ink-2);opacity:1}
 .field label{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:14px;color:var(--ink-2)}
 .field textarea{width:100%;border:0;background:transparent;resize:none;outline:none;padding:4px 0 0;min-height:28px;line-height:1.5;overflow:hidden}
 .badge{font-size:11px;border-radius:6px;padding:1px 6px;font-weight:500}
 .badge.ai{background:var(--accent-soft);color:var(--accent)}
 .badge.man{background:var(--surface-2);color:var(--ink-2)}
-.badge.chk{background:var(--warn-soft);color:var(--warn)}
-.badge.bad{background:var(--rec-soft);color:var(--rec)}
+.badge.chk{background:transparent;color:var(--warn);box-shadow:inset 0 0 0 1px currentColor}
+.badge.bad{background:var(--hl-must);color:var(--hl-must-ink)}
 .spk{display:inline-block;font-size:11px;font-weight:600;border-radius:6px;padding:0 6px;margin-left:6px;background:var(--surface-2);color:var(--ink-2)}
 .spk.s1{background:var(--accent-soft);color:var(--accent)}
-.spk.s2{background:var(--warn-soft);color:var(--warn)}
+.spk.s2{background:var(--surface-2);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
 .audio-part{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line)}
 .audio-part:first-child{border-top:0}
 .audio-part audio{width:100%;height:36px}
 .fmeta{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
-.fmeta button{border:0;background:none;padding:2px 0;font-size:13px;color:var(--accent)}
+.fmeta button{border:0;background:none;padding:8px 2px;min-height:36px;font-size:13.5px;color:var(--accent)}
 .quote{font-size:13px;color:var(--ink-2);background:var(--surface-2);border-radius:8px;padding:6px 8px;margin-top:6px}
 .seg{padding:8px 0;border-bottom:1px dashed var(--line)}
 .seg .t{font-size:12px;color:var(--ink-2);margin-left:6px;font-variant-numeric:tabular-nums}
 .seg.manual{background:var(--surface-2);border-radius:8px;padding:8px}
-.seg-play{display:inline-grid;place-items:center;width:26px;height:26px;padding:0;margin-left:4px;vertical-align:middle;border-radius:50%;border:0;background:transparent;color:var(--ink-2);cursor:pointer}
+.seg-play{display:inline-grid;place-items:center;width:36px;height:36px;padding:0;margin:-6px 0 -6px 0;vertical-align:middle;border-radius:50%;border:0;background:transparent;color:var(--ink-2);cursor:pointer}
 .seg-play svg{width:11px;height:11px}
 .seg-play:hover,.seg.playing .seg-play{color:var(--accent)}
 .kb-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-inline-end:6px;vertical-align:middle}
@@ -187,8 +199,12 @@ body.has-player .toast{bottom:calc(140px + env(safe-area-inset-bottom))}
 .stage-mark{margin:14px 0 4px;font-size:13px;font-weight:700;color:var(--accent)}
 .interim{color:var(--ink-2);font-style:italic;padding:8px 0}
 .actions{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--line);z-index:15;padding-bottom:env(safe-area-inset-bottom)}
-.actions .wrap{display:flex;gap:10px;padding-top:10px;padding-bottom:10px}
-.actions .btn{flex:1}
+.actions .wrap{display:flex;align-items:center;gap:12px;padding-top:7px;padding-bottom:7px}
+.actions .btn{flex:none;padding:8px 18px}
+.savestate{flex:1;min-width:0;font-size:13px;color:var(--ink-2);display:flex;align-items:center;gap:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.savestate i{flex:none;width:8px;height:8px;border-radius:50%;background:var(--ink-2)}
+.savestate.ok i{background:var(--ok)}
+.savestate.dirty i{background:var(--warn)}
 .analysis{line-height:1.65}
 .analysis h2,.analysis h3,.analysis h4{margin:18px 0 6px;font-size:17px}
 .analysis ul{padding-inline-start:20px;margin:6px 0}
@@ -242,6 +258,61 @@ body.has-player .toast{bottom:calc(140px + env(safe-area-inset-bottom))}
 details.help{margin-top:8px}
 details.help summary{color:var(--accent);font-size:14px;cursor:pointer}
 .hr{height:1px;background:var(--line);margin:16px 0}
+/* live radar: what is still missing, what was just captured, what this stage has so far */
+.feed,.captured{padding:14px 16px}
+.feed-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.feed h2,.captured h2{font-size:15px;font-weight:600;margin:0}
+.feed h2 .num,.captured h2 .num{font-weight:500;color:var(--ink-2);margin-inline-start:4px;font-variant-numeric:tabular-nums}
+.feed-row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.feed-h + .feed-row{border-top:0}
+.fr-main{flex:1;min-width:0}
+.fr-main .fr-l{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;color:var(--ink-2)}
+.fr-main .fr-v{margin-top:2px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.fr-main .fr-was{font-size:12.5px;color:var(--ink-2);margin-top:2px}
+.fr-act{display:flex;gap:4px;flex:none}
+.fr-act button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;min-height:36px;padding:0 10px;font-size:13px}
+.fr-act button.ok{border-color:var(--accent);color:var(--accent)}
+.empty-note{font-size:13.5px;color:var(--ink-2);margin:4px 0 0}
+.cap-row{display:flex;align-items:baseline;gap:10px;width:100%;text-align:start;border:0;border-top:1px solid var(--line);background:none;padding:9px 0;color:var(--ink);font-size:14px;min-height:40px}
+.cap-row:first-of-type{border-top:0}
+.cap-row .k{flex:0 0 34%;color:var(--ink-2);font-size:13px}
+.cap-row .v{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cap-row .badge{flex:none}
+@media (hover:hover){.cap-row:hover .v{color:var(--accent)}}
+/* the form as a review: each stage is a group; the current one opens */
+.stg{margin:14px 0}
+.stg > summary{list-style:none;display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 0;border-bottom:1px solid var(--line)}
+.stg > summary::-webkit-details-marker{display:none}
+.stg > summary h2{font-size:17px;margin:0}
+.stg > summary .cnt{font-size:12px;font-weight:500;color:var(--ink-2);background:var(--surface-2);border-radius:999px;padding:1px 8px}
+.stg > summary .chev{margin-inline-start:auto;color:var(--ink-2);transition:transform .2s}
+.stg[open] > summary .chev{transform:rotate(90deg)}
+.stg > summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+/* recording continues while another screen is open */
+.recpill{display:flex;align-items:center;gap:10px;width:100%;border:0;background:var(--rec-soft);color:var(--ink);padding:10px 16px;font-size:14px;text-align:start}
+.recpill i{width:10px;height:10px;border-radius:50%;background:var(--rec);flex:none;animation:blink 1.4s infinite}
+.recpill b{font-variant-numeric:tabular-nums}
+.recpill span{margin-inline-start:auto;color:var(--accent);font-weight:600}
+@keyframes blink{50%{opacity:.35}}
+/* finish: stop → verify → save */
+.fin .step{padding:16px}
+.fin .step h2{font-size:16px;margin:0 0 4px;display:flex;align-items:center;gap:8px}
+.fin .step h2 .num{font-weight:500;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.fin .lead{color:var(--ink-2);font-size:14px;margin:0 0 6px}
+.vrow{padding:12px 0;border-top:1px solid var(--line)}
+.vrow:first-of-type{border-top:0}
+.vrow .vl{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;color:var(--ink-2)}
+.vrow textarea{width:100%;margin-top:6px;min-height:48px}
+.vrow .q{font-size:13px;color:var(--ink-2);margin-top:4px}
+.vrow .vb{display:flex;gap:8px;margin-top:8px}
+.vrow .vb button{min-height:38px}
+.fin .must{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.fin .saverow{display:flex;flex-direction:column;gap:10px;margin:18px 0 40px}
+.fin .note{font-size:13.5px;color:var(--ink-2);margin:0}
+.fin .err{background:var(--hl-must);color:var(--hl-must-ink);border-radius:12px;padding:12px 14px;font-size:14px}
+.fin .done{background:var(--hl-done);color:var(--hl-done-ink);border-radius:12px;padding:14px 16px;font-size:15px}
+.fin .done a{color:inherit;font-weight:600}
+@media (prefers-reduced-motion:reduce){.recpill i,.recbtn.on,.field.hit{animation:none}}
 </style>
 </head>
 <body>
@@ -417,6 +488,7 @@ const ICON = {
   back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>',
   mic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"/></svg>',
   stop: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>',
+  chev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M15 6l-6 6 6 6"/></svg>',
   play: '<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M8 5v14l11-7z"/></svg>',
   close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><path d="M6 6l12 12M18 6 6 18"/></svg>',
   pause: '<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>',
@@ -705,7 +777,7 @@ ${buildTranscript(fresh)}`;
     const d = new Date();
     setFillStatus(n ? `עודכנו ${n} שדות · ${pad(d.getHours())}:${pad(d.getMinutes())}` : `אין מידע חדש לטופס · ${pad(d.getHours())}:${pad(d.getMinutes())}`);
   } catch (e) {
-    if (e.name !== 'AbortError') setFillStatus('מילוי נכשל: ' + e.message, true);
+    if (e.name !== 'AbortError') setFillStatus(`המילוי נכשל: ${esc(humanErr(e))} <button class="linkbtn" data-act="fillNow">נסה שוב</button>`, true, true);
     lastFillAt = Date.now(); // back off before the next automatic attempt
   } finally {
     filling = false; fillAbort = null;
@@ -728,12 +800,14 @@ function applyUpdates(updates, transcriptText = '') {
     if (cur && cur.locked) continue;
     const val = String(u.value || '').trim(); if (!val) continue;
     if (cur && cur.value === val) continue;
+    if (cur && cur.rejected === val) continue; // the therapist undid exactly this value
     const verified = !hay || quoteFound(u.quote, hay);
     session.fields[u.id] = { value: val, source: 'ai', quote: String(u.quote || '').trim(), needsCheck: !!(def.critical || u.uncertain || !verified), unverified: !verified, locked: false, at: Date.now() };
+    session.recent = [{ id: u.id, at: Date.now(), prev: cur && cur.value ? { ...cur } : null }, ...(session.recent || []).filter(r => r.id !== u.id)].slice(0, 20);
     n++;
     refreshField(u.id, true);
   }
-  if (n) { refreshMissing(); refreshCounts(); }
+  if (n) { touch(); refreshLive(); refreshCounts(); }
   return n;
 }
 
@@ -897,7 +971,7 @@ function addSegment(text, manual = false, extra = {}) {
   if (extra.speaker != null) g.speaker = extra.speaker;
   if (extra.t0 > 0) g.t0 = Math.round(Math.min(extra.t0, g.t));
   session.segments.push(g);
-  saveSession();
+  touch();
   appendSegmentUI(g, session.segments.length - 1);
   refreshTabLabels();
   maybeFill();
@@ -1586,14 +1660,14 @@ async function runAnalysis() {
     }, { signal: analysisAbort.signal, onText: t => { out.innerHTML = md(t); } });
     if (session !== s) return;
     s.analysis = res.text; s.analysisAt = Date.now(); s.analysisKB = kb.docs.map(d => d.title);
-    saveSession(true);
+    saveSession(true); touch();
     out.innerHTML = md(res.text); renderTestLinks();
     st.innerHTML = (res.stop_reason === 'max_tokens' ? 'התשובה נקטעה באורך המקסימלי. ' : '') +
       `נוצר ${new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })} · עלות ≈ $${(res.cost || 0).toFixed(2)}` +
       `<div class="small muted">${kbLine}</div>` +
       (kb.problems.length ? `<div class="small" style="color:var(--warn)">${kb.problems.map(esc).join('<br>')}</div>` : '');
   } catch (e) {
-    if (e.name !== 'AbortError') st.innerHTML = `<span style="color:var(--rec)">${esc(e.message)}</span>`;
+    if (e.name !== 'AbortError') st.innerHTML = `<span style="color:var(--hl-must-ink)">הניתוח נכשל: ${esc(humanErr(e))}</span> <button class="linkbtn" data-act="analyze" data-retry="1">נסה שוב</button>`;
   } finally {
     btn.disabled = false; btn.textContent = 'הפק ניתוח מחדש'; analysisAbort = null;
   }
@@ -1629,6 +1703,7 @@ function sessionDocHtml(s) {
   const v = id => s.fields[id]?.value;
   let h = `<h1>מפגש — ${esc(s.patientName)}</h1>`;
   h += `<p>תאריך: ${fmtStamp(s.startedAt)} · אזור: ${esc(s.region)} · ${esc(s.type)}</p>`;
+  h += `<p>הסכמת המטופל להקלטה: ניתנה, ${fmtStamp(s.consentAt || s.startedAt)}</p>`;
   for (const sec of sectionsFor(s)) {
     h += `<h2>${esc(sec.title)}</h2>`;
     for (const f of sec.fields) {
@@ -1655,33 +1730,28 @@ function transcriptDocHtml(s) {
   }
   return `<html><head><meta charset="utf-8"></head><body dir="rtl">${rtl(h)}</body></html>`;
 }
-async function saveToDrive() {
+async function saveToDrive(onProgress = () => { }) {
   const s = session; if (!s) return;
-  const btn = $('#saveBtn'); if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spin"></span> שומר…'; }
-  try {
-    const root = await ensureRoot();
-    const folder = await ensurePatientFolder(root, s.patientName);
-    const stamp = fmtStamp(s.startedAt);
-    s.docId = await upsertDoc(s.docId, `מפגש ${stamp} — ${s.patientName}`, sessionDocHtml(s), folder);
-    if (s.segments.length) s.transcriptDocId = await upsertDoc(s.transcriptDocId, `תמלול ${stamp} — ${s.patientName}`, transcriptDocHtml(s), folder);
-    let parts = []; try { parts = await audioParts(s.id); } catch { }
-    s.audioIds = s.audioIds || {};
-    for (const p of parts) {
-      if (s.audioIds[p.part]?.size === p.blob.size) continue; // already in Drive, unchanged
-      if (btn) btn.innerHTML = `<span class="spin"></span> מעלה הקלטה${parts.length > 1 ? ' ' + p.part : ''} (${fmtBytes(p.blob.size)})…`;
-      const ext = /mp4/.test(p.mime) ? 'm4a' : /ogg/.test(p.mime) ? 'ogg' : 'webm';
-      const id = await uploadBlob(`הקלטה ${stamp}${parts.length > 1 ? ' חלק ' + p.part : ''} — ${s.patientName}.${ext}`, p.blob, folder, p.mime.split(';')[0], s.audioIds[p.part]?.id);
-      s.audioIds[p.part] = { id, size: p.blob.size };
-    }
-    s.folderId = folder; s.savedAt = Date.now();
-    upsertPatient({ name: s.patientName, folderId: folder, region: s.region, last: s.startedAt });
-    saveSession(true);
-    toast('נשמר ב-Drive: מטופלים › ' + s.patientName); renderAudioBox();
-  } catch (e) {
-    toast('השמירה נכשלה: ' + e.message, true, 7000);
-  } finally {
-    renderSaveBtn();
+  onProgress('מתחבר ל-Google…');
+  const root = await ensureRoot();
+  const folder = await ensurePatientFolder(root, s.patientName);
+  const stamp = fmtStamp(s.startedAt);
+  onProgress('שומר את מסמך המפגש…');
+  s.docId = await upsertDoc(s.docId, `מפגש ${stamp} — ${s.patientName}`, sessionDocHtml(s), folder);
+  if (s.segments.length) { onProgress('שומר את התמלול…'); s.transcriptDocId = await upsertDoc(s.transcriptDocId, `תמלול ${stamp} — ${s.patientName}`, transcriptDocHtml(s), folder); }
+  let parts = []; try { parts = await audioParts(s.id); } catch { }
+  s.audioIds = s.audioIds || {};
+  for (const p of parts) {
+    if (s.audioIds[p.part]?.size === p.blob.size) continue; // already in Drive, unchanged
+    onProgress(`מעלה הקלטה${parts.length > 1 ? ' ' + p.part : ''} (${fmtBytes(p.blob.size)})…`);
+    const ext = /mp4/.test(p.mime) ? 'm4a' : /ogg/.test(p.mime) ? 'ogg' : 'webm';
+    const id = await uploadBlob(`הקלטה ${stamp}${parts.length > 1 ? ' חלק ' + p.part : ''} — ${s.patientName}.${ext}`, p.blob, folder, p.mime.split(';')[0], s.audioIds[p.part]?.id);
+    s.audioIds[p.part] = { id, size: p.blob.size };
   }
+  s.folderId = folder; s.savedAt = Date.now(); s.changedAt = s.savedAt;
+  upsertPatient({ name: s.patientName, folderId: folder, region: s.region, last: s.startedAt });
+  saveSession(true); renderAudioBox(); renderSaveState();
+  return folder;
 }
 function downloadCopy() {
   const s = session; if (!s) return;
@@ -1700,9 +1770,72 @@ function upsertPatient(p) {
 }
 
 /* ---------------- views ---------------- */
-let view = session ? 'session' : 'home', tab = 'form';
+let view = session ? 'session' : 'home', tab = 'live';
 function go(v) { if (v !== 'session') stopPlayer(); view = v; render(); window.scrollTo(0, 0); }
+/* ---------------- finishing a session: stop, verify what the AI filled, save ---------------- */
+let fin = { phase: 'review', msg: '', err: '', filling: false };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function openFinish() {
+  if (!session) return;
+  const wasRec = recording;
+  fin = { phase: wasRec ? 'stopping' : 'review', msg: '', err: '', filling: false };
+  if (wasRec) stopRec();
+  go('finish');
+  if (wasRec) { await sleep(useSoniox() ? 5200 : 1200); fin.phase = 'review'; }
+  // whatever was said since the last fill goes into the form before the review
+  if (session && settings.apiKey && (filling || pendingChars())) {
+    fin.filling = true; if (view === 'finish') renderFinish();
+    if (filling) { while (filling) await sleep(300); } else await runFill();
+    fin.filling = false;
+  }
+  if (view === 'finish') renderFinish();
+}
+const needsReview = f => { const v = session.fields[f.id]; return v?.value && (v.needsCheck || v.unverified); };
+function verRowHtml(f) {
+  const v = session.fields[f.id];
+  return `<div class="vrow" id="v-${f.id}"><div class="vl"><b>${esc(shortLabel(f.label))}</b>${v.unverified ? '<span class="badge bad">לא נמצא בתמלול</span>' : '<span class="badge chk">לאמת</span>'}</div>
+    <textarea class="inp" id="vt-${f.id}" rows="2" aria-label="${esc(f.label)}">${esc(v.value)}</textarea>
+    ${v.quote ? `<div class="q">מקור בתמלול: «${esc(v.quote)}»</div>` : ''}
+    <div class="vb"><button class="btn primary" data-act="vConfirm" data-fid="${f.id}">אשר</button><button class="btn" data-act="vClear" data-fid="${f.id}">נקה את השדה</button></div></div>`;
+}
+function saveRowHtml(nv) {
+  const s = session;
+  if (fin.phase === 'saving') return `<button class="btn primary block" disabled><span class="spin"></span> ${esc(fin.msg || 'שומר…')}</button>`;
+  if (fin.phase === 'saved') return `<div class="done" role="status">נשמר ב-Drive · מטופלים › ${esc(s.patientName)} · ${hhmm(s.savedAt)}${s.folderId ? ` · <a href="https://drive.google.com/drive/folders/${encodeURIComponent(s.folderId)}" target="_blank" rel="noopener">פתח את התיקייה</a>` : ''}</div>
+    <button class="btn danger block" data-act="discard">סגור את המפגש ומחק אותו מהמכשיר</button>
+    <button class="btn block" data-act="resume">חזרה למפגש</button>`;
+  const err = fin.err ? `<div class="err" role="alert">השמירה נכשלה: ${esc(fin.err)}</div>` : '';
+  if (!settings.clientId) return err + `<div class="err">כדי לשמור ל-Drive צריך Google Client ID בהגדרות.</div><button class="btn block" data-act="settings">להגדרות</button>`;
+  return err + (nv ? `<p class="note">${nv === 1 ? 'שדה אחד שלא אומת יסומן' : nv + ' שדות שלא אומתו יסומנו'} במסמך כ"לא אומת".</p>` : '') +
+    `<button class="btn primary block" data-act="saveDrive" ${fin.phase !== 'review' || fin.filling ? 'disabled' : ''}>${fin.err ? 'נסה שוב' : s.savedAt ? 'עדכן ב-Drive' : 'שמור ל-Drive'}</button>
+    <button class="btn block" data-act="resume">חזרה למפגש</button>`;
+}
+function renderFinish() {
+  const s = session; if (!s) { view = 'home'; return renderHome(); }
+  const all = fieldsFor(s), ver = all.filter(needsReview), must = all.filter(f => !s.fields[f.id]?.value && impOf(f) === 1);
+  $('#app').innerHTML = `
+  <header class="top"><div class="wrap">
+    <button class="icon-btn" data-act="resume" aria-label="חזרה למפגש">${ICON.back}</button>
+    <div class="title"><h1>סיום מפגש</h1><span>${esc(s.patientName)} · ${esc(s.region)} · ${esc(s.type)}</span></div></div></header>
+  <main class="wrap fin">
+    <section class="card step" aria-labelledby="fRec"><h2 id="fRec">הקלטה</h2>
+      <p class="lead">${fin.phase === 'stopping' ? '<span class="spin"></span> עוצר את ההקלטה ומשלים את התמלול…' : `ההקלטה עצורה · ${fmtClock(s.recordedMs || 0)} · ${s.segments.length} שורות בתמלול`}</p>
+      ${fin.filling ? '<p class="lead"><span class="spin"></span> ממלא את הטופס ממה שנאמר בסוף…</p>' : ''}</section>
+    <section class="card step" aria-labelledby="fVer"><h2 id="fVer">לאימות <span class="num">${ver.length}</span></h2>
+      ${ver.length ? '<p class="lead">שדות שה-AI מילא וצריכים את האישור שלך. אפשר לתקן לפני האישור.</p>' + ver.map(verRowHtml).join('') : '<p class="lead">כל השדות שמולאו אומתו.</p>'}</section>
+    ${must.length ? `<section class="card step" aria-labelledby="fMust"><h2 id="fMust">שדות חובה שלא נאמרו <span class="num">${must.length}</span></h2>
+      <p class="lead">אם המטופל עוד כאן, זה הזמן לשאול.</p>
+      <div class="must">${must.map(f => `<button class="chip miss i1" data-act="jump" data-fid="${f.id}">${esc(shortLabel(f.label))}</button>`).join('')}</div></section>` : ''}
+    <section class="card step" aria-labelledby="fCon"><h2 id="fCon">הסכמה</h2>
+      <p class="lead">המטופל הסכים להקלטה · סומן ב-${hhmm(new Date(s.consentAt || s.startedAt).getTime())}. ההסכמה נרשמת במסמך המפגש.</p></section>
+    <section class="card step" aria-labelledby="fAn"><h2 id="fAn">ניתוח</h2>
+      <p class="lead">${s.analysis ? 'הניתוח הופק ב-' + hhmm(s.analysisAt) + ' ויישמר עם המפגש.' : 'עוד לא הופק ניתוח. אפשר לשמור בלעדיו ולהפיק אחר כך.'}</p>
+      ${s.analysis ? '' : '<button class="btn" data-act="toAnalysis">להפקת ניתוח</button>'}</section>
+    <div class="saverow" id="saveRow">${saveRowHtml(ver.length)}</div>
+  </main>`;
+}
 function render() {
+  if (view === 'finish' && session) return renderFinish();
   if (view === 'settings') return renderSettings();
   if (view === 'session' && session) return renderSession();
   return renderHome();
@@ -1715,6 +1848,7 @@ function renderHome() {
     ${MAP_URL ? `<a class="icon-btn" href="${MAP_URL}" aria-label="מפת הדרך" title="מפת הדרך">${ICON.map}</a>` : ''}
     <button class="icon-btn" data-act="cycleTheme" aria-label="מצב תצוגה">${ICON.eye}</button>
     <button class="icon-btn" data-act="settings" aria-label="הגדרות">${ICON.gear}</button></div></header>
+  ${recPillHtml()}
   <main class="wrap">
     ${envProblem() ? `<div class="banner warn">${esc(envProblem())}</div>` : ''}
     ${needSetup ? `<div class="banner warn">כדי להתחיל צריך להגדיר מפתח Claude API ו-Google Client ID. <a href="#" data-act="settings">להגדרות</a></div>` : ''}
@@ -1754,9 +1888,9 @@ function renderSession() {
     <div class="ctl">
       <div class="recbar">
         <button class="recbtn" id="recBtn" data-act="rec" aria-label="הקלטה">${ICON.mic}</button>
-        <div class="rec-meta"><div class="timer" id="timer">00:00</div><div class="state" id="recState">מוכן להקלטה</div></div>
+        <div class="rec-meta"><div class="timer" id="timer">00:00</div><div class="state" id="recState" aria-live="polite">מוכן להקלטה</div></div>
       </div>
-      <div class="stages" id="stageChips" role="group" aria-label="שלב המפגש">${STAGES.map(x => `<button class="chip ${s.stage === x.id ? 'on' : ''}" data-act="stage" data-stage="${x.id}">${x.label}</button>`).join('')}</div>
+      <div class="stages" id="stageChips" role="group" aria-label="שלב המפגש">${STAGES.map(x => `<button class="chip ${s.stage === x.id ? 'on' : ''}" data-act="stage" data-stage="${x.id}" aria-pressed="${s.stage === x.id}">${x.label}</button>`).join('')}</div>
     </div>
     <div class="tools">
       ${MAP_URL ? `<a class="icon-btn" href="${mapLink(s.region)}" target="_blank" rel="noopener" aria-label="מפת הדרך לאזור" title="מפת הדרך לאזור">${ICON.map}</a>` : ''}
@@ -1765,20 +1899,21 @@ function renderSession() {
     </div>
   </div>
   <div class="wrap sub">
-    <nav class="tabs" id="tabs">
-      <button data-act="tab" data-tab="form">טופס</button>
-      <button data-act="tab" data-tab="transcript">תמלול</button>
-      <button data-act="tab" data-tab="analysis">ניתוח</button>
+    <nav class="tabs" id="tabs" role="tablist" aria-label="תצוגות המפגש">
+      <button role="tab" data-act="tab" data-tab="live" aria-controls="tabBody">מפגש</button>
+      <button role="tab" data-act="tab" data-tab="form" aria-controls="tabBody">טופס</button>
+      <button role="tab" data-act="tab" data-tab="transcript" aria-controls="tabBody">תמלול</button>
+      <button role="tab" data-act="tab" data-tab="analysis" aria-controls="tabBody">ניתוח</button>
     </nav>
-    <div class="status" id="fillStatus"></div>
+    <div class="status" id="fillStatus" role="status" aria-live="polite"></div>
   </div></header>
   <div class="wrap split">
-    <main class="tabbody" id="tabBody"></main>
+    <main class="tabbody" id="tabBody" role="tabpanel"></main>
     ${wide ? `<aside class="side" id="sidePane" aria-label="תמלול"></aside>` : ''}
   </div>
   <footer class="actions"><div class="wrap">
-    <button class="btn" data-act="fillNow">${ICON.spark} מלא עכשיו</button>
-    <button class="btn primary" id="saveBtn" data-act="save"></button>
+    <span class="savestate" id="saveState" role="status"></span>
+    <button class="btn" data-act="finish">סיום מפגש</button>
   </div></footer>`;
   renderRecState(); renderSaveBtn(); renderTab(); renderSide(); refreshTabLabels(); tickTimer();
   setFillStatus(lastStatus.html, lastStatus.err, lastStatus.raw);
@@ -1832,10 +1967,12 @@ async function renderTestLinks() {
     <div class="chips">${found.map(([id, n]) => `<a class="chip" href="${mapLink(homeOf(id) || session.region, id)}" target="_blank" rel="noopener">${esc(n)}</a>`).join('')}</div></div>` : '';
 }
 function renderTab() {
-  if (wide && tab === 'transcript') tab = 'form';
-  $$('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  if (wide && tab === 'transcript') tab = 'live';
+  $$('#tabs button').forEach(b => { const on = b.dataset.tab === tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; });
   const body = $('#tabBody'); if (!body) return;
-  if (tab === 'form') body.innerHTML = formHtml();
+  body.setAttribute('aria-label', $(`#tabs [data-tab="${tab}"]`)?.textContent || '');
+  if (tab === 'live') body.innerHTML = liveHtml();
+  else if (tab === 'form') body.innerHTML = formHtml();
   else if (tab === 'transcript') body.innerHTML = transcriptHtml();
   else { body.innerHTML = analysisHtml(); renderTestLinks(); }
   if (tab === 'form') $$('#tabBody textarea').forEach(autosize);
@@ -1847,6 +1984,62 @@ function refreshTabLabels() {
   $('#tabs [data-tab="form"]').textContent = `טופס (${filled}/${all.length})`;
   $('#tabs [data-tab="transcript"]').textContent = `תמלול (${session.segments.length})`;
   const sc = $('#sideCount'); if (sc) sc.textContent = session.segments.length;
+}
+/* ---------------- the live tab: a glance at the conversation ---------------- */
+const FEED_N = 4;
+function feedHtml() {
+  const s = session, rows = (s.recent || []).filter(r => s.fields[r.id]?.value && s.fields[r.id].source === 'ai').slice(0, FEED_N);
+  const t = ms => { const d = new Date(ms); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+  return `<section class="card feed" id="feed" aria-labelledby="feedH">
+    <div class="feed-h"><h2 id="feedH">נקלט עכשיו</h2><button class="linkbtn" data-act="fillNow">מלא עכשיו</button></div>
+    ${rows.length ? rows.map(r => {
+      const f = FIELD[r.id], v = s.fields[r.id];
+      return `<div class="feed-row">
+        <div class="fr-main"><div class="fr-l"><b>${esc(shortLabel(f.label))}</b> <span>${t(r.at)}</span>
+          ${v.needsCheck ? '<span class="badge chk">לאמת</span>' : ''}${v.unverified ? '<span class="badge bad">לא נמצא בתמלול</span>' : ''}</div>
+          <div class="fr-v">${esc(v.value)}</div>
+          ${r.prev ? `<div class="fr-was">היה: ${esc(String(r.prev.value).slice(0, 80))}</div>` : ''}</div>
+        <div class="fr-act">
+          ${v.needsCheck ? `<button class="ok" data-act="confirm" data-fid="${r.id}">אשר</button>` : ''}
+          <button data-act="edit" data-fid="${r.id}">ערוך</button>
+          <button data-act="undo" data-fid="${r.id}" aria-label="בטל את המילוי של ${esc(shortLabel(f.label))}">בטל</button>
+        </div></div>`;
+    }).join('') : `<p class="empty-note">כשה-AI ימלא שדה מתוך השיחה, הוא יופיע כאן לאישור, לעריכה או לביטול.</p>`}
+  </section>`;
+}
+function capturedHtml() {
+  const s = session, st = STAGES.find(x => x.id === s.stage) || STAGES[0];
+  const got = sectionsFor(s).filter(sec => st.sections.includes(sec.id)).flatMap(sec => sec.fields).filter(f => s.fields[f.id]?.value && f.id !== 'name');
+  return `<section class="card captured" aria-labelledby="capH"><h2 id="capH">נאסף ב${esc(st.label)} <span class="num">${got.length}</span></h2>
+    ${got.length ? got.map(f => { const v = s.fields[f.id];
+      return `<button class="cap-row" data-act="jump" data-fid="${f.id}"><span class="k">${esc(shortLabel(f.label))}</span><span class="v">${esc(v.value)}</span>${v.unverified ? '<span class="badge bad">לא נמצא</span>' : v.needsCheck ? '<span class="badge chk">לאמת</span>' : ''}</button>`; }).join('')
+      : `<p class="empty-note">עוד לא נאסף מידע בשלב הזה.</p>`}
+  </section>`;
+}
+function liveHtml() { return missingHtml() + feedHtml() + capturedHtml(); }
+// a session changed since it was last saved to Drive
+function touch() { if (session) { session.changedAt = Date.now(); saveSession(); renderSaveState(); } }
+const hhmm = ms => { const d = new Date(ms); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+function renderSaveState() {
+  const el = $('#saveState'); if (!el || !session) return;
+  const s = session, saved = s.savedAt ? new Date(s.savedAt).getTime() : 0;
+  let cls = '', txt = 'נשמר במכשיר · עוד לא ב-Drive';
+  if (saved && (s.changedAt || 0) <= saved) { cls = 'ok'; txt = 'נשמר ב-Drive · ' + hhmm(saved); }
+  else if (saved) { cls = 'dirty'; txt = 'יש שינויים שלא נשמרו ב-Drive · נשמר ' + hhmm(saved); }
+  el.className = 'savestate ' + cls; el.innerHTML = `<i aria-hidden="true"></i>${txt}`;
+}
+// errors in the therapist's words, with what to do next
+function humanErr(e) {
+  const m = String(e?.message || e || '');
+  if (e?.name === 'TypeError' || /failed to fetch|networkerror|load failed|network/i.test(m)) return 'אין חיבור לשרת. בדוק את האינטרנט ונסה שוב.';
+  if (/Drive 401|invalid_grant|נדרשת התחברות/.test(m)) return 'החיבור ל-Google פג. נסה שוב והתחבר מחדש.';
+  if (/Drive 403/.test(m)) return 'ל-Google אין הרשאה לשמור בתיקייה. נסה שוב, או בדוק את ההתחברות בהגדרות.';
+  if (/Drive 5\d\d/.test(m)) return 'Google Drive לא זמין כרגע. נסה שוב בעוד רגע.';
+  return m;
+}
+function recPillHtml() {
+  if (!recording || !session) return '';
+  return `<button class="recpill" data-act="resume"><i aria-hidden="true"></i>מקליט · ${esc(session.patientName)} · <b id="pillTime">${fmtClock((session.recordedMs || 0) + (recSince ? Date.now() - recSince : 0))}</b><span>חזרה למפגש</span></button>`;
 }
 // how much an unanswered field matters in the "still not said" list: 1 must ask, 2 important, 3 useful (anything not listed)
 const IMPORTANCE = {
@@ -1872,13 +2065,13 @@ function missingFields(s) {
 }
 function missingHtml() {
   const m = missingFields(session);
-  if (!m.length) return `<div class="banner info" id="missing">כל השדות בשלב הזה מולאו</div>`;
+  if (!m.length) return `<div class="banner info" id="missing">כל השדות בשלב ${esc(STAGES.find(x => x.id === session.stage)?.label || '')} מולאו</div>`;
   const n = k => m.filter(x => x.imp === k).length;
   const n3 = n(3);
   return `<section class="card missing${missOpen ? ' open' : ''}" id="missing" aria-labelledby="missH">
-    <div class="miss-h"><h2 id="missH">עוד לא נאמר <span class="num">${m.length}</span></h2>
+    <div class="miss-h"><h2 id="missH">עוד לא נאמר · ${esc(STAGES.find(x => x.id === session.stage)?.label || '')} <span class="num">${m.length}</span></h2>
       <div class="miss-key">${[1, 2, 3].filter(n).map(k => `<span class="i${k}"><i></i>${IMP_LABEL[k]} ${n(k)}</span>`).join('')}</div></div>
-    <div class="chips">${m.map(({ f, imp }) => `<button class="chip miss i${imp}" data-act="jump" data-fid="${f.id}" title="${IMP_LABEL[imp]}">${esc(shortLabel(f.label))}</button>`).join('')}${n3 ? `<button class="chip miss-more" data-act="missMore" aria-expanded="false">+${n3} ${IMP_LABEL[3]}</button>` : ''}</div></section>`;
+    <div class="chips">${m.map(({ f, imp }) => `<button class="chip miss i${imp}" data-act="jump" data-fid="${f.id}" title="${IMP_LABEL[imp]}" aria-label="${esc(shortLabel(f.label))}, ${IMP_LABEL[imp]}">${esc(shortLabel(f.label))}</button>`).join('')}${n3 ? `<button class="chip miss-more" data-act="missMore" aria-expanded="false">+${n3} ${IMP_LABEL[3]}</button>` : ''}</div></section>`;
 }
 function fieldHtml(f) {
   const v = session.fields[f.id] || {};
@@ -1888,7 +2081,7 @@ function fieldHtml(f) {
     v.value && v.needsCheck ? '<span class="badge chk">לאמת</span>' : '',
     v.value && v.unverified ? '<span class="badge bad" title="המודל ציטט מילים שלא נמצאו בתמלול">לא נמצא בתמלול</span>' : ''
   ].join('');
-  return `<div class="field" id="f-${f.id}">
+  return `<div class="field${v.value ? '' : ' empty'}" id="f-${f.id}">
     <label for="t-${f.id}">${esc(f.label)} ${badges}</label>
     <textarea id="t-${f.id}" data-fid="${f.id}" rows="1" placeholder="—">${esc(v.value || '')}</textarea>
     ${v.value && (v.quote || v.needsCheck || v.locked) ? `<div class="fmeta">
@@ -1898,12 +2091,31 @@ function fieldHtml(f) {
     </div><div class="quote" id="q-${f.id}" hidden>«${esc(v.quote || '')}»</div>` : ''}
   </div>`;
 }
+// the form is the review: one group per stage, the current stage open, empty fields as one-line rows
+let openStages = new Set([session?.stage || 'anamnesis']);
 function formHtml() {
-  const s = session;
-  return missingHtml() + sectionsFor(s).map(sec => {
-    const n = sec.fields.filter(f => s.fields[f.id]?.value).length;
-    return `<section class="sec" id="sec-${sec.id}"><h3>${esc(sec.title)} <span class="cnt" id="cnt-${sec.id}">${n}/${sec.fields.length}</span></h3><div class="fields">${sec.fields.map(fieldHtml).join('')}</div></section>`;
+  const s = session, secs = sectionsFor(s);
+  return STAGES.map(st => {
+    const mine = secs.filter(sec => st.sections.includes(sec.id)); if (!mine.length) return '';
+    const all = mine.flatMap(sec => sec.fields), n = all.filter(f => s.fields[f.id]?.value).length;
+    return `<details class="stg" id="stg-${st.id}" data-stage="${st.id}" ${openStages.has(st.id) ? 'open' : ''}>
+      <summary><h2>${st.label}</h2><span class="cnt" id="scnt-${st.id}">${n}/${all.length}</span><span class="chev" aria-hidden="true">${ICON.chev}</span></summary>
+      ${mine.map(sec => {
+        const k = sec.fields.filter(f => s.fields[f.id]?.value).length;
+        return `<section class="sec" id="sec-${sec.id}"><h3>${esc(sec.title)} <span class="cnt" id="cnt-${sec.id}">${k}/${sec.fields.length}</span></h3><div class="fields">${sec.fields.map(fieldHtml).join('')}</div></section>`;
+      }).join('')}
+    </details>`;
   }).join('');
+}
+const stageOfField = id => { const sec = sectionsFor(session).find(x => x.fields.some(f => f.id === id)); return STAGES.find(st => st.sections.includes(sec?.id))?.id; };
+// a missing chip or a captured row: show the field without raising the keyboard; editing is a tap on the field itself
+function jumpTo(id, edit = false) {
+  if (tab !== 'form') { const st = stageOfField(id); if (st) openStages.add(st); tab = 'form'; renderTab(); }
+  const g = $('#stg-' + stageOfField(id)); if (g && !g.open) g.open = true;
+  const el = $('#f-' + id); if (!el) return;
+  el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  el.classList.remove('hit'); void el.offsetWidth; el.classList.add('hit');
+  if (edit) setTimeout(() => $('#t-' + id)?.focus({ preventScroll: true }), 350);
 }
 function refreshField(id, flash = false) {
   if (tab !== 'form') return;
@@ -1915,15 +2127,22 @@ function refreshField(id, flash = false) {
   autosize($('#t-' + id));
   if (flash) { fresh.classList.add('flash'); setTimeout(() => fresh.classList.remove('flash'), 1400); }
 }
-function refreshMissing() {
-  const el = $('#missing'); if (!el || tab !== 'form') return;
-  const tmp = document.createElement('div'); tmp.innerHTML = missingHtml(); el.replaceWith(tmp.firstElementChild);
+function refreshMissing() { refreshLive(); }
+// the live tab is cheap to rebuild; keep the reader's scroll position
+function refreshLive() {
+  if (tab !== 'live' || !$('#tabBody')) return;
+  const y = window.scrollY; $('#tabBody').innerHTML = liveHtml(); window.scrollTo(0, y);
 }
 function refreshCounts() {
   refreshTabLabels();
   if (tab !== 'form') return;
   for (const sec of sectionsFor(session)) {
     const c = $('#cnt-' + sec.id); if (c) c.textContent = `${sec.fields.filter(f => session.fields[f.id]?.value).length}/${sec.fields.length}`;
+  }
+  for (const st of STAGES) {
+    const c = $('#scnt-' + st.id); if (!c) continue;
+    const all = sectionsFor(session).filter(sec => st.sections.includes(sec.id)).flatMap(sec => sec.fields);
+    c.textContent = `${all.filter(f => session.fields[f.id]?.value).length}/${all.length}`;
   }
 }
 function segHtml(g, i, prevStage) {
@@ -1978,11 +2197,7 @@ function renderRecState() {
   if (st) st.textContent = recording ? 'מקליט · ' + (STAGES.find(x => x.id === session.stage)?.label || '') + (useSoniox() ? ' · Soniox' : '')
     : (useSoniox() || SR ? 'מוכן להקלטה' : 'זיהוי דיבור לא נתמך בדפדפן הזה');
 }
-function renderSaveBtn() {
-  const b = $('#saveBtn'); if (!b || !session) return;
-  b.disabled = false;
-  b.innerHTML = `${ICON.drive} ${session.savedAt ? 'עדכן ב-Drive' : 'שמור ל-Drive'}`;
-}
+function renderSaveBtn() { renderSaveState(); }
 let lastStatus = { html: '', err: false, raw: false };
 function setFillStatus(text, err = false, raw = false) {
   lastStatus = { html: text, err, raw };
@@ -1991,9 +2206,10 @@ function setFillStatus(text, err = false, raw = false) {
   if (raw) el.innerHTML = text; else el.textContent = text;
 }
 function tickTimer() {
-  const el = $('#timer'); if (!el || !session) return;
+  if (!session) return;
   const ms = (session.recordedMs || 0) + (recording && recSince ? Date.now() - recSince : 0);
-  el.textContent = fmtClock(ms);
+  const el = $('#timer'); if (el) el.textContent = fmtClock(ms);
+  const p = $('#pillTime'); if (p) p.textContent = fmtClock(ms);
 }
 setInterval(() => {
   tickTimer(); if (view === 'session') maybeFill();
@@ -2007,6 +2223,7 @@ function renderSettings() {
   $('#app').innerHTML = `
   <header class="top"><div class="wrap">
     <button class="icon-btn" data-act="back" aria-label="חזרה">${ICON.back}</button><h1>הגדרות</h1></div></header>
+  ${recPillHtml()}
   <main class="wrap cols2" style="padding-bottom:40px">
     <div class="card"><h2>תצוגה</h2>
       <div class="seg-pick" role="group" aria-label="מצב תצוגה">${THEMES.map(([id, label]) => `<button data-act="theme" data-theme="${id}" class="${getTheme() === id ? 'on' : ''}">${label}</button>`).join('')}</div>
@@ -2084,7 +2301,7 @@ document.addEventListener('click', async e => {
     case 'home': go('home'); break;
     case 'resume': go('session'); break;
     case 'discard':
-      if (session && !session.savedAt && !confirm('המפגש לא נשמר ב-Drive. לסגור בכל זאת? הנתונים יימחקו מהטלפון.')) return;
+      if (session && (!session.savedAt || (session.changedAt || 0) > new Date(session.savedAt).getTime()) && !confirm('יש במפגש דברים שלא נשמרו ב-Drive. לסגור בכל זאת? הם יימחקו מהמכשיר.')) return;
       if (recording) stopRec();
       stopPlayer();
       if (session) audioDelete(session.id);
@@ -2093,13 +2310,38 @@ document.addEventListener('click', async e => {
     case 'start': startSession(); break;
     case 'rec': recording ? stopRec() : startRec(); break;
     case 'stage':
-      session.stage = t.dataset.stage; saveSession();
-      $$('#stageChips .chip').forEach(c => c.classList.toggle('on', c.dataset.stage === session.stage));
-      renderRecState(); refreshMissing(); break;
+      session.stage = t.dataset.stage; saveSession(); openStages.add(session.stage);
+      $$('#stageChips .chip').forEach(c => { const on = c.dataset.stage === session.stage; c.classList.toggle('on', on); c.setAttribute('aria-pressed', on); });
+      { const g = $('#stg-' + session.stage); if (g) g.open = true; }
+      renderRecState(); refreshLive(); break;
     case 'tab': tab = t.dataset.tab; renderTab(); break;
-    case 'jump': { const el = $('#f-' + t.dataset.fid); if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); $('#t-' + t.dataset.fid)?.focus({ preventScroll: true }); } break; }
+    case 'jump': if (view !== 'session') { view = 'session'; render(); } jumpTo(t.dataset.fid); break;
+    case 'edit': jumpTo(t.dataset.fid, true); break;
+    case 'undo': {
+      const id = t.dataset.fid, cur = session.fields[id], r = (session.recent || []).find(x => x.id === id);
+      session.fields[id] = r?.prev ? { ...r.prev, rejected: cur?.value } : { value: '', locked: false, rejected: cur?.value };
+      session.recent = (session.recent || []).filter(x => x.id !== id);
+      touch(); refreshField(id); refreshLive(); refreshCounts(); toast('המילוי בוטל. אותו ערך לא יוכנס שוב אוטומטית.', false, 2600); break;
+    }
     case 'quote': { const q = $('#q-' + t.dataset.fid); if (q) q.hidden = !q.hidden; break; }
-    case 'confirm': { const f = session.fields[t.dataset.fid]; if (f) { f.needsCheck = false; f.unverified = false; saveSession(); refreshField(t.dataset.fid); } break; }
+    case 'confirm': { const f = session.fields[t.dataset.fid]; if (f) { f.needsCheck = false; f.unverified = false; touch(); refreshField(t.dataset.fid); refreshLive(); } break; }
+    case 'vConfirm': {
+      const id = t.dataset.fid, f = session.fields[id], val = ($('#vt-' + id)?.value || '').trim(); if (!f) break;
+      if (!val) { session.fields[id] = { value: '', locked: false, rejected: f.value }; }
+      else if (val !== f.value) session.fields[id] = { ...f, value: val, source: 'manual', locked: true, needsCheck: false, unverified: false, at: Date.now() };
+      else { f.needsCheck = false; f.unverified = false; }
+      touch(); renderFinish(); break;
+    }
+    case 'vClear': { const id = t.dataset.fid, f = session.fields[id]; session.fields[id] = { value: '', locked: false, rejected: f?.value }; touch(); renderFinish(); break; }
+    case 'finish': openFinish(); break;
+    case 'toAnalysis': view = 'session'; tab = 'analysis'; render(); break;
+    case 'saveDrive': {
+      fin.phase = 'saving'; fin.err = ''; fin.msg = ''; const row = () => $('#saveRow');
+      if (row()) row().innerHTML = saveRowHtml(0);
+      try { await saveToDrive(m => { fin.msg = m; if (row()) row().innerHTML = saveRowHtml(0); }); fin.phase = 'saved'; }
+      catch (e) { fin.phase = 'review'; fin.err = humanErr(e); }
+      if (view === 'finish') renderFinish(); break;
+    }
     case 'unlock': { const f = session.fields[t.dataset.fid]; if (f) { f.locked = false; saveSession(); refreshField(t.dataset.fid); } break; }
     case 'fillNow':
       if (!settings.apiKey) { toast('חסר מפתח Claude API — הוסף בהגדרות', true); return; }
@@ -2115,7 +2357,7 @@ document.addEventListener('click', async e => {
       break;
     case 'plSeek': if (PL.audio) { PL.audio.currentTime = Math.max(0, PL.audio.currentTime + +t.dataset.d); renderPlayerTime(); } break;
     case 'plClose': stopPlayer(); break;
-    case 'analyze': runAnalysis(); break;
+    case 'analyze': if (session?.analysis && !t.dataset.retry && !confirm('להחליף את הניתוח הקיים בניתוח חדש?')) break; runAnalysis(); break;
     case 'download': downloadCopy(); break;
     case 'copyLog': {
       const dump = JSON.stringify({ ua: navigator.userAgent, engine: settings.engine, continuous: settings.continuous, lang: settings.lang, saveAudio: settings.saveAudio, events: rawLog }, null, 1);
@@ -2126,9 +2368,7 @@ document.addEventListener('click', async e => {
       }
       break;
     }
-    case 'save':
-      if (!settings.clientId) { toast('חסר Google Client ID בהגדרות', true); return; }
-      saveToDrive(); break;
+    case 'save': openFinish(); break;
     case 'testKey': testKey(t); break;
     case 'testDrive': testDrive(t); break;
     case 'testSoniox': testSoniox(t); break;
@@ -2149,6 +2389,17 @@ document.addEventListener('click', async e => {
       location.reload(); break;
   }
 });
+document.addEventListener('keydown', e => {
+  const t = e.target; if (!t.matches?.('#tabs [role=tab]')) return;
+  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+  const tabs = $$('#tabs [role=tab]').filter(b => b.offsetParent), i = tabs.indexOf(t);
+  const j = e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : (i + (e.key === 'ArrowLeft' ? 1 : -1) + tabs.length) % tabs.length;
+  e.preventDefault(); tab = tabs[j].dataset.tab; renderTab(); $(`#tabs [data-tab="${tab}"]`)?.focus();
+});
+document.addEventListener('toggle', e => {
+  const d = e.target; if (!d.matches?.('details.stg')) return;
+  if (d.open) openStages.add(d.dataset.stage); else openStages.delete(d.dataset.stage);
+}, true);
 document.addEventListener('input', e => {
   const t = e.target;
   if (t.matches('#tabBody textarea[data-fid]')) {
@@ -2156,7 +2407,7 @@ document.addEventListener('input', e => {
     const id = t.dataset.fid, val = t.value;
     session.fields[id] = { ...(session.fields[id] || {}), value: val, source: 'manual', locked: true, needsCheck: false, at: Date.now() };
     if (!val.trim()) session.fields[id] = { value: '', locked: false };
-    saveSession(); refreshCounts();
+    touch(); refreshCounts();
   }
 });
 document.addEventListener('focusout', e => {
@@ -2172,12 +2423,12 @@ function startSession() {
   const p = patients.find(x => x.name === name);
   session = {
     id: Date.now().toString(36), patientName: name, region: $('#pRegion').value, type: $('#pType').value,
-    consent: true, startedAt: new Date().toISOString(), stage: 'anamnesis', segments: [], processed: 0,
+    consent: true, consentAt: new Date().toISOString(), startedAt: new Date().toISOString(), stage: 'anamnesis', segments: [], processed: 0,
     fields: { name: { value: name, source: 'manual', locked: true } }, analysis: '', cost: 0,
     folderId: p?.folderId || null
   };
   upsertPatient({ name, region: session.region, last: session.startedAt });
-  saveSession(true); tab = 'form'; lastStatus = { html: '', err: false, raw: false };
+  saveSession(true); tab = 'live'; openStages = new Set([session.stage]); lastStatus = { html: '', err: false, raw: false };
   loadTestNames();
   go('session');
 }
