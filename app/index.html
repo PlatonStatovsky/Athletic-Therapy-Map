@@ -1977,6 +1977,7 @@ function renderSettings() {
       <div id="sonioxBox" ${st.engine === 'soniox' ? '' : 'hidden'}>
         <label class="lbl" for="sAccess">קוד גישה לתמלול (מוגדר בשרת ב-Cloudflare)</label>
         <input id="sAccess" class="inp ltr" type="password" autocomplete="off" value="${esc(st.accessCode)}">
+        <button class="btn block" style="margin-top:12px" data-act="testSoniox">בדוק חיבור ל-Soniox</button>
         <p class="muted small">Soniox עובד רק מהכתובת של האתר ב-Cloudflare: מפתח החשבון נשמר שם בשרת, והמכשיר מקבל מפתח זמני לכל חיבור.</p>
       </div>
       <label class="check"><input type="checkbox" id="sAudio" ${st.saveAudio ? 'checked' : ''}><span>שמור את ההקלטה (אודיו) — במכשיר עד סגירת המפגש, וב-Drive יחד עם המפגש</span></label>
@@ -2053,6 +2054,7 @@ document.addEventListener('click', async e => {
       saveToDrive(); break;
     case 'testKey': testKey(t); break;
     case 'testDrive': testDrive(t); break;
+    case 'testSoniox': testSoniox(t); break;
     case 'refreshKb': refreshKb(t); break;
     case 'theme': setTheme(t.dataset.theme); break;
     case 'cycleTheme': {
@@ -2109,6 +2111,36 @@ async function testKey(btn) {
     toast('המפתח תקין ✓ ' + ((r.content || []).find(b => b.type === 'text')?.text || ''));
   } catch (e) { toast(e.message, true, 6000); }
   finally { btn.disabled = false; btn.textContent = 'בדוק מפתח'; }
+}
+// the whole path, end to end: access code → the site's function → temporary key → a Soniox session
+// that gets half a second of silence and is closed at once (costs a fraction of a cent, no microphone)
+async function testSoniox(btn) {
+  const f = $('#sAccess'); if (f) { settings.accessCode = f.value.trim(); saveSettings(); }
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> בודק…';
+  try {
+    if (!settings.accessCode) throw new Error('חסר קוד גישה לתמלול');
+    const key = await sonioxKey();
+    await new Promise((resolve, reject) => {
+      let settled = false;
+      const ws = new WebSocket('wss://stt-rt.soniox.com/transcribe-websocket', ['soniox-api-key', key]);
+      const end = (err) => { if (settled) return; settled = true; clearTimeout(tm); try { ws.close(); } catch { } err ? reject(err) : resolve(); };
+      const tm = setTimeout(() => end(new Error('Soniox לא ענה תוך 15 שניות')), 15000);
+      ws.onopen = () => {
+        ws.send(JSON.stringify({ model: 'stt-rt-v5', audio_format: 'pcm_s16le', sample_rate: 16000, num_channels: 1, language_hints: ['he', 'en'] }));
+        ws.send(new Uint8Array(16000)); // 0.5 s of silence
+        ws.send('');
+      };
+      ws.onmessage = ev => {
+        let m; try { m = JSON.parse(ev.data); } catch { return; }
+        if (m.error_code) end(new Error(m.error_code === 402 ? 'אין יתרה בחשבון Soniox' : `Soniox ${m.error_code}: ${m.error_message || m.error_type || ''}`));
+        else if (m.finished) end();
+      };
+      ws.onerror = () => { };
+      ws.onclose = ev => end(new Error(`החיבור ל-Soniox נסגר בלי תשובה (קוד ${ev.code})`));
+    });
+    toast('החיבור ל-Soniox תקין ✓ קוד הגישה, המפתח בשרת והחשבון עובדים');
+  } catch (e) { toast(e.message, true, 8000); }
+  finally { btn.disabled = false; btn.textContent = 'בדוק חיבור ל-Soniox'; }
 }
 async function testDrive(btn) {
   btn.disabled = true; btn.innerHTML = '<span class="spin"></span> מתחבר…';
