@@ -485,6 +485,7 @@ p.evd{margin:0; color:var(--ev); font-weight:700; font-size:calc(15px * var(--fs
   .region-head h2{font-size:calc(28px * var(--fs))}
   .tools{flex:1 1 100%; min-width:0; flex-wrap:wrap; gap:8px; justify-content:space-between}
   .tlabel{display:none}
+  .tbl td:first-child{white-space:normal; min-width:6.5em}
 }
 @media (max-width:480px){
   .seg.theme button{padding:6px 10px; gap:5px; font-size:calc(13px * var(--fs))}
@@ -656,7 +657,7 @@ const T = {
 
 
 const GENERAL = {
-  intro: "שמונת השלבים של כל מפגש, מהטלפון הראשון ועד השחרור. כל אזור רץ על אותו שלד; העקרונות שמאחוריו — בלשונית ״עקרונות״.",
+  intro: "שמונת השלבים של כל מפגש, מהטלפון הראשון ועד השחרור. כל אזור רץ על אותו שלד; העקרונות שמאחוריו — בלשונית ״עקרונות״, והידע על כל רקמה — בלשונית ״רקמות״.",
   steps: [
     {
       t: "שיחת הכנה", sub: "סינון, בטיחות, הכנה",
@@ -727,7 +728,10 @@ const GENERAL = {
       body: [
         { li: ["טיפול בליקויים — לא באבחנה", "התאמה לשלב ההחלמה", "Progressive Overload", "ספציפיות לתפקוד; אינדיבידואליות למטופל", "שליטה בכאב: כאב הוא חלק מהשיקום, לא תוצאתו", "איזון בין כוח, ROM, יציבות ושליטה", "בטיחות וניהול סיכונים; חינוך ושיתוף פעולה", "קריטריונים להתקדמות: כשנשיג X ← נתקדם ל־Y"] },
         { h: "Test ← Treat ← Retest: שינוי בכאב, בטווח, בכוח, בתנועה או במשימה תפקודית", key: true },
-        { h: "בעקרונות: ניהול עומס, מגנים וסדים, חזרה לספורט", go: "st-found-4" }
+        { h: "בעקרונות: ניהול עומס, מגנים וסדים, חזרה לספורט", go: "st-found-4" },
+        { h: "בעקרונות: פגיעה חריפה — PEACE & LOVE, קרח וחום", go: "st-found-5" },
+        { h: "ברקמות: עצם — החלמה, אוסטאופורוזיס, שבר מאמץ", go: "st-tissue-1" },
+        { h: "ברקמות: שריר — קרע, שלבי החלמה, סרקופניה", go: "st-tissue-2" }
       ],
       dec: { q: "יש תגובה טיפולית חיובית ונסבלת?", yes: "המשך טיפול והתקדמות הדרגתית בעומס ובמורכבות", no: "התאמת מינון, שינוי התערבות או בחינה מחדש של האבחנה", yesGood: true }
     },
@@ -1059,7 +1063,7 @@ const VIDS = {
   tug: { v: "https://www.youtube.com/watch?v=brhnt4KM_Oc", ch: "Mission Gait" },
   berg: { v: "https://www.youtube.com/watch?v=hZ8YpcOo9Is", ch: "Bob & Brad" },
   cfrt: { ch: "Physiotutors" }, spurling: { ch: "Physiotutors" }, distraction: { ch: "Physiotutors" }, bakody: { ch: "Physiotutors" },
-  ultt: { ch: "Physiotutors", vn: "בסרטון המספור שונה: הרדיאלי נקרא ULTT3 והאולנרי ULTT4", vx: [["ULTT 2 — Radial", "https://www.youtube.com/watch?v=rir6x6Iiqc4&t=139s"], ["ULTT 3 — Ulnar", "https://www.youtube.com/watch?v=rir6x6Iiqc4&t=178s"]] },
+  ultt: { ch: "Physiotutors", vn: "בסרטון המספור שונה: הרדיאלי נקרא ULTT 3 והאולנרי ULTT 4", vx: [["ULTT 2 — Radial", "https://www.youtube.com/watch?v=rir6x6Iiqc4&t=139s"], ["ULTT 3 — Ulnar", "https://www.youtube.com/watch?v=rir6x6Iiqc4&t=178s"]] },
   armsq: { ch: "Physiotutors" }, adson: { ch: "Physiotutors" }, roos: { ch: "Physiotutors" },
   painarc: { ch: "Physiotutors" }, neer: { ch: "Physiotutors" }, hk: { ch: "Physiotutors" }, emptycan: { ch: "Physiotutors" }, fullcan: { ch: "Physiotutors" },
   droparm: { ch: "Physiotutors" }, erlag: { ch: "Physiotutors", vn: "בסרטון המבדק נקרא Lateral Rotation Lag Sign" },
@@ -1204,7 +1208,49 @@ const ABBR = {
   "ULTT": ["Upper Limb Tension Test", "מבדק מתח עצבי לגפה העליונה"],
   "UMN": ["Upper Motor Neuron", "נוירון מוטורי עליון — במוח ובחוט השדרה"],
   "VAS": ["Visual Analogue Scale", "סולם כאב חזותי, 0–10"],
-  "WAD": ["Whiplash-Associated Disorders", "ההפרעות שאחרי צליפת שוט"]
+  "WAD": ["Whiplash-Associated Disorders", "ההפרעות שאחרי צליפת שוט"],
+  "ACL": ["Anterior Cruciate Ligament", "הרצועה הצולבת הקדמית בברך"],
+  "ATP": ["Adenosine Triphosphate", "מולקולת האנרגיה של התא"],
+  "BAMIC": ["British Athletics Muscle Injury Classification", "הסיווג הבריטי לפגיעות שריר: דרגה 0–4 ומיקום a/b/c"],
+  "BJSM": ["British Journal of Sports Medicine", "כתב העת הבריטי לרפואת ספורט"],
+  "BSI": ["Bone Stress Injury", "פגיעת עומס בעצם — רצף מבצקת ועד שבר מאמץ"],
+  "CDC": ["Centers for Disease Control and Prevention", "המרכז האמריקאי לבקרת מחלות ומניעתן"],
+  "DOMS": ["Delayed Onset Muscle Soreness", "כאב שרירים מאוחר, יום־יומיים אחרי מאמץ"],
+  "DXA": ["Dual-energy X-ray Absorptiometry", "בדיקת צפיפות עצם"],
+  "EWGSOP": ["European Working Group on Sarcopenia in Older People", "קבוצת העבודה האירופית לסרקופניה — ההגדרה מ־2010"],
+  "EWGSOP2": ["European Working Group on Sarcopenia in Older People 2", "ההגדרה המעודכנת של הקבוצה האירופית, 2019"],
+  "IASP": ["International Association for the Study of Pain", "האיגוד הבינלאומי לחקר הכאב"],
+  "ICFSR": ["International Conference on Frailty and Sarcopenia Research", "הכנס הבינלאומי לחקר שבריריות וסרקופניה — ההנחיות מ־2018"],
+  "IFOMPT": ["International Federation of Orthopaedic Manipulative Physical Therapists", "הפדרציה הבינלאומית לפיזיותרפיה אורתופדית־מנואלית"],
+  "IOC": ["International Olympic Committee", "הוועד האולימפי הבינלאומי"],
+  "LIFTMOR": ["Lifting Intervention For Training Muscle and Osteoporosis Rehabilitation", "ניסוי של אימון כוח ואימפקט בעצימות גבוהה לנשים עם מסת עצם נמוכה"],
+  "LOVE": ["Load, Optimism, Vascularisation, Exercise", "עומס, אופטימיות, זרימת דם, תרגול — השלב שאחרי הימים הראשונים"],
+  "MDC": ["Minimal Detectable Change", "השינוי הקטן ביותר שגדול מטעות המדידה"],
+  "NG38": ["NICE Guideline 38", "הנחיית NICE לשברים לא מורכבים, 2016"],
+  "NICE": ["National Institute for Health and Care Excellence", "המכון הבריטי להנחיות קליניות"],
+  "NSAIDs": ["Non-Steroidal Anti-Inflammatory Drugs", "נוגדי דלקת שאינם סטרואידים, כמו איבופרופן"],
+  "PEACE": ["Protect, Elevate, Avoid anti-inflammatories, Compress, Educate", "הגנה, הרמה, הימנעות מנוגדי דלקת, לחץ, חינוך — מיד אחרי הפגיעה"],
+  "POLICE": ["Protection, Optimal Loading, Ice, Compression, Elevation", "הגנה, עומס אופטימלי, קרח, לחץ, הרמה"],
+  "PRICE": ["Protection, Rest, Ice, Compression, Elevation", "הגנה, מנוחה, קרח, לחץ, הרמה"],
+  "PURE": ["Prospective Urban Rural Epidemiology", "מחקר עוקבה בינלאומי — כ־140,000 איש ב־17 מדינות"],
+  "RED-S": ["Relative Energy Deficiency in Sport", "חוסר אנרגיה יחסי בספורט — השם מ־2014"],
+  "REDs": ["Relative Energy Deficiency in Sport", "חוסר אנרגיה יחסי בספורט — השם המעודכן מ־2023"],
+  "RICE": ["Rest, Ice, Compression, Elevation", "מנוחה, קרח, לחץ, הרמה"],
+  "SIN": ["Severity, Irritability, Nature", "חומרה, אריטביליות, אופי"],
+  "SINSS": ["Severity, Irritability, Nature, Stage, Stability", "חומרה, אריטביליות, אופי, שלב, יציבות"],
+  "TENS": ["Transcutaneous Electrical Nerve Stimulation", "גירוי עצבי חשמלי דרך העור"],
+  "TUG": ["Timed Up and Go", "קימה מכיסא, הליכה 3 מטר, סיבוב וחזרה — עם שעון"],
+  "WHO": ["World Health Organization", "ארגון הבריאות העולמי"],
+  "A1": ["A1 Pulley — First Annular Pulley", "הגלגלת הטבעתית הראשונה של גידי הכופפים, בבסיס האצבע"],
+  "C5": ["Cervical level 5", "רמה צווארית 5 — החוליה, או שורש העצב שיוצא בגובה שלה"],
+  "C6": ["Cervical level 6", "רמה צווארית 6 — החוליה, או שורש העצב שיוצא בגובה שלה"],
+  "C7": ["Cervical level 7", "רמה צווארית 7 — החוליה, או שורש העצב שיוצא בגובה שלה"],
+  "C8": ["Cervical nerve root 8", "שורש העצב הצווארי השמיני — יוצא בין C7 ל־T1"],
+  "T1": ["Thoracic vertebra 1", "החוליה החזית הראשונה"],
+  "T4": ["Thoracic vertebra 4", "החוליה החזית הרביעית"],
+  "T6": ["Thoracic vertebra 6", "החוליה החזית השישית"],
+  "T12": ["Thoracic vertebra 12", "החוליה החזית האחרונה, מעל המותן"],
+  "L1": ["Lumbar vertebra 1", "החוליה המותנית הראשונה"]
 };
 
 
@@ -2993,6 +3039,17 @@ const FOUND = {
           ]
         },
         {
+          h: "לחץ נפשי וסיכון לפציעה",
+          li: [
+            "לחץ, דאגות יומיומיות, אירועי חיים שליליים וחרדה מנבאים פציעה.",
+            "ההסבר המוצע: לחץ פוגע בקשב, בקבלת החלטות ובשליטה העצבית־שרירית.",
+            "בסקירה שיטתית (2018), ב־13 מתוך 14 מחקרים התערבות פסיכולוגית — בעיקר ניהול לחץ — הפחיתה פציעות או קיצרה את ההיעדרות; ההשפעה נעה מקטנה לגדולה.",
+            "מגבלות: מדגמים קטנים, סיכון בינוני להטיה, מעט נשים.",
+            "למטפל: שואלים על לחץ ועל תקופות עמוסות, ומפנים לפסיכולוג ספורט כשצריך — ההתערבות עצמה לא בתחום שלנו. מה שבתחום שלנו: קשר טוב ומטרות משותפות עם הספורטאי."
+          ],
+          src: "[Gledhill 2018 — התערבויות פסיכולוגיות למניעת פציעות, BJSM](https://ray.yorksj.ac.uk/id/eprint/2775/)"
+        },
+        {
           h: "חזרה לספורט — רצף, לא רגע",
           li: [
             "קודם תפקוד יומיומי (ADL), ואחר כך שלושה שלבים:",
@@ -3016,6 +3073,55 @@ const FOUND = {
         }
       ]
     },
+    {
+      t: "פגיעה חריפה ברקמה רכה", sub: "הימים הראשונים ומה שאחריהם",
+      blocks: [
+        {
+          h: "PEACE — מיד אחרי הפגיעה",
+          table: [["אות", "מה עושים"], ["P — Protect", "מגבילים תנועה או עומס ל־1–3 ימים. מנוחה ממושכת פוגעת בחוזק ובאיכות הרקמה; הכאב מכוון."], ["E — Elevate", "מרימים את הגפה מעל גובה הלב. הראיות חלשות, אבל המחיר נמוך."], ["A — Avoid anti-inflammatories", "בלי טיפול אנטי־דלקתי כשגרה: הדלקת היא חלק מהתיקון. על תרופות מחליט רופא."], ["C — Compress", "חבישה או טייפ מפחיתים נפיחות — לא הדוקים מדי."], ["E — Educate", "מסבירים את התהליך ואת הערך של שיקום פעיל. לטיפולים פסיביים — חשמל, טיפול ידני, דיקור — השפעה קטנה בהתחלה, וסיכון לתלות."]]
+        },
+        {
+          h: "LOVE — בימים שאחרי",
+          table: [["אות", "מה עושים"], ["L — Load", "תנועה ועומס מוקדמים, ככל שהכאב מאפשר — בלי להחמיר."], ["O — Optimism", "ציפייה חיובית קשורה לתוצאה טובה יותר; קטסטרופיזציה, דיכאון ופחד מעכבים."], ["V — Vascularisation", "פעילות אירובית בלי כאב, כמה ימים אחרי הפגיעה — לזרימת דם לרקמה."], ["E — Exercise", "תרגול לשיקום טווח, כוח ופרופריוצפציה; הכאב מכוון את ההתקדמות."]],
+          hist: {
+            tag: "RICE ← PEACE & LOVE",
+            was: "RICE ‏(1978): מנוחה, קרח, לחץ, הרמה. אחר כך PRICE — נוספה הגנה; ו־POLICE ‏(2012) — המנוחה הוחלפה ב״עומס אופטימלי״.",
+            now: "PEACE & LOVE ‏(2019, BJSM): מתייחס גם לשלבים שאחרי הימים הראשונים, ומוסיף חינוך, אופטימיות ותרגול.",
+            why: "ראשי התיבות הישנים עסקו רק בשלב החריף והתעלמו מהמשך הריפוי, והראיות למנוחה ולקרח מוגבלות. גם ממציא RICE חזר בו ב־2014: לדבריו, קרח ומנוחה מלאה עלולים לעכב החלמה.",
+            so: "מגינים ימים בודדים, ואז מעמיסים. החינוך והאופטימיות הם חלק מהטיפול, לא תוספת.",
+            src: "[Dubois & Esculier — PEACE & LOVE, BJSM](https://bjsm.bmj.com/content/bjsports/early/2019/08/03/bjsports-2019-101253.full.pdf) · [RICE — Wikipedia](https://en.wikipedia.org/wiki/RICE_(medicine))"
+          }
+        },
+        {
+          h: "קרח, חום ונוגדי דלקת",
+          li: [
+            "קרח מקל על כאב בטווח הקצר. לא מניחים אותו ישירות על העור.",
+            "חום: גם לו ראיות מוגבלות, אבל בכאב גב חריף ובכאבי שרירים אחרי מאמץ (DOMS) הוא הקל יותר מקור.",
+            "השורה התחתונה: קור וחום הם כלים להקלה על כאב, לא להאצת ריפוי. בוחרים לפי מה שמקל על המטופל, וממשיכים לעבוד.",
+            "נוגדי דלקת (NSAIDs) מקלים על כאב, אבל עלולים לפגוע בתיקון הרקמה — לכן לא כשגרה. על תרופות מחליט רופא."
+          ],
+          hist: {
+            tag: "קרח — מחלוקת",
+            was: "קרח — חלק קבוע מהטיפול הראשוני (RICE).",
+            now: "מחברי PEACE & LOVE: אין ראיות איכותיות לקרח, וייתכן שהוא מפריע לתהליך הדלקתי שמתחיל את הריפוי.",
+            dispute: "סקירה מ־2021: קרח מקל על כאב; הנזק לריפוי הודגם רק בבעלי חיים ולא הוכח בבני אדם — וגם תועלת להחלמה לא הוכחה.",
+            so: "קרח קצר להקלה על כאב — סביר. לא מצפים ממנו לזרז ריפוי, ולא מחליפים בו תנועה ועומס.",
+            src: "[Kwiecien & McHugh 2021](https://pubmed.ncbi.nlm.nih.gov/33877402/) · [סיכום הסקירה — Sports Med U](https://sportsmedu-newsletter.beehiiv.com/p/chilling-truths-cryotherapys-role-injury-recovery-exercise-performance)"
+          },
+          src: "[Malanga 2015 — חום וקור, סיכום](https://www.painscience.com/biblio/heat-and-cold-need-much-more-study-but-heat-shows-promise.html)"
+        },
+        { go: "st-tissue-2", h: "ברקמות: החלמת שריר — שלושה שלבים" }
+      ]
+    }
+  ]
+};
+
+
+
+
+const TISSUE = {
+  intro: "איך כל רקמה בנויה, איך היא נפגעת, איך היא מחלימה ואיך משקמים אותה — עקרונות שחוזרים בכל אזור. כל נושא מאומת מול הספרות; איפה שהגדרה השתנתה — יש הסבר מתקפל.",
+  topics: [
     {
       t: "עצם, שברים ואוסטאופורוזיס", sub: "רקמה חיה שמגיבה לעומס",
       blocks: [
@@ -3114,7 +3220,7 @@ const FOUND = {
           ],
           src: "[Hendy 2012 — Cross-education וקיבוע](https://dro.deakin.edu.au/articles/journal_contribution/Cross_education_and_immobilisation_mechanisms_and_implications_for_injury_rehabilitation/21004273)"
         },
-        { go: "st-found-4", h: "ראו גם: כללי עבודה בזמן קיבוע או סד" },
+        { go: "st-found-4", h: "בעקרונות: כללי עבודה בזמן קיבוע או סד" },
         {
           h: "אוסטאופורוזיס — המחלה השקטה",
           p: "ירידה בצפיפות העצם ופגיעה במבנה שלה, כשהפירוק עולה על הבנייה ← העצם נשברת מכוח קטן. אין תסמינים עד השבר הראשון.",
@@ -3270,12 +3376,183 @@ const FOUND = {
             "תמיד בתיאום עם הרופא — אין ציר זמן אחד לכולם."
           ]
         },
-        { go: "st-found-4", h: "ראו גם: חזרה לספורט — רצף, לא רגע" }
+        { go: "st-found-4", h: "בעקרונות: חזרה לספורט — רצף, לא רגע" }
+      ]
+    },
+    {
+      t: "שריר — פגיעה, החלמה ושיקום", sub: "מעווית ועד חזרה לספורט",
+      blocks: [
+        {
+          h: "השריר — מה צריך לזכור",
+          li: [
+            "שריר מייצר כוח רק בכיווץ — הוא מושך, לא דוחף. הוא מתכווץ משני קצותיו, וזז הצד שפחות מקובע.",
+            "יודעים איפה השריר מתחבר ← יודעים איזו תנועה הוא עושה, ואיזו תנועה תעמיס עליו.",
+            "בכל תנועה: אגוניסט מבצע, אנטגוניסט נגדי, סינרגיסטים עוזרים. כשהשריר הראשי לא מסביר את הכאב — בודקים גם את המשניים.",
+            "תפקידים מעבר לתנועה: ייצוב, הגנה על איברים, ייצור חום.",
+            "פרופריוצפציה: כישורי השריר (Muscle Spindles) — בתוך השריר, מודדים אורך ומתיחה; גופיפי גולג׳י (Golgi Tendon Organs) — במעבר בין השריר לגיד, מודדים מתח. לכן עבודה פרופריוצפטיבית היא חלק מכל שיקום שריר.",
+            "פשיה (Fascia) עוטפת את השריר, ומשפיעה על טווח התנועה ועל העברת הכוח."
+          ],
+          src: "[כישורי שריר וגופיפי גולג׳י — Deranged Physiology](https://derangedphysiology.com/main/cicm-primary-exam/musculoskeletal-system/Chapter-142/muscle-spindles-and-golgi-tendon-organs)"
+        },
+        {
+          h: "סוגי סיבים",
+          table: [["", "Type I — ״אדומים״", "Type II — ״לבנים״"], ["אנרגיה", "אירובית", "בעיקר אנאירובית"], ["כיווץ", "איטי, סיבולתי, עמיד לעייפות", "מהיר, כוח מתפרץ, מתעייף מהר"], ["מתאים ל־", "יציבה, ייצוב, מאמץ ממושך", "ספרינט, קפיצה, בלימה, שינוי כיוון"]],
+          post: [
+            "כל שריר הוא תערובת: בסולאוס כ־70% Type I, בגסטרוקנמיוס כ־50%.",
+            "הגנטיקה קובעת הרבה, אבל אימון לאורך שנים משנה את המאפיינים של הסיבים הקיימים.",
+            "בשיקום מתאימים לדרישות: מרתוניסט ← סיבולת; ספרינטר ← כוח מתפרץ ויציאה מהירה."
+          ],
+          src: "[הרכב סיבים בשרירי הרגל (1975)](https://www.scilit.net/publications/e31fa5553275ca91837ceb85b327fd2b)"
+        },
+        {
+          h: "עווית או קרע?", stop: true,
+          p: "ספורטאי נעצר באמצע משחק עם כאב בשריר, והאינסטינקט הוא למתוח. אבל מתיחה על קרע מוסיפה נזק.",
+          li: [
+            "שואלים: ״תפס והתכווץ״ — או ״משהו נקרע, הרגשתי תק״?",
+            "עווית: השריר מכווץ וקשה, ומשתחרר במתיחה עדינה תוך דקות.",
+            "קרע: כאב ממוקד שנשאר, חולשה בכיווץ נגד התנגדות, ולפעמים חבורה בימים שאחרי.",
+            "לא בטוחים ← לא מותחים, ובודקים שוב למחרת. מה שלא עובר אחרי כמה ימים — כנראה קרע."
+          ],
+          hist: {
+            tag: "התייבשות ומלחים ← עייפות עצבית־שרירית",
+            was: "עווית במאמץ הוסברה בהתייבשות, בחוסר מלחים, או ב״נגמרה האנרגיה לשחרור הכיווץ״.",
+            now: "ההסבר המוביל: שינוי בשליטה העצבית־שרירית בגלל עייפות — יותר עירור מכישורי השריר, פחות עיכוב מגופיפי גולג׳י.",
+            why: "ההסבר של התייבשות ומלחים נשען בעיקר על תצפיות ועל סדרות מקרים קטנות, וארבעה מחקרים פרוספקטיביים לא תמכו בו. נכון שהשריר צריך ATP כדי להשתחרר מכיווץ, אבל עווית במאמץ היא לא ״נעילה מחוסר אנרגיה״.",
+            so: "לא כל עווית היא ״חוסר מלחים״: שואלים על עייפות, קצב ועומס חריג — לא רק על שתייה.",
+            dispute: "יש חוקרים שעדיין מייחסים חלק מהעוויתות לאובדן נוזלים ומלחים, בעיקר בחום; ייתכן שבחלק מהמקרים שני המנגנונים פועלים יחד.",
+            src: "[Schwellnus — עוויתות במאמץ, BJSM](https://bjsm.bmj.com/content/43/6/401)"
+          }
+        },
+        {
+          h: "סרקופניה",
+          p: "מחלת שריר: ירידה כללית ומתקדמת בכוח ובמסת השריר, שקשורה לגיל ולחוסר פעילות. בשונה מאטרופיה — ירידה מקומית מחוסר שימוש, למשל אחרי גבס.",
+          li: [
+            "הכוח יורד מהר יותר מהמסה: עד העשור השביעי־שמיני, הכוח המרבי נמוך בממוצע ב־20%–40%.",
+            "נפגעים בעיקר סיבי Type II — המהירים ← פחות כוח מתפרץ, תגובה איטית ← נפילות.",
+            "כוח אחיזה הוא מדד מרכזי: במחקר PURE (כ־140,000 איש ב־17 מדינות), כל 5 ק״ג פחות באחיזה — 16% יותר תמותה.",
+            "כאב או דלקת מקומיים בכף היד מורידים אחיזה בלי קשר לסרקופניה.",
+            "אפשר לטפל: אימון התנגדות — המלצה חזקה; חלבון — המלצה מותנית (ICFSR 2018). מפנים לרופא ולתזונאי.",
+            "אצל מבוגרים — גם כוח מתפרץ ותגובה מהירה, לא רק כוח איטי."
+          ],
+          hist: {
+            tag: "מסה ← כוח, 2019",
+            was: "1989: המונח נטבע כ״אובדן בשר״ — ירידה במסת השריר עם הגיל. 2010 (EWGSOP): מסה נמוכה, ועוד כוח נמוך או ביצוע נמוך.",
+            now: "2019 (EWGSOP2): ״מחלת שריר״. קודם בודקים כוח — אחיזה מתחת ל־27 ק״ג בגברים או ל־16 ק״ג בנשים, או חמש קימות מכיסא ביותר מ־15 שניות ← סרקופניה אפשרית. מסה נמוכה מאשרת; ביצוע נמוך ← סרקופניה חמורה.",
+            why: "כוח מנבא נפילות, אובדן עצמאות ותמותה טוב יותר ממסה, וקל למדוד אותו בקליניקה.",
+            so: "אחיזה וקימה מכיסא — כלים פשוטים לסינון. חשד ← הפניה לבירור, ובינתיים אימון כוח.",
+            src: "[EWGSOP2 2019](https://cris.maastrichtuniversity.nl/en/publications/sarcopenia-revised-european-consensus-on-definition-and-diagnosis/) · [EWGSOP 2010](https://academic.oup.com/ageing/article/39/4/412/7077) · [ספי EWGSOP2 — Van Ancum 2020](https://core.ac.uk/download/482726096.pdf)"
+          },
+          src: "[Doherty 2003 — גיל וסרקופניה](https://insight.jci.org/references/scholar/50/B1) · [אובדן סיבי Type II — NIHR Newcastle](https://newcastlebrc.nihr.ac.uk/our-research/ageing-sarcopenia-and-multimorbidity/news-and-events/4935-how-do-human-muscle-fibres-age) · [PURE — כוח אחיזה](https://blogs.nejm.org/cardioexchange/2015/05/13/get-a-grip-global-study-finds-grip-strength-is-a-simple-and-powerful-predictor-of-death) · [ICFSR 2018](https://cris.maastrichtuniversity.nl/en/publications/international-clinical-practice-guidelines-for-sarcopenia-icfsr-s/)"
+        },
+        {
+          h: "קרע בשריר — מנגנון וגורמי סיכון",
+          li: [
+            "המנגנון הקלאסי הוא אקסצנטרי: השריר מתארך תחת עומס — בלימה חדה, ספרינט, שינוי כיוון.",
+            "בכדורגל, המסטרינג היא הפציעה הבודדת השכיחה ביותר — 12%–37% מכל הפציעות. מבין פגיעות השריר: אדוקטורים כ־23%, קוואדריצפס כ־19%, תאומים 12%–13%.",
+            "גורמי הסיכון החזקים לקרע בהמסטרינג: קרע קודם (פי 2.7; קרע טרי — פי 4.8), גיל מבוגר, קרע קודם ב־ACL, פגיעה קודמת בתאומים.",
+            "עלייה חדה בעומס — למשל חזרה מפגרה בלי בניית כושר.",
+            "לחץ נפשי ותקופות עמוסות קשורים גם הם לסיכון מוגבר."
+          ],
+          hist: {
+            tag: "חוסר איזון כוח — לא הוכח",
+            was: "חוסר איזון בין קוואדריצפס חזק להמסטרינג חלש נחשב לגורם מרכזי לקרע.",
+            now: "מטא־אנליזה (2020) בדקה 13 מדדי כוח — כולל היחס בין השרירים — ואף אחד מהם לא נמצא קשור לסיכון.",
+            so: "כוח חשוב בשיקום, אבל לא מסיקים ״הוא ייקרע״ מיחס כוח בלבד. מתמקדים בגורמים שהוכחו — קודם כול פגיעה קודמת — ובמניעה.",
+            src: "[Green 2020 — גורמי סיכון להמסטרינג](https://bjsm.bmj.com/content/54/18/1081)"
+          },
+          src: "[FCB/Aspetar — מדריך פגיעות שריר](https://www.crr-suva.ch/data/documents/SSMS_2015/Muscle_injuryclinical_guide_2015-FCBASPETAR.pdf)"
+        },
+        { go: "st-found-4", h: "בעקרונות: לחץ נפשי וסיכון לפציעה" },
+        {
+          h: "דירוג חומרה",
+          p: "המיקום חשוב לא פחות מהגודל: פגיעה שנכנסת לגיד מאריכה את החזרה ומעלה את הסיכון לקרע חוזר.",
+          table: [["דרגה (BAMIC)", "מה רואים"], ["0", "כאב אחרי מאמץ; MRI תקין"], ["1", "קרע קטן"], ["2", "קרע בינוני — לרוב עוצר את הפעילות"], ["3", "קרע נרחב — חולשה משמעותית ונפיחות"], ["4", "קרע מלא של השריר או של הגיד, לעיתים עם שקע מורגש"]],
+          post: [
+            "לכל דרגה 1–3 נוסף מיקום: a — בשולי השריר; b — בגוף השריר או במעבר לגיד; c — בתוך הגיד.",
+            "דוגמה מנתוני האתלטיקה הבריטית: 63% קרעים חוזרים בדרגה 2c, לעומת 6% בדרגה 2b.",
+            "ניתוח — בעיקר בתלישת גיד מהעצם, לא בכל קרע גדול."
+          ],
+          hist: {
+            tag: "שלוש דרגות ← BAMIC, 2014",
+            was: "שלוש דרגות לפי גודל: קל, בינוני, מלא.",
+            now: "קונצנזוס מינכן (2012) מבדיל בין פגיעה תפקודית — עייפות, כאבי שרירים, הפרעה עצבית־שרירית — לבין פגיעה מבנית. BAMIC (2014): דרגות 0–4, ולכל דרגה גם מיקום.",
+            why: "הדירוג הישן פשוט מדי: הוא לא מבדיל בין פגיעה בגוף השריר לפגיעה בגיד, שההחלמה שלהן שונה מאוד.",
+            so: "כשיש MRI — מחפשים קודם כול אם הפגיעה מגיעה לגיד (c). זה משנה את קצב השיקום ואת התחזית.",
+            src: "[סיווג פגיעות שריר — POGO Physio](https://www.pogophysio.com.au/blog/how-are-muscle-injuries-classified/)"
+          }
+        },
+        {
+          h: "בדיקה בחשד לקרע",
+          li: [
+            "כוח נגד התנגדות (MMT) — חולשה וכאב.",
+            "טווח תנועה — בעדינות, בלי למתוח בכוח.",
+            "מישוש עדין: הכאב בגוף השריר או ליד החיבור לגיד? נוקשות, המטומה, שקע.",
+            "תפקוד: הליכה; בהמסטרינג — לפעמים גם ישיבה כואבת.",
+            "הדמיה, כשצריכים לדעת אם הגיד מעורב: אולטרסאונד — רצוי כ־48 שעות אחרי הפגיעה; MRI — 24–48 שעות.",
+            "את ההחלטה על חזרה לספורט מקבלים לפי מבדקים תפקודיים, לא לפי MRI."
+          ],
+          src: "[FCB/Aspetar](https://www.crr-suva.ch/data/documents/SSMS_2015/Muscle_injuryclinical_guide_2015-FCBASPETAR.pdf) · [Reurink — MRI בחזרה לספורט](https://bjsm.bmj.com/content/48/18/1370)"
+        },
+        {
+          h: "החלמת שריר — שלושה שלבים",
+          p: "בשריר מתחרים שני תהליכים: התחדשות של סיבי שריר (רגנרציה, בעזרת תאי לוויין) מול הצטלקות (פיברוזיס). המטרה: מקסימום התחדשות, צלקת קטנה ככל האפשר.",
+          table: [["שלב", "מה קורה", "מה מדגישים"], ["הרס ודלקת", "הימים הראשונים: דימום; תאי דלקת מפנים רקמה פגועה", "הגנה קצרה, תנועה בלי כאב, שמירה על שאר הגוף"], ["תיקון", "תאי לוויין בונים סיבים חדשים; קולגן; כלי דם חדשים", "עומס מדורג שגדל, טווח שמתרחב בהדרגה"], ["רימודלינג", "הסיבים והצלקת מתארגנים לפי העומס", "עומס גבוה, אקסצנטרי בטווח ארוך, פליומטרי, דרישות הענף"]],
+          post: [
+            "השלבים חופפים. עוברים ביניהם לפי קריטריונים — הליכה בלי כאב, כוח, טווח — לא לפי ימים.",
+            "עבודה איזומטרית, קונצנטרית ואקסצנטרית חופפת לאורך השיקום; מחזקים בטווח ארוך ככל האפשר.",
+            "מעט מדי עומס ← צלקת גדולה וחולשה; יותר מדי ומוקדם מדי ← קרע חוזר.",
+            "גיד מחלים לאט יותר ובעיקר בצלקת — פגיעה שמגיעה לגיד דורשת שיקום ארוך וזהיר יותר."
+          ],
+          hist: {
+            tag: "מנוחה ← עומס מוקדם",
+            was: "״לנוח שבועיים״ עד שהכאב עובר, ורק אז להתחיל שיקום.",
+            now: "הגנה קצרה של ימים בודדים, ואז עומס מוקדם ומדורג לפי הכאב.",
+            why: "במחקר אקראי (2017), ספורטאים שהתחילו שיקום יומיים אחרי הקרע הגיעו להחלמה בלי כאב בערך שלושה שבועות לפני מי שחיכו תשעה ימים — בלי תוספת של קרעים חוזרים.",
+            so: "מתחילים לעבוד כבר בימים הראשונים, בתוך גבולות הכאב — לא שולחים את הספורטאי הביתה ״לנוח״.",
+            src: "[Bayer 2017, NEJM — סיכום](https://medicalresearch.com/?p=37335)"
+          },
+          src: "[FCB/Aspetar](https://www.crr-suva.ch/data/documents/SSMS_2015/Muscle_injuryclinical_guide_2015-FCBASPETAR.pdf)"
+        },
+        { go: "st-found-5", h: "בעקרונות: PEACE & LOVE, קרח וחום" },
+        {
+          h: "המסטרינג — לחזק כשהשריר ארוך",
+          p: "במחקר אקראי על 75 כדורגלנים עם קרע בהמסטרינג, שיקום שמדגיש תרגילי התארכות (L-protocol) החזיר אותם לאחר 28 יום בממוצע, לעומת 51 יום בשיקום רגיל.",
+          li: ["הרעיון: לחזק את ההמסטרינג במנח ארוך — המנח שבו הוא נפגע בספרינט."],
+          src: "[Askling 2013, BJSM](https://bjsm.bmj.com/content/47/15/953)"
+        },
+        {
+          h: "מניעה",
+          li: [
+            "מניעה = אימון של מה שהשריר צריך לעמוד בו: עומס אקסצנטרי, ספרינט, שינוי כיוון.",
+            "אדוקטורים: תוכנית חיזוק שמבוססת על תרגיל Copenhagen הפחיתה בעיות במפשעה בכ־41% אצל כדורגלנים.",
+            "מתיחות לבדן — לא נמצא להן אפקט מונע.",
+            "הסיכון לקרע חוזר במקום גבוה בחודשיים הראשונים אחרי החזרה (14%–16%) ← ממשיכים לעבוד גם אחרי השחרור."
+          ],
+          hist: {
+            tag: "נורדיק: 51% ← לא חד־משמעי",
+            now: "מטא־אנליזה (2019, כ־8,500 ספורטאים): תוכניות שכוללות את תרגיל הנורדיק הפחיתו קרעי המסטרינג עד 51%.",
+            dispute: "ניתוח מחדש (2021): בחלק מהמחקרים הנורדיק בא יחד עם תרגילים אחרים, וטווח התוצאות רחב מדי למסקנה; רמת הוודאות נמוכה.",
+            so: "נורדיק הוא תרגיל סביר בתוכנית מניעה, אבל לא ״חיסון״: הוא חלק מהתוכנית, לא כל התוכנית.",
+            src: "[van Dyk 2019](https://bjsm.bmj.com/content/53/21/1362) · [Impellizzeri 2021 — ניתוח מחדש](https://usblog.gradeworkinggroup.org/2021/09/re-analysis-of-systematic-review-on.html)"
+          },
+          src: "[Harøy 2019 — Copenhagen](https://bjsm.bmj.com/content/53/3/150) · [FCB/Aspetar](https://www.crr-suva.ch/data/documents/SSMS_2015/Muscle_injuryclinical_guide_2015-FCBASPETAR.pdf)"
+        },
+        {
+          h: "חזרה לספורט אחרי קרע",
+          li: [
+            "בלי כאב ובלי סימנים קליניים.",
+            "כוח אקסצנטרי מתפרץ — בתנועה שדומה לענף ולמנגנון הפגיעה.",
+            "השתתפות מלאה באימוני הקבוצה לפני משחק.",
+            "מהמתוכנן אל הלא־צפוי: מתחילים בתרגול מוכר, ומסיימים בתגובה לגירוי לא צפוי — כדור, יריב, דחיפה."
+          ],
+          src: "[FCB/Aspetar](https://www.crr-suva.ch/data/documents/SSMS_2015/Muscle_injuryclinical_guide_2015-FCBASPETAR.pdf)"
+        },
+        { go: "st-found-4", h: "בעקרונות: חזרה לספורט — רצף, לא רגע" }
       ]
     }
+
   ]
 };
-
 
 
 
@@ -3368,6 +3645,7 @@ function blocks(arr){
     let body = b.p ? "<p>" + fx(b.p) + "</p>" : "";
     if(b.li) body += li(b.li);
     if(b.table) body += tableHTML(b.table, true);
+    if(b.post) body += li(b.post);
     if(b.tests) body += chips(b.tests, false);
     if(b.hist) body += histHTML(b.hist);
     if(b.src) body += '<p class="bsrc">' + rich(b.src) + "</p>";
@@ -3386,8 +3664,11 @@ REGIONS.forEach(r => {
   r.s1.checks.forEach((c, i) => (c.tests || []).forEach(id => addUse(id, { kind: "chk", id: "chk-" + r.id + "-" + i, name: c.title, rid: r.id })));
   r.s3.patterns.forEach((pt, pi) => pt.paths.forEach((p, ji) => (p.tests || []).forEach(id => addUse(id, { kind: "path", id: r.id + "-" + pi + "-" + ji, name: p.n, rid: r.id }))));
 });
-FOUND.topics.forEach((tp, i) => tp.blocks.forEach(b => (b.tests || []).forEach(id => addUse(id, { kind: "go", id: "st-found-" + (i + 1), name: b.h || tp.t, rid: "found" }))));
-const regionName = id => id === "found" ? "עקרונות" : (REGIONS.find(r => r.id === id) || { name: "מסגרת כללית" }).name;
+// topic tabs: cross-region knowledge laid out as numbered topics
+const TOPIC_TABS = [["found", "עקרונות", FOUND], ["tissue", "רקמות", TISSUE]];
+const topicTab = id => TOPIC_TABS.find(t => t[0] === id);
+TOPIC_TABS.forEach(([tid, , D]) => D.topics.forEach((tp, i) => tp.blocks.forEach(b => (b.tests || []).forEach(id => addUse(id, { kind: "go", id: "st-" + tid + "-" + (i + 1), name: b.h || tp.t, rid: tid })))));
+const regionName = id => topicTab(id) ? topicTab(id)[1] : (REGIONS.find(r => r.id === id) || { name: "מסגרת כללית" }).name;
 
 // ---------- general ----------
 function renderGeneral(){
@@ -3404,13 +3685,13 @@ function renderGeneral(){
 }
 
 // ---------- foundations ----------
-function renderFound(){
+function renderTopics([tid, name, D]){
   scope();
-  let html = '<section role="tabpanel" id="p-found" aria-labelledby="t-found" hidden><div class="region-head"><h2>עקרונות</h2><p class="lede">' + fx(FOUND.intro) + '</p></div><ol class="spine">';
-  FOUND.topics.forEach((tp, i) => { scope(); html += station("found", i + 1, tp.t, tp.sub, blocks(tp.blocks), !!tp.flag); });
+  let html = '<section role="tabpanel" id="p-' + tid + '" aria-labelledby="t-' + tid + '" hidden><div class="region-head"><h2>' + esc(name) + '</h2><p class="lede">' + fx(D.intro) + '</p></div><ol class="spine">';
+  D.topics.forEach((tp, i) => { scope(); html += station(tid, i + 1, tp.t, tp.sub, blocks(tp.blocks), !!tp.flag); });
   return html + "</ol></section>";
 }
-const isGen = id => id === "general" || id === "found";
+const isGen = id => id === "general" || !!topicTab(id);
 
 // ---------- region ----------
 function pathHTML(r, pi, ji, p){
@@ -3507,16 +3788,16 @@ function renderRegion(r){
 }
 
 // ---------- mount ----------
-const TABS = [["general", "מסגרת כללית", "8 שלבים"], ["found", "עקרונות", FOUND.topics.length + " נושאים"], ...REGIONS.map(r => [r.id, r.name, r.s3.patterns.reduce((a, p) => a + p.paths.length, 0) + " פתולוגיות"])];
+const TABS = [["general", "מסגרת כללית", "8 שלבים"], ...TOPIC_TABS.map(([tid, name, D]) => [tid, name, D.topics.length + " נושאים"]), ...REGIONS.map(r => [r.id, r.name, r.s3.patterns.reduce((a, p) => a + p.paths.length, 0) + " פתולוגיות"])];
 $("#tabs").innerHTML = TABS.map(([id, name, cnt]) => '<button class="reg" role="tab" type="button" id="t-' + id + '" aria-controls="p-' + id + '" aria-selected="false" data-tab="' + id + '"><span>' + esc(name) + '</span><span class="cnt">' + esc(cnt) + "</span></button>").join("");
-$("#main-in").innerHTML = renderGeneral() + renderFound() + REGIONS.map(renderRegion).join("");
+$("#main-in").innerHTML = renderGeneral() + TOPIC_TABS.map(renderTopics).join("") + REGIONS.map(renderRegion).join("");
 
 let current = "general";
 const STAGES = ["קבלת מטופל ואנמנזה", "סינון דגלים אדומים", "בדיקה בסיסית", "סיווג לפי הממצאים", "סיום בדיקה והערכה", "פרוגנוזה ומטרות", "תוכנית טיפול ותרגול", "מעקב והערכה חוזרת"];
 function renderOutline(){
   let h = "";
-  if(current === "found"){
-    h = FOUND.topics.map((tp, i) => '<button type="button" class="ol-st' + (tp.flag ? " flag" : "") + '" data-scroll="st-found-' + (i + 1) + '"><span class="n">' + (i + 1) + "</span><span>" + esc(tp.t) + "</span></button>").join("");
+  if(topicTab(current)){
+    h = topicTab(current)[2].topics.map((tp, i) => '<button type="button" class="ol-st' + (tp.flag ? " flag" : "") + '" data-scroll="st-' + current + "-" + (i + 1) + '"><span class="n">' + (i + 1) + "</span><span>" + esc(tp.t) + "</span></button>").join("");
   } else if(current === "general"){
     h = GENERAL.steps.map((s, i) => '<button type="button" class="ol-st' + (i === 0 ? " flag" : "") + '" data-scroll="st-general-' + (i + 1) + '"><span class="n">' + (i + 1) + "</span><span>" + esc(s.t) + "</span></button>").join("");
   } else {
@@ -3530,7 +3811,7 @@ function renderOutline(){
     });
   }
   $("#outline").innerHTML = h;
-  $("#ol-h").textContent = current === "general" ? "שמונת השלבים" : current === "found" ? "נושאים" : "שלבים ופתולוגיות";
+  $("#ol-h").textContent = current === "general" ? "שמונת השלבים" : topicTab(current) ? "נושאים" : "שלבים ופתולוגיות";
 }
 
 // ---------- panel ----------
@@ -3732,13 +4013,13 @@ GENERAL.steps.forEach((s, i) => {
   const all = [].concat(s.body || [], s.after || []).map(b => [b.h || "", (b.li || []).join(" ")].join(" ")).join(" · ") + (s.dec ? " · " + s.dec.q : "");
   IDX.push({ type: "step", id: "st-general-" + (i + 1), title: s.t, sub: "מסגרת כללית · שלב " + (i + 1), body: all, extra: s.sub || "" });
 });
-FOUND.topics.forEach((tp, i) => {
+TOPIC_TABS.forEach(([tid, name, D]) => D.topics.forEach((tp, i) => {
   const txt = v => Array.isArray(v) ? v.map(txt).join(" ") : v && typeof v === "object" ? Object.values(v).map(txt).join(" ") : String(v || "");
-  tp.blocks.forEach(b => IDX.push({ type: "found", id: "st-found-" + (i + 1), title: b.h || tp.t, sub: "עקרונות · " + tp.t,
+  tp.blocks.forEach(b => IDX.push({ type: tid, id: "st-" + tid + "-" + (i + 1), title: b.h || tp.t, sub: name + " · " + tp.t,
     body: [b.p, txt(b.li), txt(b.table), b.hist ? [b.hist.was, b.hist.now, b.hist.why, b.hist.so, b.hist.dispute].join(" ") : ""].filter(Boolean).join(" · ").replace(LINK, "$1"), extra: "" }));
-});
+}));
 IDX.forEach(e => { e.nt = norm(e.title); e.nb = norm(e.body); e.nk = norm(e.key || ""); e.nx = norm(e.extra + " " + e.sub); });
-const GROUPS = [["path", "פתולוגיות", 8], ["test", "מבדקים", 8], ["found", "עקרונות", 5], ["step", "שלבים ודגלים", 5]];
+const GROUPS = [["path", "פתולוגיות", 8], ["test", "מבדקים", 8], ["found", "עקרונות", 5], ["tissue", "רקמות", 5], ["step", "שלבים ודגלים", 5]];
 function snippet(text, terms){
   const low = text.toLowerCase();
   let at = -1, len = 0;
