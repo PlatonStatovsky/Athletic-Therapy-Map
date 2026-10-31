@@ -10,6 +10,8 @@ Contracts between the two parts — keep them or update both sides together:
 - Deep links into the map: `#<tab>` opens a region, `#<tab>&t=<testId>` also opens that test's card (handled at the end of `index.html`). The app links to tests this way.
 - Theme is shared through `localStorage['uqmap-theme']` (`light` | `comfort` | `dark`; absent = comfort, or dark when the device is dark).
 
+Hosting: Cloudflare Pages project `ligamentum` — production https://ligamentum.pages.dev from `main`; every other branch gets a preview at https://<branch>.ligamentum.pages.dev. No build step, output directory = repo root.
+
 Workflow:
 - `main` is production. Work in a branch; merge or push to `main` only when Platon asks.
 - Hebrew RTL throughout; keep the existing house style of each part.

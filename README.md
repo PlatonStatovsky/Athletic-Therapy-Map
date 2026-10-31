@@ -6,6 +6,7 @@
 | `app/` | העוזר הקליני — הקלטת מפגש, מילוי טופס אוטומטי, ניתוח קליני, שמירה ל-Google Drive |
 | `functions/api/soniox-key.js` | פונקציית שרת קטנה ב-Cloudflare שנותנת לעוזר מפתח זמני לתמלול ב-Soniox |
 
+- כתובת: https://ligamentum.pages.dev (Cloudflare Pages, פרויקט `ligamentum`). העוזר: https://ligamentum.pages.dev/app/
 - אין שלב בנייה: הקבצים מוגשים כמו שהם.
 - האתר מתפרסם מהענף `main`. כל ענף אחר מקבל כתובת תצוגה מקדימה משלו.
 - העוזר קורא את מפת הדרך מאותו אתר (`../index.html`) ומשתמש בה כבסיס ידע לניתוח.
