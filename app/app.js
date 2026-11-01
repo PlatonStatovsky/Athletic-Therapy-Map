@@ -262,7 +262,8 @@ window.addEventListener('storage', e => { if (e.key === THEME_KEY) themeChanged(
 DARK_MQ.addEventListener?.('change', themeChanged);
 function autosize(t) { t.style.height = 'auto'; t.style.height = (t.scrollHeight + 2) + 'px'; }
 const fmtDate = iso => { const d = new Date(iso); return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}`; };
-const fmtStamp = iso => { const d = new Date(iso); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const fmtStamp = iso => { const d = new Date(iso); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`; }; // file names (sort by date)
+const fmtWhen = iso => { const d = new Date(iso); return `${fmtDate(iso)} · ${pad(d.getHours())}:${pad(d.getMinutes())}`; }; // everything a person reads
 const fmtClock = ms => { const s = Math.floor(ms / 1000); return `${pad(Math.floor(s / 60))}:${pad(s % 60)}`; };
 
 /* ---------------- Claude API ---------------- */
@@ -913,7 +914,7 @@ function wrapLabel(t, maxW, px = 13, maxLines = 2) {
   return lines;
 }
 function courseSvg(d, W) {
-  const FS = W < 420 ? 13 : 12.5, TICK = 12, padR = 34, xl = 18, xr = W - padR - 18; // y labels live in the 34px on the right
+  const FS = W < 420 ? 13 : 12.5, TICK = W < 420 ? 12.5 : 12, TLF = W < 420 ? 12 : 11, padR = 34, xl = 18, xr = W - padR - 18; // y labels live in the 34px on the right
   const sc = timeScale([...d.events.map(e => e.d), ...d.pain.map(p => p.d)], xl, xr), x = sc.x;
   const band = d.pain.length || d.vmax != null, top = 22, bh = band ? 88 : 0, y0 = top + bh;
   const py = v => y0 - v / 10 * bh, ay = y0 + (band ? 34 : 18), ring = ringed(d.pain);
@@ -948,7 +949,7 @@ function courseSvg(d, W) {
   // time ticks sit just above the axis, between the pain band and the events
   let lastTx = -1e4;
   for (const t of sc.ticks) {
-    const lab = agoLabel(t.d), w = textW(lab, 11);
+    const lab = agoLabel(t.d), w = textW(lab, TLF);
     svg += `<line class="tk" x1="${t.x}" y1="${ay - 3}" x2="${t.x}" y2="${ay + 3}"/>`;
     if (t.x - w / 2 > lastTx + 8 && t.x + w / 2 < xr + 10 && t.x - w / 2 > xl + 22) { svg += `<text class="tlab" x="${t.x}" y="${ay - 8}" text-anchor="middle">${lab}</text>`; lastTx = t.x + w / 2; }
   }
@@ -975,7 +976,7 @@ function courseSvg(d, W) {
       <text class="when" x="${v.lx}" y="${base}" text-anchor="middle">${esc(v.when)}</text>${v.lines.map((l, i) => `<text class="lab" x="${v.lx}" y="${base + LH * (i + 1)}" text-anchor="middle">${esc(l)}</text>`).join('')}`;
   }
   svg += `<circle class="ev now" cx="${xl}" cy="${ay}" r="5"/><text class="when" x="${today.lx}" y="${ay + 20}" text-anchor="middle">היום</text>`;
-  return `<svg viewBox="0 0 ${W} ${Math.ceil(deepest + 6)}" width="${W}" height="${Math.ceil(deepest + 6)}" aria-hidden="true" style="--fs:${FS}px;--tk:${TICK}px">${svg}</svg>`;
+  return `<svg viewBox="0 0 ${W} ${Math.ceil(deepest + 6)}" width="${W}" height="${Math.ceil(deepest + 6)}" aria-hidden="true" style="--fs:${FS}px;--tk:${TICK}px;--tlf:${TLF}px">${svg}</svg>`;
 }
 
 /* charts drawn at the width they get, so their text keeps real pixel sizes on a phone too */
@@ -1421,7 +1422,7 @@ async function playSeg(i) {
   let parts = []; try { parts = await audioParts(s.id); } catch { }
   const t0 = lineStart(g);
   const p = parts.filter(p => partStartOf(s, p) <= t0 + 2000).pop();
-  if (!p || t0 > p.end + 5000) { toast('אין הקלטה שמורה לשורה הזו', true); return; }
+  if (!p || t0 > p.end + 5000) { toast('אין הקלטה לקטע זה', true); return; }
   const a = await playerFor(s, p);
   await ensureSeekable(a);
   a.currentTime = Math.max(0, (t0 - PL.start) / 1000 - PLAY_LEAD);
@@ -2069,8 +2070,8 @@ const rtl = h => h.replace(/<(p|h[1-6]|li|ul)>/g, '<$1 dir="rtl" style="directio
 function sessionDocHtml(s) {
   const v = id => s.fields[id]?.value;
   let h = `<h1>מפגש — ${esc(s.patientName)}</h1>`;
-  h += `<p>תאריך: ${fmtStamp(s.startedAt)} · אזור: ${esc(s.region)} · ${esc(s.type)}</p>`;
-  h += `<p>הסכמת המטופל להקלטה: ניתנה, ${fmtStamp(s.consentAt || s.startedAt)}</p>`;
+  h += `<p>תאריך: ${fmtWhen(s.startedAt)} · אזור: ${esc(s.region)} · ${esc(s.type)}</p>`;
+  h += `<p>הסכמת המטופל להקלטה: ניתנה, ${fmtWhen(s.consentAt || s.startedAt)}</p>`;
   h += recordDocHtml(s) + vizDocHtml(s) + notesDocHtml(s);
   h += `<h2>הטופס</h2>`;
   for (const sec of sectionsFor(s)) {
@@ -2125,7 +2126,7 @@ function notesDocHtml(s) {
   return '<h2>פתקים ומשימות</h2><ul>' + n.map(x => `<li>${esc(x.text)}${x.field && FIELD[x.field] ? ` (נוסף לשדה: ${esc(shortLabel(FIELD[x.field].label))})` : ''}${x.task ? ` · משימה: ${esc(x.task)}${x.done ? ' (בוצע)' : ''}` : ''}</li>`).join('') + '</ul>';
 }
 function transcriptDocHtml(s) {
-  let h = `<h1>תמלול — ${esc(s.patientName)} — ${fmtStamp(s.startedAt)}</h1>`, last = null;
+  let h = `<h1>תמלול — ${esc(s.patientName)} — ${fmtWhen(s.startedAt)}</h1>`, last = null;
   for (const g of s.segments) {
     if (g.stage !== last) { h += `<h2>${esc(STAGES.find(x => x.id === g.stage)?.label || g.stage)}</h2>`; last = g.stage; }
     const d = new Date(g.t), pos = recPos(s, g);
@@ -2231,7 +2232,7 @@ function renderFinish() {
   <div class="toolbar page"><div class="lead"><button class="icon-btn glass" data-act="resume" aria-label="חזרה למפגש">${ICON.back}</button></div>
     <div class="trail"><button class="icon-btn glass" data-act="settings" aria-label="הגדרות">${ICON.gear}</button></div></div>
   <div class="content">
-    <div class="ptitle"><div><h1>סיום מפגש</h1><div class="sub">${esc(s.patientName)} · ${esc(s.region)} · ${esc(s.type)} · ${fmtDate(s.startedAt)}</div></div></div>
+    <div class="ptitle"><div><h1>סיום מפגש</h1><div class="sub">${esc(s.patientName)} · ${esc(s.region)} · ${esc(s.type)} · ${fmtWhen(s.startedAt)}</div></div></div>
     <section class="card fin-sec" aria-labelledby="fRec"><div class="card-h cat-rec"><span class="glyph">${ICON.mic}</span><h2 id="fRec">הקלטה</h2></div>
       <p class="lead">${fin.phase === 'stopping' ? '<span class="spin"></span> עוצר את ההקלטה ומשלים את התמלול…' : `ההקלטה עצורה · ${fmtClock(s.recordedMs || 0)} · ${s.segments.length} שורות בתמלול`}</p>
       ${fin.filling ? '<p class="lead"><span class="spin"></span> ממלא את הטופס ממה שנאמר בסוף…</p>' : ''}
@@ -2275,7 +2276,7 @@ function renderHome() {
     ${envProblem() ? `<div class="banner warn">${esc(envProblem())}</div>` : ''}
     ${missing.length ? `<div class="banner warn">כדי להתחיל חסר ${missing.length > 1 ? missing.slice(0, -1).join(', ') + ' ו' + missing.at(-1) : missing[0]}. <a href="#" data-act="settings" data-tab="api">להגדרות API</a></div>` : ''}
     ${session ? `<section class="card"><div class="card-h cat-rec"><span class="glyph">${ICON.live}</span><h2>מפגש פתוח</h2></div>
-      <p class="muted">${esc(session.patientName)} · ${esc(session.region)} · ${fmtStamp(session.startedAt)}${session.savedAt ? ' · נשמר ב-Drive' : ' · <b>לא נשמר עדיין</b>'}</p>
+      <p class="muted">${esc(session.patientName)} · ${esc(session.region)} · ${fmtWhen(session.startedAt)}${session.savedAt ? ' · נשמר ב-Drive' : ' · <b>לא נשמר עדיין</b>'}</p>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn primary" data-act="resume">המשך מפגש</button><button class="btn danger" data-act="discard">סגור מפגש</button></div></section>` : ''}
     <div class="home-grid">
     <section class="card" aria-labelledby="newH">
@@ -2346,7 +2347,7 @@ const SIDE_LABEL = { hidden: 'מוסתרת', narrow: 'צרה', medium: 'בינו
 const sideShown = () => wide && (settings.sideW || 'medium') !== 'hidden' && !settings.focus;
 let trOpenNarrow = false; // below 1000px the transcript opens as a panel over the session
 const trOverlay = () => !wide && trOpenNarrow && !settings.focus;
-const TR_SIZE = { narrow: 'צר', medium: 'בינוני', wide: 'רחב' };
+const TR_SIZE = { narrow: SIDE_LABEL.narrow, medium: SIDE_LABEL.medium, wide: SIDE_LABEL.wide };
 function applyLayout() {
   const r = document.documentElement;
   r.dataset.side = settings.sideW || 'medium';
@@ -2555,7 +2556,7 @@ function srcPopHtml(ids, title) {
     const canPlay = g && !g.manual && s.audioParts;
     const badge = v.unverified ? '<span class="badge bad">לא נמצא בתמלול</span>' : v.needsCheck ? '<span class="badge chk">לאמת</span>' : v.confirmed ? '<span class="badge ok">אומת</span>' : v.source === 'manual' ? '<span class="badge">נכתב ידנית</span>' : v.source === 'note' ? '<span class="badge">מפתק</span>' : '';
     return `<div style="margin-top:${many ? 12 : 0}px">${many ? `<div class="fl">${esc(shortLabel(f.label))} ${badge}</div>` : ''}<div class="fv">${escN(v.value || '—')}</div>
-      ${v.quote ? `<div class="src-q${heard ? '' : ' bad'}"><div class="m">${!heard ? 'המודל ציטט, אבל זה לא נמצא בתמלול' : v.asked ? 'נשען על שאלה של המטפל, לא על דברי המטופל' : 'נשמע בתמלול'}${g ? ' · ' + hhmm(g.t) + (g.speaker != null ? ' · דובר ' + esc(g.speaker) : '') : ''}${canPlay ? `<button class="play" data-act="segPlay" data-i="${i}" aria-label="השמע מההקלטה">${ICON.play}</button>` : ''}</div>«${esc(v.quote)}»</div>` : ''}
+      ${v.quote ? `<div class="src-q${heard ? '' : ' bad'}"><div class="m">${!heard ? 'המודל ציטט, אבל זה לא נמצא בתמלול' : v.asked ? 'נשען על שאלה של המטפל, לא על דברי המטופל' : 'נשמע בתמלול'}${g ? ' · ' + hhmm(g.t) + (g.speaker != null ? ' · דובר ' + esc(g.speaker) : '') : ''}${canPlay ? `<button class="play" data-act="segPlay" data-i="${i}" aria-label="השמע מההקלטה">${ICON.play}</button>` : g ? ' · <span class="noaud">אין הקלטה לקטע זה</span>' : ''}</div>«${esc(v.quote)}»</div>` : ''}
       <div class="acts">${v.needsCheck || v.unverified ? `<button class="btn sm primary" data-act="confirm" data-fid="${id}">אשר</button>` : ''}<button class="btn sm" data-act="edit" data-fid="${id}">ערוך</button>${v.source === 'ai' ? `<button class="btn sm" data-act="undo" data-fid="${id}">בטל מילוי</button>` : ''}</div></div>`;
   });
   const one = ids.length === 1 && FIELD[ids[0]];
