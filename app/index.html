@@ -3,52 +3,58 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0f5c5c">
-<title>עוזר קליני</title>
+<meta name="theme-color" content="#16263a">
+<title>Thalamus · עוזר קליני</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>try{var t=localStorage.getItem('uqmap-theme');if(t==='light'||t==='comfort'||t==='dark')document.documentElement.dataset.theme=t;else if(!matchMedia('(prefers-color-scheme: dark)').matches)document.documentElement.dataset.theme='comfort'}catch(e){}</script>
 <style>
-/* themes: light (default), dark, comfort ("נוח לעין": warm paper, softer contrast, less blue light).
-   data-theme on <html> forces one; without it the system setting decides between light and dark. */
+/* Thalamus, an anatomy-atlas plate: paper ground, a venous-ink header band, and the atlas inks carry state —
+   arterial red = recording / must rule out, nerve ochre = not yet said, lymph green = done, venous blue = action.
+   data-theme on <html> forces light / comfort / dark; without it the system setting decides. */
 :root{
-  --bg:#f5f3ee; --surface:#ffffff; --surface-2:#eeebe4; --ink:#1c2321; --ink-2:#5a6360; --line:#dbd6cc;
-  --accent:#0f5c5c; --accent-ink:#ffffff; --accent-soft:#dbeae7;
-  --rec:#c0352a; --rec-soft:#f8dfdb; --warn:#9a5800; --warn-soft:#fbeccf; --ok:#2c6a3d; --ok-soft:#dcefe0;
-  --hl-done:#d4f0db; --hl-done-ink:#1d5a2f; --hl-rec:#ffe2b8; --hl-rec-ink:#7a4300; --hl-must:#ffd3cc; --hl-must-ink:#8e1f15;
-  --radius:14px; --shadow:0 1px 2px rgba(0,0,0,.05),0 6px 18px rgba(0,0,0,.05);
+  --bg:#f3f1ec; --surface:#ffffff; --surface-2:#ece9e2; --ink:#16202a; --ink-2:#55606b; --line:#dad5cc;
+  --accent:#1f5fa8; --accent-ink:#ffffff; --accent-soft:#dce7f5;
+  --rec:#b3261e; --rec-soft:#f7dcd8; --warn:#8a5a00; --warn-soft:#f6e7c1; --ok:#2e6b45; --ok-soft:#dceedf;
+  --hl-done:#d6ebd9; --hl-done-ink:#1f5a33; --hl-rec:#f3dfa8; --hl-rec-ink:#6b4600; --hl-must:#f6d2cc; --hl-must-ink:#8e1c14;
+  --band:#16263a; --band-ink:#f3f1ec; --band-ink-2:#b4c3d4; --band-line:#2b3f57; --band-field:#21364f; --band-err:#ffb4a8;
+  --lead:#16202a; --radius:8px; --shadow:none;
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme]){
-    --bg:#111514; --surface:#1a201f; --surface-2:#222928; --ink:#e7ecea; --ink-2:#a1aba8; --line:#2e3735;
-    --accent:#5fb3a8; --accent-ink:#0a1413; --accent-soft:#1c3431;
-    --rec:#ef6a5e; --rec-soft:#3b201e; --warn:#e6b05a; --warn-soft:#382c16; --ok:#7bc38d; --ok-soft:#1b3222;
-    --hl-done:#1f3d29; --hl-done-ink:#a6e3b5; --hl-rec:#47331a; --hl-rec-ink:#f3c27c; --hl-must:#4d2420; --hl-must-ink:#ffb1a8;
-    --shadow:none;
+    --bg:#0f141a; --surface:#161d25; --surface-2:#1e2731; --ink:#e6ebf0; --ink-2:#9eabb8; --line:#2a3542;
+    --accent:#7fb0e8; --accent-ink:#0b1118; --accent-soft:#1b2c40;
+    --rec:#f0705f; --rec-soft:#3a1e1b; --warn:#e2b254; --warn-soft:#352a14; --ok:#7cc48f; --ok-soft:#183020;
+    --hl-done:#1c3424; --hl-done-ink:#a8e0b6; --hl-rec:#3f3115; --hl-rec-ink:#f0cc7a; --hl-must:#45221f; --hl-must-ink:#ffb4a8;
+    --band:#0a0e13; --band-ink:#e6ebf0; --band-ink-2:#93a4b6; --band-line:#1f2934; --band-field:#141b23; --band-err:#ffb4a8;
+    --lead:#e6ebf0;
   }
 }
 :root[data-theme=dark]{
-  --bg:#111514; --surface:#1a201f; --surface-2:#222928; --ink:#e7ecea; --ink-2:#a1aba8; --line:#2e3735;
-  --accent:#5fb3a8; --accent-ink:#0a1413; --accent-soft:#1c3431;
-  --rec:#ef6a5e; --rec-soft:#3b201e; --warn:#e6b05a; --warn-soft:#382c16; --ok:#7bc38d; --ok-soft:#1b3222;
-  --hl-done:#1f3d29; --hl-done-ink:#a6e3b5; --hl-rec:#47331a; --hl-rec-ink:#f3c27c; --hl-must:#4d2420; --hl-must-ink:#ffb1a8;
-  --shadow:none;
+  --bg:#0f141a; --surface:#161d25; --surface-2:#1e2731; --ink:#e6ebf0; --ink-2:#9eabb8; --line:#2a3542;
+  --accent:#7fb0e8; --accent-ink:#0b1118; --accent-soft:#1b2c40;
+  --rec:#f0705f; --rec-soft:#3a1e1b; --warn:#e2b254; --warn-soft:#352a14; --ok:#7cc48f; --ok-soft:#183020;
+  --hl-done:#1c3424; --hl-done-ink:#a8e0b6; --hl-rec:#3f3115; --hl-rec-ink:#f0cc7a; --hl-must:#45221f; --hl-must-ink:#ffb4a8;
+  --band:#0a0e13; --band-ink:#e6ebf0; --band-ink-2:#93a4b6; --band-line:#1f2934; --band-field:#141b23; --band-err:#ffb4a8;
+  --lead:#e6ebf0;
 }
+/* comfort: the same plate under warm, low-glare light */
 :root[data-theme=comfort]{
-  --bg:#f0dcc0; --surface:#faecd8; --surface-2:#f3e1c6; --ink:#33271b; --ink-2:#735e45; --line:#e4cba8;
-  --accent:#3e6b5f; --accent-ink:#fbf6ea; --accent-soft:#dde3cf;
-  --rec:#b04a3c; --rec-soft:#f1d6c8; --warn:#8a5a1c; --warn-soft:#f2dfb8; --ok:#4c6b38; --ok-soft:#dfe5c6;
-  --hl-done:#d8e6c4; --hl-done-ink:#3c5a26; --hl-rec:#f5d9a8; --hl-rec-ink:#714815; --hl-must:#f0c9bb; --hl-must-ink:#86321f;
-  --shadow:0 1px 2px rgba(60,40,10,.06);
+  --bg:#ede3d2; --surface:#f7f0e3; --surface-2:#e8dcc8; --ink:#2b2620; --ink-2:#655848; --line:#d9cbb3;
+  --accent:#2c5c8f; --accent-ink:#f7f0e3; --accent-soft:#d9e1e6;
+  --rec:#a33a2e; --rec-soft:#edcfc4; --warn:#7a5210; --warn-soft:#eeddb5; --ok:#3f6a42; --ok-soft:#dce3c8;
+  --hl-done:#d7e3c3; --hl-done-ink:#365a2a; --hl-rec:#eed9a4; --hl-rec-ink:#5f400c; --hl-must:#edc8bc; --hl-must-ink:#842f21;
+  --band:#2f2b25; --band-ink:#f4ecdd; --band-ink-2:#c9bba5; --band-line:#4a443b; --band-field:#3b362f; --band-err:#ffc2b4;
+  --lead:#2b2620;
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink)}
-body{font:16px/1.55 Heebo,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;-webkit-text-size-adjust:100%;padding-bottom:env(safe-area-inset-bottom)}
+body{font:16px/1.55 Assistant,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;font-feature-settings:"tnum" 0;-webkit-text-size-adjust:100%;padding-bottom:env(safe-area-inset-bottom)}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 h1,h2,h3{margin:0;line-height:1.25}
@@ -130,6 +136,8 @@ textarea.inp{resize:vertical;min-height:84px}
 .chip.miss-more{border:1px dashed var(--ink-2);background:transparent;color:var(--ink-2);padding:5px 11px;min-height:34px;font-size:13.5px;line-height:1.45;display:none}
 /* phone: the "useful" level folds into one chip so the form still starts on the first screen */
 @media (max-width:639px){
+  .feed-row{flex-wrap:wrap}
+  .fr-act{width:100%;justify-content:flex-start}
   .tabs{gap:0}
   .tabs button{font-size:14.5px;padding:10px 2px}
   .missing:not(.open) .chip.miss.i3{display:none}
@@ -238,7 +246,7 @@ body.has-player .toast{bottom:calc(140px + env(safe-area-inset-bottom))}
   .split{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(340px,1fr);gap:28px;align-items:start}
   .side{position:sticky;top:calc(var(--hdr,170px) + 6px);max-height:calc(100dvh - var(--hdr,170px) - 92px);overflow:auto;
         border-inline-start:1px solid var(--line);padding:0 18px 16px 4px;overscroll-behavior:contain}
-  .tabs [data-tab=transcript]{display:none}
+  html[data-side-on] .tabs [data-tab=transcript]{display:none}
   /* one bar: name · recording · stage · tools; under it the tabs with the fill status at the far end */
   .top .bar{display:flex;gap:18px;min-height:68px;padding-bottom:0}
   .bar .title{flex:0 1 auto;min-width:120px;max-width:280px}
@@ -313,6 +321,80 @@ details.help summary{color:var(--accent);font-size:14px;cursor:pointer}
 .fin .done{background:var(--hl-done);color:var(--hl-done-ink);border-radius:12px;padding:14px 16px;font-size:15px}
 .fin .done a{color:inherit;font-weight:600}
 @media (prefers-reduced-motion:reduce){.recpill i,.recbtn.on,.field.hit{animation:none}}
+/* ===== Thalamus: the atlas plate layer ===== */
+::selection{background:var(--accent-soft);color:var(--ink)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+html{scrollbar-color:var(--line) transparent}
+/* the shell: one venous-ink band carries the patient, the recording and the stage */
+.top{background:var(--band);color:var(--band-ink);border-bottom:0}
+.top h1,.top .title h1{color:var(--band-ink)}
+.top .title span{color:var(--band-ink-2)}
+.top .icon-btn{color:var(--band-ink)}
+.top .icon-btn:active,.top .icon-btn[aria-pressed=true]{background:var(--band-field)}
+.top .icon-btn:focus-visible,.top .tabs button:focus-visible,.top .stages .chip:focus-visible{outline-color:var(--band-ink)}
+.rec-meta .timer{color:var(--band-ink);font-weight:700;letter-spacing:.01em}
+.rec-meta .state{color:var(--band-ink-2)}
+.recbtn{background:var(--rec);color:#fff;box-shadow:0 0 0 3px var(--band-field)}
+.stages{background:var(--band-field)}
+.stages .chip{color:var(--band-ink-2)}
+.stages .chip.on{background:var(--band-ink);color:var(--band);box-shadow:none}
+.top .wrap.sub{border-top:1px solid var(--band-line)}
+.top .tabs{border-bottom:0}
+.top .tabs button{color:var(--band-ink-2);border-bottom-color:transparent}
+.top .tabs button.on{color:var(--band-ink);border-bottom-color:var(--band-ink)}
+.top .status{color:var(--band-ink-2)}
+.top .status.err{color:var(--band-err)}
+.top .status .linkbtn{color:var(--band-ink);text-decoration:underline;text-underline-offset:3px}
+.brand{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.brand .mark{width:30px;height:24px;flex:none;color:var(--band-ink)}
+.brand h1{font-size:21px;font-weight:800;letter-spacing:.01em;flex:none}
+.brand small{font-size:13px;color:var(--band-ink-2);font-weight:500}
+/* plates: flat, 8px, separated by tone and one rule */
+.card{border-radius:var(--radius);box-shadow:none}
+.card h2{font-size:16px;font-weight:700}
+.btn{border-radius:8px;font-weight:600}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.inp{border-radius:8px}
+.field{border-radius:8px}
+.chip{border-radius:6px}
+.chip.miss,.chip.miss-more{border-radius:6px}
+.stages,.stages .chip{border-radius:7px}
+.badge{border-radius:4px}
+.tabs button{font-weight:600}
+.recpill{background:var(--rec-soft)}
+/* the label pin: every captured fact starts with an atlas label dot */
+.fr-l b::before,.cap-row .k::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-inline-end:7px;vertical-align:middle;box-shadow:0 0 0 2px var(--accent-soft)}
+.fr-act .src{border-color:transparent;color:var(--accent);padding:0 6px}
+/* the signature: a leader line from a captured fact to the transcript line it was heard in */
+.leader{position:fixed;left:0;top:0;width:100vw;height:100vh;pointer-events:none;z-index:40;overflow:visible}
+.leader line{stroke:var(--lead);stroke-width:1.25}
+.leader circle{fill:var(--surface);stroke:var(--lead);stroke-width:1.25}
+.leader circle.end{fill:var(--lead)}
+.seg.sourced{background:var(--accent-soft);border-radius:6px;padding-inline:8px;box-shadow:inset -3px 0 0 var(--accent)}
+.callout{position:relative;margin-top:8px;padding:8px 22px 8px 10px;font-size:13.5px;color:var(--ink-2);background:var(--surface-2);border-radius:6px}
+.callout::before{content:"";position:absolute;inset-inline-start:9px;top:0;bottom:50%;border-inline-start:1.25px solid var(--lead)}
+.callout::after{content:"";position:absolute;inset-inline-start:6px;top:calc(50% - 4px);width:7px;height:7px;border-radius:50%;background:var(--lead)}
+/* layout the therapist controls: transcript width, focus, density */
+@media (min-width:1000px){
+  html[data-side-on] .split{grid-template-columns:minmax(0,1fr) var(--side-w,38%)}
+  html:not([data-side-on]) .split{display:block;max-width:900px;margin-inline:auto}
+  html[data-side=narrow]{--side-w:300px}
+  html[data-side=medium]{--side-w:38%}
+  html[data-side=wide]{--side-w:50%}
+  html:not([data-side-on]) .tabs [data-tab=transcript]{display:inline-block}
+}
+html[data-focus] .captured,html[data-focus] .top .tools .map-btn,html[data-focus] .top .tools .theme-btn{display:none}
+html[data-focus] .missing .chip.miss{font-size:15px;min-height:38px}
+html[data-focus] .feed-row .fr-v{font-size:17px}
+html[data-density=compact] body{font-size:15px}
+html[data-density=compact] .card{padding:12px;margin:10px 0}
+html[data-density=compact] .chip.miss{padding:3px 9px;min-height:30px;font-size:13px}
+html[data-density=compact] .feed-row{padding:7px 0}
+html[data-density=compact] .field{padding:7px 10px;margin:6px 0}
+html[data-density=compact] .field.empty{min-height:40px;padding:4px 10px}
+html[data-density=compact] .cap-row{padding:6px 0;min-height:34px}
+html[data-density=compact] .seg{padding:5px 0}
+.seg-pick button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 </style>
 </head>
 <body>
@@ -488,6 +570,9 @@ const ICON = {
   back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>',
   mic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"/></svg>',
   stop: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>',
+  mark: '<svg class="mark" viewBox="0 0 32 24" aria-hidden="true"><ellipse cx="11.2" cy="12" rx="7.2" ry="9.6" transform="rotate(-14 11.2 12)" fill="currentColor" opacity=".55"/><ellipse cx="20.8" cy="12" rx="7.2" ry="9.6" transform="rotate(14 20.8 12)" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+  focus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 9V5h4M20 9V5h-4M4 15v4h4M20 15v4h-4"/><circle cx="12" cy="12" r="2.6"/></svg>',
+  pane: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2"/><path d="M10 4.5v15"/></svg>',
   chev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M15 6l-6 6 6 6"/></svg>',
   play: '<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M8 5v14l11-7z"/></svg>',
   close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><path d="M6 6l12 12M18 6 6 18"/></svg>',
@@ -506,7 +591,7 @@ function toast(msg, err = false, ms = 3800) {
 }
 /* ---------------- theme ---------------- */
 const THEMES = [['auto', 'אוטומטי'], ['light', 'בהיר'], ['comfort', 'נוח לעין'], ['dark', 'כהה']];
-const THEME_BG = { light: '#f5f3ee', dark: '#111514', comfort: '#f0dcc0' };
+const THEME_BG = { light: '#16263a', dark: '#0a0e13', comfort: '#2f2b25' };
 const DARK_MQ = matchMedia('(prefers-color-scheme: dark)');
 // one theme for the whole site: the map and the app share localStorage 'uqmap-theme'
 const THEME_KEY = 'uqmap-theme';
@@ -1835,6 +1920,7 @@ function renderFinish() {
   </main>`;
 }
 function render() {
+  applyLayout(); clearLeader();
   if (view === 'finish' && session) return renderFinish();
   if (view === 'settings') return renderSettings();
   if (view === 'session' && session) return renderSession();
@@ -1844,7 +1930,7 @@ function render() {
 function renderHome() {
   const needSetup = !settings.apiKey || !settings.clientId;
   $('#app').innerHTML = `
-  <header class="top"><div class="wrap"><h1>עוזר קליני</h1>
+  <header class="top"><div class="wrap"><div class="brand">${ICON.mark}<h1>Thalamus</h1><small>עוזר קליני</small></div>
     ${MAP_URL ? `<a class="icon-btn" href="${MAP_URL}" aria-label="מפת הדרך" title="מפת הדרך">${ICON.map}</a>` : ''}
     <button class="icon-btn" data-act="cycleTheme" aria-label="מצב תצוגה">${ICON.eye}</button>
     <button class="icon-btn" data-act="settings" aria-label="הגדרות">${ICON.gear}</button></div></header>
@@ -1893,8 +1979,10 @@ function renderSession() {
       <div class="stages" id="stageChips" role="group" aria-label="שלב המפגש">${STAGES.map(x => `<button class="chip ${s.stage === x.id ? 'on' : ''}" data-act="stage" data-stage="${x.id}" aria-pressed="${s.stage === x.id}">${x.label}</button>`).join('')}</div>
     </div>
     <div class="tools">
-      ${MAP_URL ? `<a class="icon-btn" href="${mapLink(s.region)}" target="_blank" rel="noopener" aria-label="מפת הדרך לאזור" title="מפת הדרך לאזור">${ICON.map}</a>` : ''}
-      <button class="icon-btn" data-act="cycleTheme" aria-label="מצב תצוגה">${ICON.eye}</button>
+      ${MAP_URL ? `<a class="icon-btn map-btn" href="${mapLink(s.region)}" target="_blank" rel="noopener" aria-label="מפת הדרך לאזור" title="מפת הדרך לאזור">${ICON.map}</a>` : ''}
+      <button class="icon-btn theme-btn" data-act="cycleTheme" aria-label="מצב תצוגה">${ICON.eye}</button>
+      ${wide && !settings.focus ? `<button class="icon-btn" data-act="pane" aria-label="רוחב חלונית התמלול: ${SIDE_LABEL[settings.sideW || 'medium']}" title="רוחב חלונית התמלול">${ICON.pane}</button>` : ''}
+      <button class="icon-btn" data-act="focus" aria-pressed="${!!settings.focus}" aria-label="מצב פוקוס" title="מצב פוקוס">${ICON.focus}</button>
       <button class="icon-btn" data-act="settings" aria-label="הגדרות">${ICON.gear}</button>
     </div>
   </div>
@@ -1909,7 +1997,7 @@ function renderSession() {
   </div></header>
   <div class="wrap split">
     <main class="tabbody" id="tabBody" role="tabpanel"></main>
-    ${wide ? `<aside class="side" id="sidePane" aria-label="תמלול"></aside>` : ''}
+    ${sideShown() ? `<aside class="side" id="sidePane" aria-label="תמלול"></aside>` : ''}
   </div>
   <footer class="actions"><div class="wrap">
     <span class="savestate" id="saveState" role="status"></span>
@@ -1922,7 +2010,18 @@ function renderSession() {
 // wide screens (tablet landscape): the transcript lives in a side pane, tabs are form / analysis
 const WIDE_MQ = matchMedia('(min-width: 1000px)');
 let wide = WIDE_MQ.matches;
-WIDE_MQ.addEventListener?.('change', e => { wide = e.matches; if (view === 'session' && session) renderSession(); });
+WIDE_MQ.addEventListener?.('change', e => { wide = e.matches; applyLayout(); if (view === 'session' && session) renderSession(); });
+// the therapist's own layout: transcript pane width, focus mode, density
+const SIDE_LABEL = { hidden: 'מוסתרת', narrow: 'צרה', medium: 'בינונית', wide: 'רחבה' };
+const sideShown = () => wide && (settings.sideW || 'medium') !== 'hidden' && !settings.focus;
+function applyLayout() {
+  const r = document.documentElement;
+  r.dataset.side = settings.sideW || 'medium';
+  r.toggleAttribute('data-side-on', sideShown());
+  r.toggleAttribute('data-focus', !!settings.focus);
+  r.dataset.density = settings.density || 'comfortable';
+}
+applyLayout();
 function renderSide() {
   const side = $('#sidePane'); if (!side) return;
   side.innerHTML = `<h3 class="side-h">תמלול <span class="cnt muted small" id="sideCount">${session.segments.length}</span></h3>` + transcriptHtml();
@@ -1967,7 +2066,7 @@ async function renderTestLinks() {
     <div class="chips">${found.map(([id, n]) => `<a class="chip" href="${mapLink(homeOf(id) || session.region, id)}" target="_blank" rel="noopener">${esc(n)}</a>`).join('')}</div></div>` : '';
 }
 function renderTab() {
-  if (wide && tab === 'transcript') tab = 'live';
+  if (sideShown() && tab === 'transcript') tab = 'live';
   $$('#tabs button').forEach(b => { const on = b.dataset.tab === tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; });
   const body = $('#tabBody'); if (!body) return;
   body.setAttribute('aria-label', $(`#tabs [data-tab="${tab}"]`)?.textContent || '');
@@ -2001,6 +2100,7 @@ function feedHtml() {
           ${r.prev ? `<div class="fr-was">היה: ${esc(String(r.prev.value).slice(0, 80))}</div>` : ''}</div>
         <div class="fr-act">
           ${v.needsCheck ? `<button class="ok" data-act="confirm" data-fid="${r.id}">אשר</button>` : ''}
+          ${v.quote ? `<button class="src" data-act="src" data-fid="${r.id}">מקור</button>` : ''}
           <button data-act="edit" data-fid="${r.id}">ערוך</button>
           <button data-act="undo" data-fid="${r.id}" aria-label="בטל את המילוי של ${esc(shortLabel(f.label))}">בטל</button>
         </div></div>`;
@@ -2015,6 +2115,31 @@ function capturedHtml() {
       return `<button class="cap-row" data-act="jump" data-fid="${f.id}"><span class="k">${esc(shortLabel(f.label))}</span><span class="v">${esc(v.value)}</span>${v.unverified ? '<span class="badge bad">לא נמצא</span>' : v.needsCheck ? '<span class="badge chk">לאמת</span>' : ''}</button>`; }).join('')
       : `<p class="empty-note">עוד לא נאסף מידע בשלב הזה.</p>`}
   </section>`;
+}
+/* the signature: a leader line from a captured fact to the transcript line it was heard in */
+function findSeg(quote) {
+  const q = normQ(quote); if (!q) return -1;
+  const words = q.split(' ').filter(w => w.length > 1); let best = -1, score = 0;
+  session.segments.forEach((g, i) => { const t = normQ(g.text); const sc = t.includes(q) ? 2 : words.filter(w => t.includes(w)).length / Math.max(1, words.length); if (sc > score) { score = sc; best = i; } });
+  return score >= 0.6 ? best : -1;
+}
+let leaderT = null;
+function clearLeader() { clearTimeout(leaderT); $('#leader')?.remove(); $$('.seg.sourced').forEach(e => e.classList.remove('sourced')); }
+function showSource(fid, from) {
+  clearLeader(); $$('.callout').forEach(c => c.remove());
+  const v = session?.fields[fid]; if (!v?.quote) { toast('אין ציטוט מקור לשדה הזה'); return; }
+  const side = $('#sidePane'), i = findSeg(v.quote), seg = side && i >= 0 ? side.querySelector(`.seg[data-i="${i}"]`) : null;
+  if (!seg) { // no pane on this screen, or the line is gone: the quote opens under the fact
+    from.insertAdjacentHTML('beforeend', `<div class="callout">${v.unverified || i < 0 ? 'המודל ציטט, אבל זה לא נמצא בתמלול' : 'נשמע בתמלול'}: «${esc(v.quote)}»</div>`); return;
+  }
+  seg.classList.add('sourced'); seg.scrollIntoView({ block: 'center' });
+  requestAnimationFrame(() => {
+    const a = from.getBoundingClientRect(), b = seg.getBoundingClientRect();
+    const x1 = a.left - 6, y1 = Math.max(a.top + 18, Math.min(a.bottom - 18, a.top + a.height / 2)), x2 = b.right + 6, y2 = b.top + Math.min(b.height / 2, 16);
+    document.body.insertAdjacentHTML('beforeend', `<svg class="leader" id="leader" aria-hidden="true"><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/><circle cx="${x1}" cy="${y1}" r="4"/><circle class="end" cx="${x2}" cy="${y2}" r="3.5"/></svg>`);
+    setTimeout(() => { addEventListener('scroll', clearLeader, { capture: true, once: true }); }, 50);
+    leaderT = setTimeout(clearLeader, 4500);
+  });
 }
 function liveHtml() { return missingHtml() + feedHtml() + capturedHtml(); }
 // a session changed since it was last saved to Drive
@@ -2226,8 +2351,14 @@ function renderSettings() {
   ${recPillHtml()}
   <main class="wrap cols2" style="padding-bottom:40px">
     <div class="card"><h2>תצוגה</h2>
+      <label class="lbl" style="margin-top:0">צבעים</label>
       <div class="seg-pick" role="group" aria-label="מצב תצוגה">${THEMES.map(([id, label]) => `<button data-act="theme" data-theme="${id}" class="${getTheme() === id ? 'on' : ''}">${label}</button>`).join('')}</div>
       <p class="muted small" style="margin:8px 0 0">"אוטומטי" — נוח לעין, וכהה כשהמכשיר במצב כהה. אותה בחירה חלה גם על המפה. "נוח לעין" — רקע נייר חם וניגודיות רכה, לעבודה ארוכה. אפשר להחליף גם בכפתור מצב התצוגה שבפס העליון.</p>
+      <label class="lbl">חלונית התמלול (במסך רחב)</label>
+      <div class="seg-pick" role="group" aria-label="רוחב חלונית התמלול">${['hidden','narrow','medium','wide'].map(k => `<button data-act="sideW" data-v="${k}" aria-pressed="${(st.sideW || 'medium') === k}">${SIDE_LABEL[k]}</button>`).join('')}</div>
+      <label class="lbl">צפיפות</label>
+      <div class="seg-pick" style="grid-template-columns:repeat(2,1fr)" role="group" aria-label="צפיפות">${[['comfortable','רגילה'],['compact','קומפקטית']].map(([k,l]) => `<button data-act="density" data-v="${k}" aria-pressed="${(st.density || 'comfortable') === k}">${l}</button>`).join('')}</div>
+      <label class="check" style="margin-top:12px"><input type="checkbox" id="sFocus" ${st.focus ? 'checked' : ''}><span>מצב פוקוס: במפגש רק "עוד לא נאמר" ו"נקלט עכשיו", בלי חלונית התמלול וכלים משניים</span></label>
     </div>
     <div class="card"><h2>Claude API</h2>
       <label class="lbl" for="sKey">מפתח API</label>
@@ -2286,7 +2417,7 @@ function renderSettings() {
   bind('sKey', 'apiKey', v => v.trim()); bind('sExt', 'extractModel'); bind('sAna', 'analysisModel');
   bind('sCid', 'clientId', v => v.trim()); bind('sRoot', 'rootFolderName', v => v.trim() || 'מטופלים');
   bind('sKb', 'kbDocs'); bind('sExtra', 'extraKB'); bind('sSite', 'siteKB'); bind('sBudget', 'kbBudget', v => Math.max(20, +v || 350)); bind('sAuto', 'autoFill'); bind('sChars', 'fillChars', v => Math.max(80, +v || 600)); bind('sCont', 'continuous'); bind('sAccess', 'accessCode', v => v.trim()); bind('sAudio', 'saveAudio');
-  bind('sEngine', 'engine'); $('#sEngine').addEventListener('change', e => { $('#sonioxBox').hidden = e.target.value !== 'soniox'; });
+  bind('sEngine', 'engine'); $('#sFocus')?.addEventListener('change', e => { settings.focus = e.target.checked; saveSettings(); applyLayout(); }); $('#sEngine').addEventListener('change', e => { $('#sonioxBox').hidden = e.target.value !== 'soniox'; });
 }
 
 /* ---------------- events ---------------- */
@@ -2323,7 +2454,7 @@ document.addEventListener('click', async e => {
       session.recent = (session.recent || []).filter(x => x.id !== id);
       touch(); refreshField(id); refreshLive(); refreshCounts(); toast('המילוי בוטל. אותו ערך לא יוכנס שוב אוטומטית.', false, 2600); break;
     }
-    case 'quote': { const q = $('#q-' + t.dataset.fid); if (q) q.hidden = !q.hidden; break; }
+    case 'quote': { if ($('#sidePane')) { showSource(t.dataset.fid, t.closest('.field')); break; } const q = $('#q-' + t.dataset.fid); if (q) q.hidden = !q.hidden; break; }
     case 'confirm': { const f = session.fields[t.dataset.fid]; if (f) { f.needsCheck = false; f.unverified = false; touch(); refreshField(t.dataset.fid); refreshLive(); } break; }
     case 'vConfirm': {
       const id = t.dataset.fid, f = session.fields[id], val = ($('#vt-' + id)?.value || '').trim(); if (!f) break;
@@ -2374,6 +2505,14 @@ document.addEventListener('click', async e => {
     case 'testSoniox': testSoniox(t); break;
     case 'refreshKb': refreshKb(t); break;
     case 'theme': setTheme(t.dataset.theme); break;
+    case 'sideW': case 'density':
+      settings[act === 'sideW' ? 'sideW' : 'density'] = t.dataset.v; saveSettings(); applyLayout();
+      $$(`[data-act="${act}"]`).forEach(b => b.setAttribute('aria-pressed', b === t)); break;
+    case 'focus': settings.focus = !settings.focus; saveSettings(); applyLayout(); renderSession(); toast(settings.focus ? 'מצב פוקוס' : 'יציאה ממצב פוקוס', false, 1300); break;
+    case 'pane': { const order = ['hidden', 'narrow', 'medium', 'wide'], cur = settings.sideW || 'medium';
+      settings.sideW = order[(order.indexOf(cur) + 1) % order.length]; saveSettings(); applyLayout(); renderSession();
+      toast('חלונית התמלול: ' + SIDE_LABEL[settings.sideW], false, 1300); break; }
+    case 'src': showSource(t.dataset.fid, t.closest('.feed-row, .field, .cap-row') || t); break;
     case 'cycleTheme': {
       const ids = THEMES.map(x => x[0]), next = ids[(ids.indexOf(getTheme()) + 1) % ids.length];
       setTheme(next); toast('תצוגה: ' + THEMES.find(x => x[0] === next)[1], false, 1400); break;

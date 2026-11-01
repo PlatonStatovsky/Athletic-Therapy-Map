@@ -1,14 +1,14 @@
 {
-  "name": "עוזר קליני",
-  "short_name": "עוזר קליני",
+  "name": "Thalamus · עוזר קליני",
+  "short_name": "Thalamus",
   "lang": "he",
   "dir": "rtl",
   "start_url": "./",
   "scope": "../",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#f5f3ee",
-  "theme_color": "#0f5c5c",
+  "background_color": "#f3f1ec",
+  "theme_color": "#16263a",
   "icons": [
     {
       "src": "icon-192.png",
@@ -27,5 +27,5 @@
       "purpose": "maskable"
     }
   ],
-  "description": "עוזר קליני ומפת דרך לשיקום שמרני"
+  "description": "Thalamus: עוזר קליני למפגש, מחובר למפת הדרך לשיקום שמרני"
 }
