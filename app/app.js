@@ -224,6 +224,7 @@ const ICON = (() => {
     bulb: S('<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/>'),
     drive: S('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>', 2),
     clip: S('<rect x="5" y="4.5" width="14" height="16.5" rx="2.5"/><path d="M9 4.5V3.5h6v1M8.5 10h7M8.5 13.5h7M8.5 17h4"/>'),
+    ext: S('<path d="M7 17 17 7M9 7h8v8"/>'),
     more: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="8" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="16" cy="12" r="1.1" fill="currentColor" stroke="none"/></svg>'
   };
 })();
@@ -249,11 +250,16 @@ function applyTheme() {
 }
 function setTheme(t) {
   try { if (t === 'auto') localStorage.removeItem(THEME_KEY); else localStorage.setItem(THEME_KEY, t); } catch { }
-  applyTheme();
+  themeChanged();
   $$('.seg-pick [data-theme]').forEach(b => b.classList.toggle('on', b.dataset.theme === t));
 }
-window.addEventListener('storage', e => { if (e.key === THEME_KEY) applyTheme(); });
-DARK_MQ.addEventListener?.('change', applyTheme);
+// Safari keeps painting the sticky transcript panel in the old theme until it is rebuilt, so rebuild it
+function themeChanged() {
+  applyTheme();
+  requestAnimationFrame(() => { if (view === 'session' && session && $('#sidePane')) renderSide(); });
+}
+window.addEventListener('storage', e => { if (e.key === THEME_KEY) themeChanged(); });
+DARK_MQ.addEventListener?.('change', themeChanged);
 function autosize(t) { t.style.height = 'auto'; t.style.height = (t.scrollHeight + 2) + 'px'; }
 const fmtDate = iso => { const d = new Date(iso); return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}`; };
 const fmtStamp = iso => { const d = new Date(iso); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
@@ -1082,7 +1088,7 @@ function examCard() {
     // positive / negative / unclear get a mark; a score or words keep exactly what was said
     const cls = { positive: 'pos', negative: 'neg', equivocal: 'eq', score: 'val', text: 'val' };
     tests = `<div><h3>${ICON.tests} מבדקים מיוחדים</h3><div class="tests">${ex.tests.map(t => `<div class="test"><span class="res ${cls[t.result] || 'val'}">${cls[t.result] === 'val' ? '' : '<i aria-hidden="true"></i>'}${t.result === 'score' && t.value ? `<bdi dir="ltr">${esc(t.value)}</bdi>` : esc(resultText(t))}</span>
-      <span class="nm">${t.test_id && testLink(t.test_id) ? `<a href="${testLink(t.test_id)}" target="_blank" rel="noopener">${esc(t.name)}</a>` : `<b>${esc(t.name)}</b>`}${unvOf(s, t.fields) ? UNV : ''}</span><span class="sd">${SIDE_HE[t.side] || ''}</span></div>`).join('')}</div></div>`;
+      <span class="nm">${t.test_id && testLink(t.test_id) ? `<a href="${testLink(t.test_id)}" target="${MAP_TARGET}">${esc(t.name)}</a>` : `<b>${esc(t.name)}</b>`}${unvOf(s, t.fields) ? UNV : ''}</span><span class="sd">${SIDE_HE[t.side] || ''}</span></div>`).join('')}</div></div>`;
   }
   return `<section class="card span2">${cardHead('exam', atMeta('exam'))}<div class="exam">${rom}${mmt}${tests}</div></section>`;
 }
@@ -1091,7 +1097,7 @@ function hypoCard(inGrid) {
   return `<section class="card${inGrid ? ' span2' : ''}">${cardHead('hypo', atMeta('hypo') + hypoBtn('עדכן'))}
     <div class="hyps">${list.map(h => `<div class="hyp"><h3>${esc(h.name)}</h3><span class="st ${STATUS_HE[h.status] ? h.status : 'possible'}">${lvl}${STATUS_HE[h.status] || STATUS_HE.possible}</span>
       ${h.support?.length || h.against?.length ? `<div class="ev"><div><b>תומך</b>${h.support?.length ? `<ul>${h.support.map(x => `<li>${escN(x)}</li>`).join('')}</ul>` : '<span class="muted">—</span>'}</div><div><b>סותר</b>${h.against?.length ? `<ul>${h.against.map(x => `<li>${escN(x)}</li>`).join('')}</ul>` : '<span class="muted">—</span>'}</div></div>` : ''}
-      ${h.tests?.length ? `<div class="ts">מבדקים שיעזרו להבחין: ${h.tests.map(id => testLink(id) ? `<a class="chipl" href="${testLink(id)}" target="_blank" rel="noopener">${esc(testName(id))}</a>` : `<span class="chipl">${esc(testName(id))}</span>`).join('')}</div>` : ''}</div>`).join('')}</div>
+      ${h.tests?.length ? `<div class="ts">מבדקים שיעזרו להבחין: ${h.tests.map(id => testLink(id) ? `<a class="chipl" href="${testLink(id)}" target="${MAP_TARGET}">${esc(testName(id))}</a>` : `<span class="chipl">${esc(testName(id))}</span>`).join('')}</div>` : ''}</div>`).join('')}</div>
     <p class="fine">השערות עבודה לחשיבה קלינית, לא אבחנה. ${MAP_TAB[s.region] ? 'נשענות על המסלולים במפת הדרך לאזור.' : 'לאזור הזה עוד אין מסלולים במפה.'}</p></section>`;
 }
 
@@ -2315,6 +2321,7 @@ function renderSession() {
       ${islandHtml()}
       <div class="trail"><div class="capsule glass tools">
         <button class="icon-btn opt" data-act="focus" aria-pressed="${!!settings.focus}" aria-label="מצב פוקוס" title="מצב פוקוס">${ICON.focus}</button>
+        ${!sideShown() && !settings.focus ? `<button class="icon-btn ph-tr" data-act="trOpen" aria-label="פתח את התמלול" title="תמלול">${ICON.chat}<span class="cnt" id="trCountPh">${s.segments.length || ''}</span></button>` : ''}
         <button class="icon-btn" data-act="more" aria-haspopup="dialog" aria-label="עוד: תצוגה, מפה, הגדרות" title="עוד">${ICON.more}</button>
         <button class="btn sm primary" data-act="finish">סיום</button>
       </div></div>
@@ -2363,6 +2370,7 @@ function sideToLatest() {
   box.scrollTop = Math.max(0, list.offsetTop + list.offsetHeight + 48 - box.clientHeight);
 }
 // map deep links: "../#shoulder" opens a region, "../#shoulder&t=hk" also opens a test card
+const MAP_TARGET = 'thalamus-map'; // every map link reuses this one tab
 const MAP_TAB = { 'צוואר וראש': 'neck', 'כתף': 'shoulder', 'מרפק': 'elbow', 'שורש כף יד וכף יד': 'hand' };
 function mapLink(region, testId) { return MAP_URL + '#' + (MAP_TAB[region] || 'general') + (testId ? '&t=' + testId : ''); }
 let siteData = null; // the map's data once loaded, for test names and the region a test card lives in
@@ -2395,7 +2403,7 @@ async function renderTestLinks() {
     if (hit) found.push([id, t.n]);
   }
   box.innerHTML = found.length ? `<section class="card"><div class="card-h cat-test"><span class="glyph">${ICON.tests}</span><h2>מבדקים שהוזכרו</h2><span class="end meta">פתיחת הכרטיס במפה</span></div>
-    <div class="toks">${found.map(([id, n]) => `<a class="chipl" href="${testLink(id)}" target="_blank" rel="noopener">${esc(n)}</a>`).join('')}</div></section>` : '';
+    <div class="toks">${found.map(([id, n]) => `<a class="chipl" href="${testLink(id)}" target="${MAP_TARGET}">${esc(n)}</a>`).join('')}</div></section>` : '';
 }
 function ptitleHtml() {
   const s = session;
@@ -2412,7 +2420,7 @@ function renderTab() {
   else { body.innerHTML = ptitleHtml() + analysisHtml(); renderTestLinks(); }
   if (tab === 'form' || tab === 'summary') $$('#tabBody textarea').forEach(autosize);
   const nb = $('#noteBar');
-  if (nb) nb.innerHTML = tab === 'live' && smart().notes ? `<form class="notebar glass" data-act="noteForm"><span class="gl" aria-hidden="true">${ICON.note}</span>
+  if (nb) nb.innerHTML = tab === 'live' && smart().notes ? `<form class="notebar glass${noteFold ? ' folded' : ''}" data-act="noteForm"><button type="button" class="gl" data-act="noteOpen" aria-label="פתק חדש" aria-expanded="${!noteFold}">${ICON.note}</button>
     <input class="ni" id="noteIn" autocomplete="off" placeholder="פתק: מה לבדוק או לזכור" aria-label="פתק חדש: מה לבדוק, מה ראית, מה לזכור">
     <button class="send" data-act="addNote" aria-label="הוסף פתק">${ICON.send}</button></form>` : '';
   renderSaveState();
@@ -2422,16 +2430,27 @@ function summaryHtml() {
   const s = session, viz = vizCards('all', true);
   const closing = sectionsFor(s).filter(sec => sec.id === 'summary').flatMap(sec => sec.fields);
   const tasks = (s.notes || []).filter(n => n.task);
-  return (viz.length ? `<div class="grid">${viz.join('')}</div>` : smartGraphics() ? `<section class="card compact"><div class="card-h cat-hyp"><span class="glyph">${ICON.clip}</span><h2>סיכום חזותי</h2></div><span class="hint">ייבנה ממה שייאסף במפגש</span></section>` : '') +
-    (smart().record ? recordHtml() : '') +
-    `<section class="card" aria-labelledby="sumH"><div class="card-h cat-rec"><span class="glyph">${ICON.clip}</span><h2 id="sumH">סיכום המפגש</h2><span class="end meta">התרשמות, טיפול והמשך</span></div><div class="fields flat">${closing.map(fieldHtml).join('')}</div></section>` +
-    (tasks.length ? `<section class="card cat-note"><div class="card-h"><span class="glyph">${ICON.note}</span><h2>משימות מהפתקים <span class="muted num">${tasks.length}</span></h2></div>${notesListHtml(tasks)}</section>` : '');
+  return `<section class="card" aria-labelledby="sumH"><div class="card-h cat-rec"><span class="glyph">${ICON.clip}</span><h2 id="sumH">סיכום המפגש</h2><span class="end meta">התרשמות, טיפול והמשך</span></div><div class="fields flat">${closing.map(fieldHtml).join('')}</div></section>` +
+    (tasks.length ? `<section class="card cat-note"><div class="card-h"><span class="glyph">${ICON.note}</span><h2>משימות מהפתקים <span class="muted num">${tasks.length}</span></h2></div>${notesListHtml(tasks)}</section>` : '') +
+    `<section class="card" aria-labelledby="docH"><div class="card-h cat-rec"><span class="glyph">${ICON.doc}</span><h2 id="docH">המסמך הסופי</h2><span class="end meta">כך יישמר ב-Drive</span></div><div class="docprev" id="docPrev">${docPrevHtml(s)}</div></section>` +
+    vizFoldHtml(viz);
 }
+const vizFoldHtml = (viz, open = false) => viz.length ? `<details class="card vizfold"${open ? ' open' : ''}><summary><span class="glyph">${ICON.clock}</span><h2>סיכום חזותי</h2><span class="muted num">${viz.length}</span>${ICON.chev}</summary><div class="grid">${viz.join('')}</div></details>` : '';
+function refreshVizFold() { // the folded graphics follow the background updates and keep their open state
+  const body = $('#tabBody'); if (!body || !session) return;
+  const cur = $('.vizfold', body), html = vizFoldHtml(vizCards('all', true), !!cur?.open);
+  if (cur) cur.outerHTML = html || ''; else if (html) body.insertAdjacentHTML('beforeend', html);
+}
+// the saved document's body, shown read-only in the app (same builder as the Drive copy)
+function docPrevHtml(s) { const h = sessionDocHtml(s); return bdiHtml(h.slice(h.indexOf('<body dir="rtl">') + 16, h.lastIndexOf('</body>'))); }
+// isolate the numbers in already-escaped HTML (text between tags only)
+const bdiHtml = h => h.split(/(<[^>]+>)/).map(p => p.startsWith('<') ? p : p.replace(NUM_RE, (m, ent, num) => ent || `<bdi dir="ltr">${num}</bdi>`)).join('');
+function refreshDocPrev() { const el = $('#docPrev'); if (el && session) el.innerHTML = docPrevHtml(session); }
 function refreshTabLabels() {
   if (!session) return;
   const all = fieldsFor(session), filled = all.filter(f => session.fields[f.id]?.value).length;
   $$('[data-n="form"]').forEach(n => n.textContent = `${filled}/${all.length}`);
-  const tc = $('#trCount'); if (tc) tc.textContent = session.segments.length || '';
+  $$('#trCount, #trCountPh').forEach(tc => tc.textContent = session.segments.length || '');
   const sc = $('#sideCount'); if (sc) sc.textContent = session.segments.length;
 }
 
@@ -2474,7 +2493,7 @@ const FEED_N = 6;
 function moreHtml() {
   return `<h3>עוד <button class="icon-btn x" data-act="popClose" aria-label="סגור">${ICON.close}</button></h3>
     <div class="more"><span class="lbl" id="mThL">מצב תצוגה</span><div class="seg" role="group" aria-labelledby="mThL">${THEMES.map(([id, label]) => `<button data-act="theme" data-theme="${id}" aria-pressed="${getTheme() === id}">${label}</button>`).join('')}</div>
-    <div class="more-l">${MAP_URL ? `<a class="btn" href="${mapLink(session.region)}" target="_blank" rel="noopener">${ICON.map} מפת הדרך לאזור</a>` : ''}<button class="btn" data-act="focus">${ICON.focus} ${settings.focus ? 'יציאה ממצב פוקוס' : 'מצב פוקוס'}</button><button class="btn" data-act="settings">${ICON.gear} כל ההגדרות</button></div></div>`;
+    <div class="more-l">${MAP_URL ? `<a class="btn mapgo" href="${esc(mapLink(session.region))}" target="${MAP_TARGET}">${ICON.map} מפת הדרך לאזור <span class="ext" aria-label="(נפתח בלשונית המפה)">${ICON.ext}</span></a>` : ''}<button class="btn" data-act="focus">${ICON.focus} ${settings.focus ? 'יציאה ממצב פוקוס' : 'מצב פוקוס'}</button><button class="btn" data-act="settings">${ICON.gear} כל ההגדרות</button></div></div>`;
 }
 function feedHtml() {
   const s = session, rows = aiRecent(s).slice(0, FEED_N);
@@ -2764,6 +2783,7 @@ function refreshMissing() { refreshLive(); }
 function refreshLive() {
   updateIsland(); refreshPop();
   if (view === 'finish') return;
+  if (tab === 'summary') { refreshDocPrev(); refreshVizFold(); return; }
   if (tab !== 'live' || !$('#tabBody')) return;
   const y = window.scrollY; $('#tabBody').innerHTML = liveHtml(); renderSaveState(); window.scrollTo(0, y);
 }
@@ -2825,6 +2845,7 @@ function analysisHtml() {
   <button class="btn block" data-act="download">הורד עותק של המפגש (HTML)</button>`;
 }
 function renderRecState() {
+  syncTicker();
   const b = $('#recBtn'); if (!b) return;
   b.classList.toggle('on', recording);
   b.innerHTML = recording ? ICON.stop : ICON.mic;
@@ -2849,11 +2870,16 @@ function tickTimer() {
   const el = $('#timer'); if (el) el.textContent = fmtClock(ms);
   const p = $('#pillTime'); if (p) p.textContent = fmtClock(ms);
 }
-setInterval(() => {
-  tickTimer(); if (view === 'session') maybeFill();
-  if (recording && !useSoniox() && !IS_ANDROID && rec && Date.now() - lastRecEvent > WATCHDOG_MS) restartRec('watchdog');
-  if (recording && useSoniox() && STT.buf.trim() && Date.now() - STT.lastFinal > 2500) sttFlush();
-}, 1000);
+let recTicker = null;
+function syncTicker() { // the clock and the recognizer watchdog tick every second only while recording
+  if (recording && !recTicker) recTicker = setInterval(() => {
+    tickTimer(); if (view === 'session') maybeFill();
+    if (recording && !useSoniox() && !IS_ANDROID && rec && Date.now() - lastRecEvent > WATCHDOG_MS) restartRec('watchdog');
+    if (recording && useSoniox() && STT.buf.trim() && Date.now() - STT.lastFinal > 2500) sttFlush();
+  }, 1000);
+  if (!recording && recTicker) { clearInterval(recTicker); recTicker = null; tickTimer(); }
+}
+setInterval(() => { if (!recording && view === 'session') maybeFill(); }, 10000); // typed transcript lines still get filled
 
 /* ---------------- live record (Notes-like) ---------------- */
 function recordHtml() {
@@ -2884,6 +2910,16 @@ function notesCardHtml() {
   const list = [...(session.notes || [])].reverse();
   return `<section class="card cat-note" aria-labelledby="noteH"><div class="card-h"><span class="glyph">${ICON.note}</span><h2 id="noteH">פתקים <span class="muted num">${list.length}</span></h2><span class="end meta">ה-AI משייך כל פתק לשדה או למשימה</span></div>${notesListHtml(list)}</section>`;
 }
+// phones fold the note bar into its button (the screen is short); wider screens keep it open
+const PHONE_MQ = matchMedia('(max-width: 759px)');
+let noteFold = PHONE_MQ.matches;
+PHONE_MQ.addEventListener?.('change', e => { noteFold = e.matches; if (view === 'session' && session) renderTab(); });
+function setNoteFold(fold) {
+  const f = $('#noteBar .notebar'); if (!f) return;
+  noteFold = fold && PHONE_MQ.matches; f.classList.toggle('folded', noteFold);
+  f.querySelector('.gl')?.setAttribute('aria-expanded', String(!noteFold));
+  if (!noteFold) $('#noteIn')?.focus();
+}
 function addNote() {
   const inp = $('#noteIn'); const text = (inp?.value || '').trim(); if (!text || !session) return;
   session.notes = session.notes || [];
@@ -2896,7 +2932,7 @@ function addNote() {
 function nextHtml() {
   const list = insState().next || [];
   return `<section class="card ai" aria-labelledby="nextH"><div class="card-h cat-hyp"><span class="glyph">${ICON.sparkles}</span><h2 id="nextH">הצעות להמשך</h2><span class="badge beta">BETA</span><span class="end meta">${insState().at.next ? 'עודכן ' + hhmm(insState().at.next) : ''}</span></div>
-    ${list.length ? `<ul class="nexts">${list.map(x => `<li><span class="ic" aria-hidden="true">${x.kind === 'test' ? ICON.tests : ICON.question}</span><p>${esc(x.text)}<span>${esc(x.why || '')}</span></p>${x.test_id && testLink(x.test_id) ? `<a class="chipl" href="${testLink(x.test_id)}" target="_blank" rel="noopener">כרטיס במפה</a>` : '<span></span>'}</li>`).join('')}</ul>`
+    ${list.length ? `<ul class="nexts">${list.map(x => `<li><span class="ic" aria-hidden="true">${x.kind === 'test' ? ICON.tests : ICON.question}</span><p>${esc(x.text)}<span>${esc(x.why || '')}</span></p>${x.test_id && testLink(x.test_id) ? `<a class="chipl" href="${testLink(x.test_id)}" target="${MAP_TARGET}">כרטיס במפה</a>` : '<span></span>'}</li>`).join('')}</ul>`
       : `<p class="empty-note">אחרי כמה פרטים מהשיחה יופיעו כאן השאלה או המבדק הבאים שכדאי לשקול.</p>`}
     <p class="fine">הצעות של ה-AI לפי מה שנאמר ומפת הדרך. ההחלטה שלך.</p></section>`;
 }
@@ -3016,6 +3052,7 @@ document.addEventListener('change', e => {
 });
 
 /* ---------------- events ---------------- */
+document.addEventListener('click', e => { if (e.target.closest('a.mapgo')) setTimeout(closePop, 0); }); // the link opens, the menu closes
 document.addEventListener('click', async e => {
   const t = e.target.closest('[data-act]'); if (!t) return;
   const act = t.dataset.act;
@@ -3093,6 +3130,7 @@ document.addEventListener('click', async e => {
       if (!aiReady()) { toast('חסר קוד גישה. אפשר להוסיף אותו בהגדרות, בלשונית API.', true); return; }
       markDirtyAll(); runInsight(true); break;
     case 'addNote': addNote(); break;
+    case 'noteOpen': if (PHONE_MQ.matches && !noteFold && !$('#noteIn')?.value.trim()) setNoteFold(true); else setNoteFold(false); break;
     case 'encToggle': {
       e.preventDefault(); const want = !settings.encrypt;
       if (!want && !await confirmDlg('לכבות את ההצפנה?', 'הנתונים במכשיר יישמרו מעכשיו בלי הצפנה.', 'כבה הצפנה', true)) break;
@@ -3208,7 +3246,9 @@ document.addEventListener('input', e => {
 });
 document.addEventListener('focusout', e => {
   const t = e.target;
-  if (t.matches('#tabBody textarea[data-fid]')) { const id = t.dataset.fid; setTimeout(() => { refreshField(id); refreshMissing(); }, 180); }
+  if (t.matches('#tabBody textarea[data-fid]')) { const id = t.dataset.fid; setTimeout(() => { refreshField(id); refreshMissing(); if (tab === 'summary') refreshDocPrev(); }, 180); }
+  // an empty note bar folds away again on a phone once the focus leaves it
+  if (t.id === 'noteIn' && PHONE_MQ.matches) setTimeout(() => { if (!$('#noteBar')?.contains(document.activeElement) && !t.value.trim()) setNoteFold(true); }, 150);
 });
 function setPType(v) { $$('#pType [data-act="ptype"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v)); }
 async function startSession() {
