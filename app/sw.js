@@ -1,8 +1,8 @@
 // Offline shell for עוזר קליני. Same-origin files only: network first, cache as fallback,
 // so a new version on the server is picked up on the next open.
 // The knowledge-base cache (ca-kb-*) belongs to the page and is never touched here.
-const CACHE = 'ca-shell-v6';
-const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './json5.min.js', './kb-site.js', './fonts/heebo-hebrew-wght-normal.woff2', './fonts/inter-latin-wght-normal.woff2'];
+const CACHE = 'ca-shell-v7';
+const SHELL = ['./', './index.html', './app.js', './boot.js', './norms.js', './manifest.webmanifest', './icon-192.png', './icon-512.png', './json5.min.js', './kb-site.js', './fonts/heebo-hebrew-wght-normal.woff2', './fonts/inter-latin-wght-normal.woff2'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
