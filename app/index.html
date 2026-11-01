@@ -282,6 +282,8 @@ details.help summary{color:var(--accent);font-size:14px;cursor:pointer}
 .feed.lead .fr-l span:not(.badge){display:none}
 .feed.lead .fr-v{-webkit-line-clamp:1;margin:0;min-width:0}
 .feed.lead .fr-was{display:none}
+.fr-b{display:inline-flex;gap:4px;flex:none;align-items:center}
+.feed:not(.lead) .fr-b{margin-top:4px}
 .feed.lead .fr-act button{min-height:34px;padding:0 9px}
 .feed-more{border:0;background:none;color:var(--accent);font-size:13.5px;padding:6px 0 0;font-weight:600}
 .fr-main{flex:1;min-width:0}
@@ -362,8 +364,8 @@ html{scrollbar-color:var(--line) transparent}
 .top .bar .title{display:flex;align-items:center;gap:10px}
 .top .bar .tt{min-width:0}
 .top .bar .tt span{display:block;font-size:13px;color:var(--band-ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bmini b{font-size:17px;font-weight:800;letter-spacing:.01em}
-@media (max-width:999px){.bmini b{display:none}.bmini{padding-inline-end:8px}}
+.top .bmini b{display:inline;font-size:17px;font-weight:800;letter-spacing:.01em}
+@media (max-width:999px){.top .bmini b{display:none}.top .bmini{padding-inline-end:8px;margin-inline-end:0}}
 .brand .mark{width:30px;height:24px;flex:none;color:var(--band-ink)}
 .brand h1{font-size:21px;font-weight:800;letter-spacing:.01em;flex:none}
 .brand small{font-size:13px;color:var(--band-ink-2);font-weight:500}
@@ -2122,9 +2124,9 @@ function feedHtml(lead = true) {
     ${rows.length ? rows.map(r => {
       const f = FIELD[r.id], v = s.fields[r.id];
       return `<div class="feed-row">
-        <div class="fr-main"><div class="fr-l"><b>${esc(shortLabel(f.label))}</b> <span>${t(r.at)}</span>
-          ${v.needsCheck ? '<span class="badge chk">לאמת</span>' : v.confirmed ? '<span class="badge ok">אומת</span>' : ''}${v.unverified ? '<span class="badge bad">לא נמצא בתמלול</span>' : ''}</div>
+        <div class="fr-main"><div class="fr-l"><b>${esc(shortLabel(f.label))}</b> <span>${t(r.at)}</span></div>
           <div class="fr-v">${esc(v.value)}</div>
+          <span class="fr-b">${v.needsCheck ? '<span class="badge chk">לאמת</span>' : v.confirmed ? '<span class="badge ok">אומת</span>' : ''}${v.unverified ? '<span class="badge bad">לא נמצא בתמלול</span>' : ''}</span>
           ${r.prev ? `<div class="fr-was">היה: ${esc(String(r.prev.value).slice(0, 80))}</div>` : ''}</div>
         <div class="fr-act">
           ${v.needsCheck ? `<button class="ok" data-act="confirm" data-fid="${r.id}">אשר</button>` : ''}
