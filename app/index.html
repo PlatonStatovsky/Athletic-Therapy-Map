@@ -8,12 +8,12 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preload" href="fonts/assistant-hebrew-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>try{var t=localStorage.getItem('uqmap-theme');if(t==='light'||t==='comfort'||t==='dark')document.documentElement.dataset.theme=t;else if(!matchMedia('(prefers-color-scheme: dark)').matches)document.documentElement.dataset.theme='comfort'}catch(e){}</script>
 <style>
+@font-face{font-family:Assistant;font-style:normal;font-display:swap;font-weight:200 800;src:url(fonts/assistant-hebrew-wght-normal.woff2) format('woff2');unicode-range:U+0307-0308,U+0590-05FF,U+200C-2010,U+20AA,U+25CC,U+FB1D-FB4F}
+@font-face{font-family:Assistant;font-style:normal;font-display:swap;font-weight:200 800;src:url(fonts/assistant-latin-wght-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 /* Thalamus, an anatomy-atlas plate: paper ground, a venous-ink header band, and the atlas inks carry state —
    arterial red = recording / must rule out, nerve ochre = not yet said, lymph green = done, venous blue = action.
    data-theme on <html> forces light / comfort / dark; without it the system setting decides. */
@@ -31,7 +31,7 @@
     --accent:#7fb0e8; --accent-ink:#0b1118; --accent-soft:#1b2c40;
     --rec:#f0705f; --rec-soft:#3a1e1b; --warn:#e2b254; --warn-soft:#352a14; --ok:#7cc48f; --ok-soft:#183020;
     --hl-done:#1c3424; --hl-done-ink:#a8e0b6; --hl-rec:#3f3115; --hl-rec-ink:#f0cc7a; --hl-must:#45221f; --hl-must-ink:#ffb4a8;
-    --band:#0a0e13; --band-ink:#e6ebf0; --band-ink-2:#93a4b6; --band-line:#1f2934; --band-field:#141b23; --band-err:#ffb4a8;
+    --band:#132238; --band-ink:#e6ebf0; --band-ink-2:#a7b6c8; --band-line:#22334b; --band-field:#1b2c45; --band-err:#ffb4a8;
     --lead:#e6ebf0;
   }
 }
@@ -40,7 +40,7 @@
   --accent:#7fb0e8; --accent-ink:#0b1118; --accent-soft:#1b2c40;
   --rec:#f0705f; --rec-soft:#3a1e1b; --warn:#e2b254; --warn-soft:#352a14; --ok:#7cc48f; --ok-soft:#183020;
   --hl-done:#1c3424; --hl-done-ink:#a8e0b6; --hl-rec:#3f3115; --hl-rec-ink:#f0cc7a; --hl-must:#45221f; --hl-must-ink:#ffb4a8;
-  --band:#0a0e13; --band-ink:#e6ebf0; --band-ink-2:#93a4b6; --band-line:#1f2934; --band-field:#141b23; --band-err:#ffb4a8;
+  --band:#132238; --band-ink:#e6ebf0; --band-ink-2:#a7b6c8; --band-line:#22334b; --band-field:#1b2c45; --band-err:#ffb4a8;
   --lead:#e6ebf0;
 }
 /* comfort: the same plate under warm, low-glare light */
@@ -49,7 +49,7 @@
   --accent:#2c5c8f; --accent-ink:#f7f0e3; --accent-soft:#d9e1e6;
   --rec:#a33a2e; --rec-soft:#edcfc4; --warn:#7a5210; --warn-soft:#eeddb5; --ok:#3f6a42; --ok-soft:#dce3c8;
   --hl-done:#d7e3c3; --hl-done-ink:#365a2a; --hl-rec:#eed9a4; --hl-rec-ink:#5f400c; --hl-must:#edc8bc; --hl-must-ink:#842f21;
-  --band:#2f2b25; --band-ink:#f4ecdd; --band-ink-2:#c9bba5; --band-line:#4a443b; --band-field:#3b362f; --band-err:#ffc2b4;
+  --band:#24324a; --band-ink:#f4ecdd; --band-ink-2:#c3c9d2; --band-line:#36455f; --band-field:#2e3d57; --band-err:#ffc2b4;
   --lead:#2b2620;
 }
 *{box-sizing:border-box}
@@ -178,7 +178,8 @@ a.chip{text-decoration:none;color:var(--accent);display:inline-block}
 .badge{font-size:11px;border-radius:6px;padding:1px 6px;font-weight:500}
 .badge.ai{background:var(--accent-soft);color:var(--accent)}
 .badge.man{background:var(--surface-2);color:var(--ink-2)}
-.badge.chk{background:transparent;color:var(--warn);box-shadow:inset 0 0 0 1px currentColor}
+.badge.chk{background:transparent;color:var(--accent);box-shadow:inset 0 0 0 1px currentColor}
+.badge.ok{background:var(--hl-done);color:var(--hl-done-ink)}
 .badge.bad{background:var(--hl-must);color:var(--hl-must-ink)}
 .spk{display:inline-block;font-size:11px;font-weight:600;border-radius:6px;padding:0 6px;margin-left:6px;background:var(--surface-2);color:var(--ink-2)}
 .spk.s1{background:var(--accent-soft);color:var(--accent)}
@@ -273,6 +274,16 @@ details.help summary{color:var(--accent);font-size:14px;cursor:pointer}
 .feed h2 .num,.captured h2 .num{font-weight:500;color:var(--ink-2);margin-inline-start:4px;font-variant-numeric:tabular-nums}
 .feed-row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
 .feed-h + .feed-row{border-top:0}
+.feed.lead{padding:10px 14px}
+.feed.lead .feed-h{margin-bottom:2px}
+.feed.lead .feed-row{align-items:center;padding:6px 0}
+.feed.lead .fr-main{display:flex;align-items:baseline;gap:8px;min-width:0}
+.feed.lead .fr-l{flex:none;flex-wrap:nowrap}
+.feed.lead .fr-l span:not(.badge){display:none}
+.feed.lead .fr-v{-webkit-line-clamp:1;margin:0;min-width:0}
+.feed.lead .fr-was{display:none}
+.feed.lead .fr-act button{min-height:34px;padding:0 9px}
+.feed-more{border:0;background:none;color:var(--accent);font-size:13.5px;padding:6px 0 0;font-weight:600}
 .fr-main{flex:1;min-width:0}
 .fr-main .fr-l{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;color:var(--ink-2)}
 .fr-main .fr-v{margin-top:2px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -298,7 +309,7 @@ details.help summary{color:var(--accent);font-size:14px;cursor:pointer}
 .stg > summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
 /* recording continues while another screen is open */
 .recpill{display:flex;align-items:center;gap:10px;width:100%;border:0;background:var(--rec-soft);color:var(--ink);padding:10px 16px;font-size:14px;text-align:start}
-.recpill i{width:10px;height:10px;border-radius:50%;background:var(--rec);flex:none;animation:blink 1.4s infinite}
+.recpill i{width:10px;height:10px;border-radius:50%;background:var(--rec);flex:none}
 .recpill b{font-variant-numeric:tabular-nums}
 .recpill span{margin-inline-start:auto;color:var(--accent);font-weight:600}
 @keyframes blink{50%{opacity:.35}}
@@ -346,6 +357,13 @@ html{scrollbar-color:var(--line) transparent}
 .top .status.err{color:var(--band-err)}
 .top .status .linkbtn{color:var(--band-ink);text-decoration:underline;text-underline-offset:3px}
 .brand{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.bmini{display:flex;align-items:center;gap:8px;flex:none;color:var(--band-ink);padding-inline-end:14px;border-inline-end:1px solid var(--band-line);margin-inline-end:4px}
+.bmini .mark{width:26px;height:20px}
+.top .bar .title{display:flex;align-items:center;gap:10px}
+.top .bar .tt{min-width:0}
+.top .bar .tt span{display:block;font-size:13px;color:var(--band-ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bmini b{font-size:17px;font-weight:800;letter-spacing:.01em}
+@media (max-width:999px){.bmini b{display:none}.bmini{padding-inline-end:8px}}
 .brand .mark{width:30px;height:24px;flex:none;color:var(--band-ink)}
 .brand h1{font-size:21px;font-weight:800;letter-spacing:.01em;flex:none}
 .brand small{font-size:13px;color:var(--band-ink-2);font-weight:500}
@@ -363,14 +381,15 @@ html{scrollbar-color:var(--line) transparent}
 .tabs button{font-weight:600}
 .recpill{background:var(--rec-soft)}
 /* the label pin: every captured fact starts with an atlas label dot */
-.fr-l b::before,.cap-row .k::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-inline-end:7px;vertical-align:middle;box-shadow:0 0 0 2px var(--accent-soft)}
+.fr-l b::before,.cap-row .k::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-inline-end:7px;vertical-align:middle}
 .fr-act .src{border-color:transparent;color:var(--accent);padding:0 6px}
 /* the signature: a leader line from a captured fact to the transcript line it was heard in */
+.feed-row.sourcing .fr-act{visibility:hidden}
 .leader{position:fixed;left:0;top:0;width:100vw;height:100vh;pointer-events:none;z-index:40;overflow:visible}
 .leader line{stroke:var(--lead);stroke-width:1.25}
 .leader circle{fill:var(--surface);stroke:var(--lead);stroke-width:1.25}
 .leader circle.end{fill:var(--lead)}
-.seg.sourced{background:var(--accent-soft);border-radius:6px;padding-inline:8px;box-shadow:inset -3px 0 0 var(--accent)}
+.seg.sourced{background:var(--accent-soft);border-radius:6px;padding-inline:8px}
 .callout{position:relative;margin-top:8px;padding:8px 22px 8px 10px;font-size:13.5px;color:var(--ink-2);background:var(--surface-2);border-radius:6px}
 .callout::before{content:"";position:absolute;inset-inline-start:9px;top:0;bottom:50%;border-inline-start:1.25px solid var(--lead)}
 .callout::after{content:"";position:absolute;inset-inline-start:6px;top:calc(50% - 4px);width:7px;height:7px;border-radius:50%;background:var(--lead)}
@@ -387,6 +406,13 @@ html[data-focus] .captured,html[data-focus] .top .tools .map-btn,html[data-focus
 html[data-focus] .missing .chip.miss{font-size:15px;min-height:38px}
 html[data-focus] .feed-row .fr-v{font-size:17px}
 html[data-density=compact] body{font-size:15px}
+html[data-density=compact] .recbtn{width:40px;height:40px}
+html[data-density=compact] .recbtn svg{width:20px;height:20px}
+html[data-density=compact] .rec-meta .timer{font-size:17px}
+html[data-density=compact] .top .bar{min-height:54px}
+html[data-density=compact] .tabs button{min-height:38px;padding-block:6px}
+html[data-density=compact] .feed.lead .fr-act button{min-height:30px}
+html[data-density=compact] .missing .chips{gap:4px}
 html[data-density=compact] .card{padding:12px;margin:10px 0}
 html[data-density=compact] .chip.miss{padding:3px 9px;min-height:30px;font-size:13px}
 html[data-density=compact] .feed-row{padding:7px 0}
@@ -591,7 +617,7 @@ function toast(msg, err = false, ms = 3800) {
 }
 /* ---------------- theme ---------------- */
 const THEMES = [['auto', 'אוטומטי'], ['light', 'בהיר'], ['comfort', 'נוח לעין'], ['dark', 'כהה']];
-const THEME_BG = { light: '#16263a', dark: '#0a0e13', comfort: '#2f2b25' };
+const THEME_BG = { light: '#16263a', dark: '#132238', comfort: '#24324a' };
 const DARK_MQ = matchMedia('(prefers-color-scheme: dark)');
 // one theme for the whole site: the map and the app share localStorage 'uqmap-theme'
 const THEME_KEY = 'uqmap-theme';
@@ -1880,7 +1906,7 @@ function verRowHtml(f) {
   const v = session.fields[f.id];
   return `<div class="vrow" id="v-${f.id}"><div class="vl"><b>${esc(shortLabel(f.label))}</b>${v.unverified ? '<span class="badge bad">לא נמצא בתמלול</span>' : '<span class="badge chk">לאמת</span>'}</div>
     <textarea class="inp" id="vt-${f.id}" rows="2" aria-label="${esc(f.label)}">${esc(v.value)}</textarea>
-    ${v.quote ? `<div class="q">מקור בתמלול: «${esc(v.quote)}»</div>` : ''}
+    ${v.quote ? `<div class="callout">${v.unverified ? 'המודל ציטט, אבל זה לא נמצא בתמלול' : 'נשמע בתמלול'}: «${esc(v.quote)}»</div>` : ''}
     <div class="vb"><button class="btn primary" data-act="vConfirm" data-fid="${f.id}">אשר</button><button class="btn" data-act="vClear" data-fid="${f.id}">נקה את השדה</button></div></div>`;
 }
 function saveRowHtml(nv) {
@@ -1970,7 +1996,7 @@ function renderSession() {
   $('#app').innerHTML = `
   <header class="top"><div class="wrap bar">
     <button class="icon-btn back" data-act="home" aria-label="חזרה">${ICON.back}</button>
-    <div class="title"><h1>${esc(s.patientName)}</h1><span>${esc(s.region)} · ${esc(s.type)}</span></div>
+    <div class="title"><div class="bmini" aria-hidden="true">${ICON.mark}<b>Thalamus</b></div><div class="tt"><h1>${esc(s.patientName)}</h1><span>${esc(s.region)} · ${esc(s.type)}</span></div></div>
     <div class="ctl">
       <div class="recbar">
         <button class="recbtn" id="recBtn" data-act="rec" aria-label="הקלטה">${ICON.mic}</button>
@@ -2086,16 +2112,18 @@ function refreshTabLabels() {
 }
 /* ---------------- the live tab: a glance at the conversation ---------------- */
 const FEED_N = 4;
-function feedHtml() {
-  const s = session, rows = (s.recent || []).filter(r => s.fields[r.id]?.value && s.fields[r.id].source === 'ai').slice(0, FEED_N);
+let feedAll = false;
+function feedHtml(lead = true) {
+  const s = session, all = (s.recent || []).filter(r => s.fields[r.id]?.value && s.fields[r.id].source === 'ai');
+  const rows = all.slice(0, lead && !feedAll ? 2 : FEED_N), more = Math.min(all.length, FEED_N) - rows.length;
   const t = ms => { const d = new Date(ms); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
-  return `<section class="card feed" id="feed" aria-labelledby="feedH">
+  return `<section class="card feed${lead ? ' lead' : ''}" id="feed" aria-labelledby="feedH">
     <div class="feed-h"><h2 id="feedH">נקלט עכשיו</h2><button class="linkbtn" data-act="fillNow">מלא עכשיו</button></div>
     ${rows.length ? rows.map(r => {
       const f = FIELD[r.id], v = s.fields[r.id];
       return `<div class="feed-row">
         <div class="fr-main"><div class="fr-l"><b>${esc(shortLabel(f.label))}</b> <span>${t(r.at)}</span>
-          ${v.needsCheck ? '<span class="badge chk">לאמת</span>' : ''}${v.unverified ? '<span class="badge bad">לא נמצא בתמלול</span>' : ''}</div>
+          ${v.needsCheck ? '<span class="badge chk">לאמת</span>' : v.confirmed ? '<span class="badge ok">אומת</span>' : ''}${v.unverified ? '<span class="badge bad">לא נמצא בתמלול</span>' : ''}</div>
           <div class="fr-v">${esc(v.value)}</div>
           ${r.prev ? `<div class="fr-was">היה: ${esc(String(r.prev.value).slice(0, 80))}</div>` : ''}</div>
         <div class="fr-act">
@@ -2104,7 +2132,7 @@ function feedHtml() {
           <button data-act="edit" data-fid="${r.id}">ערוך</button>
           <button data-act="undo" data-fid="${r.id}" aria-label="בטל את המילוי של ${esc(shortLabel(f.label))}">בטל</button>
         </div></div>`;
-    }).join('') : `<p class="empty-note">כשה-AI ימלא שדה מתוך השיחה, הוא יופיע כאן לאישור, לעריכה או לביטול.</p>`}
+    }).join('') + (more > 0 ? `<button class="feed-more" data-act="feedMore">עוד ${more}</button>` : '') : `<p class="empty-note">כשה-AI ימלא שדה מתוך השיחה, הוא יופיע כאן לאישור, לעריכה או לביטול.</p>`}
   </section>`;
 }
 function capturedHtml() {
@@ -2124,7 +2152,18 @@ function findSeg(quote) {
   return score >= 0.6 ? best : -1;
 }
 let leaderT = null;
-function clearLeader() { clearTimeout(leaderT); $('#leader')?.remove(); $$('.seg.sourced').forEach(e => e.classList.remove('sourced')); }
+function clearLeader() { clearTimeout(leaderT); $('#leader')?.remove(); $$('.seg.sourced').forEach(e => e.classList.remove('sourced')); $$('.sourcing').forEach(e => e.classList.remove('sourcing')); }
+// the point where the fact's text ends (its left end in RTL), so the line starts at the fact, not at a button
+function textEnd(row) {
+  const el = row.querySelector('.fr-v, .v, textarea, label') || row;
+  if (el.tagName === 'TEXTAREA') { const r = el.getBoundingClientRect(); return { x: r.left + 4, y: r.top + Math.min(r.height / 2, 14) }; }
+  const range = document.createRange(); range.selectNodeContents(el);
+  const rects = [...range.getClientRects()].filter(r => r.width); if (!rects.length) { const r = el.getBoundingClientRect(); return { x: r.left - 6, y: r.top + r.height / 2 }; }
+  // mixed Hebrew and numbers reorder inside a line, so take the leftmost box of the last line
+  const top = Math.max(...rects.map(r => r.top)), line = rects.filter(r => Math.abs(r.top - top) < 4);
+  const left = Math.min(...line.map(r => r.left)), h = line[0].height;
+  return { x: left - 6, y: top + h / 2 };
+}
 function showSource(fid, from) {
   clearLeader(); $$('.callout').forEach(c => c.remove());
   const v = session?.fields[fid]; if (!v?.quote) { toast('אין ציטוט מקור לשדה הזה'); return; }
@@ -2132,16 +2171,15 @@ function showSource(fid, from) {
   if (!seg) { // no pane on this screen, or the line is gone: the quote opens under the fact
     from.insertAdjacentHTML('beforeend', `<div class="callout">${v.unverified || i < 0 ? 'המודל ציטט, אבל זה לא נמצא בתמלול' : 'נשמע בתמלול'}: «${esc(v.quote)}»</div>`); return;
   }
-  seg.classList.add('sourced'); seg.scrollIntoView({ block: 'center' });
+  seg.classList.add('sourced'); seg.scrollIntoView({ block: 'center' }); from.classList.add('sourcing');
   requestAnimationFrame(() => {
-    const a = from.getBoundingClientRect(), b = seg.getBoundingClientRect();
-    const x1 = a.left - 6, y1 = Math.max(a.top + 18, Math.min(a.bottom - 18, a.top + a.height / 2)), x2 = b.right + 6, y2 = b.top + Math.min(b.height / 2, 16);
+    const b = seg.getBoundingClientRect(), { x: x1, y: y1 } = textEnd(from), x2 = b.right + 6, y2 = b.top + Math.min(b.height / 2, 16);
     document.body.insertAdjacentHTML('beforeend', `<svg class="leader" id="leader" aria-hidden="true"><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/><circle cx="${x1}" cy="${y1}" r="4"/><circle class="end" cx="${x2}" cy="${y2}" r="3.5"/></svg>`);
     setTimeout(() => { addEventListener('scroll', clearLeader, { capture: true, once: true }); }, 50);
     leaderT = setTimeout(clearLeader, 4500);
   });
 }
-function liveHtml() { return missingHtml() + feedHtml() + capturedHtml(); }
+function liveHtml() { return feedHtml(true) + missingHtml() + capturedHtml(); }
 // a session changed since it was last saved to Drive
 function touch() { if (session) { session.changedAt = Date.now(); saveSession(); renderSaveState(); } }
 const hhmm = ms => { const d = new Date(ms); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
@@ -2455,12 +2493,12 @@ document.addEventListener('click', async e => {
       touch(); refreshField(id); refreshLive(); refreshCounts(); toast('המילוי בוטל. אותו ערך לא יוכנס שוב אוטומטית.', false, 2600); break;
     }
     case 'quote': { if ($('#sidePane')) { showSource(t.dataset.fid, t.closest('.field')); break; } const q = $('#q-' + t.dataset.fid); if (q) q.hidden = !q.hidden; break; }
-    case 'confirm': { const f = session.fields[t.dataset.fid]; if (f) { f.needsCheck = false; f.unverified = false; touch(); refreshField(t.dataset.fid); refreshLive(); } break; }
+    case 'confirm': { const f = session.fields[t.dataset.fid]; if (f) { f.needsCheck = false; f.unverified = false; f.confirmed = true; touch(); refreshField(t.dataset.fid); refreshLive(); } break; }
     case 'vConfirm': {
       const id = t.dataset.fid, f = session.fields[id], val = ($('#vt-' + id)?.value || '').trim(); if (!f) break;
       if (!val) { session.fields[id] = { value: '', locked: false, rejected: f.value }; }
       else if (val !== f.value) session.fields[id] = { ...f, value: val, source: 'manual', locked: true, needsCheck: false, unverified: false, at: Date.now() };
-      else { f.needsCheck = false; f.unverified = false; }
+      else { f.needsCheck = false; f.unverified = false; f.confirmed = true; }
       touch(); renderFinish(); break;
     }
     case 'vClear': { const id = t.dataset.fid, f = session.fields[id]; session.fields[id] = { value: '', locked: false, rejected: f?.value }; touch(); renderFinish(); break; }
@@ -2481,6 +2519,7 @@ document.addEventListener('click', async e => {
     case 'addManual': { const ta = $('#manualText'); if (ta.value.trim()) { addSegment(ta.value, true); ta.value = ''; } break; }
     case 'segPlay': playSeg(+t.dataset.i); break;
     case 'missMore': missOpen = true; $('#missing')?.classList.add('open'); break;
+    case 'feedMore': feedAll = true; refreshLive(); break;
     case 'plToggle':
       if (!PL.audio) break;
       if (PL.audio.paused) { if (recording) { toast('ההשמעה זמינה כשההקלטה עצורה', true); break; } PL.audio.play().catch(() => { }); }
