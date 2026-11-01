@@ -368,10 +368,10 @@ These three hues are kept apart for colour-vision safety and have been checked w
 
 The layout is a three-column shell: the rail or sidebar on the start edge (right, in RTL), the main column, and an optional transcript inspector on the end edge.
 
-- **Rail and sidebar:** below 1280px the rail is 84px wide, with icons above 11px labels and counts. At 1280px and up it becomes a 252px sidebar with the app identity, the patient block, icon-and-label rows with trailing counts, and the stage list. The rail is a glass panel inset 10px from the viewport edges, with a 26px radius.
+- **Rail and sidebar:** below 1280px the rail is 84px wide, with icons above 11px labels and counts. At 1280px and up it becomes a 252px sidebar with the app identity, the patient block, icon-and-label rows with trailing counts. The views are Session, Form, Summary and Analysis; there is no stage switch, because the phase (anamnesis, exam, summary) follows what has been filled. The rail is a glass panel inset 10px from the viewport edges, with a 26px radius.
 - **Main column:** the content is centred with a max width of 1080px (880px on the home and finish screens), and side padding of clamp(14px, 2.2vw, 28px). The sticky toolbar is 72px tall. Its capsules float over the content and the gaps between them pass pointer events through.
 - **Cards:** an auto-fit grid with columns of at least 300px and a 14px gap. Wide cards span the full row.
-- **Inspector:** the user chooses the width: hidden, narrow (300px), medium (36%) or wide (46%). It is an opaque card, sticky at full height.
+- **Transcript panel:** at 1000px and up it sits on the end edge as an opaque card, sticky at full height, at narrow (300px), medium (36%) or wide (46%), chosen in its own header. Its hide button folds it into a half-circle glass tab on the left screen edge (34×84px, 42px end radius, chat icon and line count), which reopens it at the last width. Below 1000px the same tab opens it as a panel over the session from the left edge (up to 440px), closed by its button or Escape.
 - **Focus mode:** removes the rail and inspector so the main column is the only column.
 - **Phone (below 760px):** a single column. The rail is replaced by a floating glass capsule tab bar 12px from the sides and bottom, respecting the safe area. The island fills the toolbar. The settings drawer becomes a bottom sheet at 92dvh. The note bar, toast and player move up to clear the tab bar.
 - **Rhythm:** card padding is 16px, gaps are 14px, field rows are 10px by 14px, and list rows have a minimum height of 46 to 54px.
@@ -409,7 +409,7 @@ Corners are continuous and nest concentrically, with inner corners tighter than 
 - **Icon buttons:** 40px circles, transparent at rest with a Fill background on hover. When pressed they take a Blue Soft fill and Blue Ink icon. Icons are inline SVG at 21px.
 
 ### Segmented control
-A Fill capsule track with 2px of inset padding. Each segment is a capsule at least 34px tall. The selected segment is a raised Card-coloured thumb (#636366 in dark) with the segment-thumb shadow and semibold text. Its background and shadow animate over 0.25s on the spring curve. Stage segments include a filled/total count in caption grey.
+A Fill capsule track with 2px of inset padding. Each segment is a capsule at least 34px tall. The selected segment is a raised Card-coloured thumb (#636366 in dark) with the segment-thumb shadow and semibold text. Its background and shadow animate over 0.25s on the spring curve. The transcript panel's width control is a compact variant (28px segments, caption text).
 
 ### Switches
 iOS geometry: a 51 by 31px capsule track with a 27px white knob. The track is Fill when off and System Green when on, and the knob slides over 0.25s on the spring curve.
@@ -434,7 +434,7 @@ iOS geometry: a 51 by 31px capsule track with a 27px white knob. The track is Fi
 - **Rail item:** a 58px column with a 24px icon over an 11px semibold label and a 10px count. The radius is 16px. At rest it uses Secondary Label, on hover it gets a Fill Quiet background, and the current item has a Blue Soft background with Blue Ink text.
 - **Sidebar item (1280px and up):** a 44px row with a 22px icon tinted System Blue, a 15px label and a trailing count.
 - **Phone tab bar:** a glass capsule with four equal items, 52px tall, with 23px icons and 10.5px labels. Counts are hidden.
-- **Toolbar:** glass capsules. The island sits at the leading edge, and the tools capsule (map, pane width, focus, more, Done) sits at the trailing edge.
+- **Toolbar:** glass capsules. The island sits at the leading edge, and the tools capsule (focus, more, Done) sits at the trailing edge. "More" holds the display mode, the map and all settings.
 
 ### Recording Island (signature)
 A 52px glass capsule with a 30px radius, flexing between 220px and 540px wide. From the start edge it contains:

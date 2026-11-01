@@ -489,6 +489,18 @@ html[data-focus] .rail{display:none}
 .insp-in{height:100%;border-radius:var(--r-xl);overflow:auto;padding:12px 14px 16px;display:flex;flex-direction:column;background:var(--card);box-shadow:var(--card-sh)}
 .insp-h{display:flex;align-items:center;gap:8px;padding:14px 2px 10px;position:sticky;top:-12px;z-index:2;margin-top:-12px;background:var(--card)}
 .insp-h h2{font-size:var(--fs-body)}
+.insp-h .end{margin-inline-start:auto;display:flex;align-items:center;gap:4px}
+.insp-h .hide{width:34px;height:34px;background:var(--fill)}
+.insp-h .hide svg{width:18px;height:18px}
+.seg.sz button{min-height:28px;padding:2px 9px;font-size:var(--fs-cap)}
+.insp.overlay{position:fixed;z-index:45;top:0;bottom:0;left:0;width:min(440px,calc(100vw - 28px));height:auto;padding:10px;animation:trIn .38s cubic-bezier(.16,1,.3,1)}
+.insp.overlay .insp-in{box-shadow:0 18px 50px rgba(0,0,0,.22)}
+@keyframes trIn{from{transform:translateX(-100%)}}
+.trtab{position:fixed;z-index:35;left:0;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:34px;height:84px;padding:0 4px 0 0;border:0;border-radius:0 42px 42px 0;color:var(--tint-ink);font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;transition:width .25s cubic-bezier(.16,1,.3,1)}
+.trtab:hover{width:40px}
+.trtab svg{width:20px;height:20px}
+.fields.flat{background:transparent;border-radius:0;border-top:.5px solid var(--sep)}
+.fields.flat .field{padding-inline:0}
 .insp-h .cnt{font-size:var(--fs-foot);color:var(--label-2)}
 #segList{display:flex;flex-direction:column;gap:6px}
 #segList .seg{position:relative;align-self:flex-start;max-width:86%;padding:8px 13px 7px;border-radius:18px;background:var(--fill);font-size:var(--fs-sub);line-height:1.45;scroll-margin:120px;transition:box-shadow .3s,background .3s}
@@ -864,6 +876,7 @@ const ICON = (() => {
     dumbbell: S('<path d="M6.5 6.5v11M17.5 6.5v11M3.5 9.5v5M20.5 9.5v5M6.5 12h11"/>', 2),
     bulb: S('<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/>'),
     drive: S('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>', 2),
+    clip: S('<rect x="5" y="4.5" width="14" height="16.5" rx="2.5"/><path d="M9 4.5V3.5h6v1M8.5 10h7M8.5 13.5h7M8.5 17h4"/>'),
     more: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="8" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="16" cy="12" r="1.1" fill="currentColor" stroke="none"/></svg>'
   };
 })();
@@ -1178,7 +1191,7 @@ function applyUpdates(updates, transcriptText = '') {
     n++; changed.push(u.id);
     refreshField(u.id, true);
   }
-  if (n) { markDirty(changed); touch(); refreshLive(); refreshCounts(); updateIsland(true); }
+  if (n) { markDirty(changed); syncStage(); touch(); refreshLive(); refreshCounts(); updateIsland(true); }
   return n;
 }
 
@@ -1348,7 +1361,7 @@ function applyInsight(s, j, parts, recSecs, cat, sent = new Set()) {
       n.status = n.field || n.task ? 'filed' : 'kept';
     }
     (s.notes || []).forEach(n => { if (sent.has(n.id) && n.status === 'pending') n.status = 'kept'; });
-    touch(); refreshCounts();
+    syncStage(); touch(); refreshCounts();
   }
   if (parts.includes('body') && Array.isArray(j.body)) { ins.body = j.body.filter(b => BODY_ZONES.includes(b.zone)).map(b => ({ ...b, fields: okF(b.fields) })); ins.at.body = now; }
   if (parts.includes('timeline') && Array.isArray(j.timeline)) { ins.timeline = j.timeline.filter(t => t.event).map(t => ({ ...t, fields: okF(t.fields) })); ins.at.timeline = now; }
@@ -1417,6 +1430,7 @@ function courseCard() {
   const undated = ins.timeline.filter(t => !(t.days_ago >= 0));
   const ctx = [vmax != null && vasCtx(s.fields.vas_max.value) ? `שיא <bdi dir="ltr">${vmax}/10</bdi>: ${esc(vasCtx(s.fields.vas_max.value))}` : '', vnow != null && vasCtx(s.fields.vas_now.value) ? `עכשיו <bdi dir="ltr">${vnow}/10</bdi>: ${esc(vasCtx(s.fields.vas_now.value))}` : ''].filter(Boolean);
   return `<section class="card">${cardHead('course', atMeta('timeline'))}
+    ${vmax != null || vnow != null || ev.some(e => e.vas >= 0) ? `<div class="legend" style="margin:0 0 4px"><span><i class="ln" style="--k:var(--pink)"></i>כאב <bdi dir="ltr">(0–10)</bdi></span><span><i style="--k:var(--purple);border-radius:50%"></i>אירועים</span></div>` : ''}
     <div class="tl">${courseSvg(ev, vmax, vnow)}</div>
     ${undated.length ? `<p class="fine">בלי זמן: ${undated.map(t => esc(t.event) + (unvOf(s, t.fields) ? ' (לא נמצא בתמלול)' : '')).join(' · ')}</p>` : ''}
     ${ctx.length ? `<p class="fine">${ctx.join(' · ')}</p>` : ''}</section>`;
@@ -1433,12 +1447,11 @@ function courseSvg(ev, vmax, vnow) {
   const x = d => padL + (d / max) * (W - padL - padR);
   const pain = ev.filter(e => e.vas >= 0 && e.vas <= 10).map(e => ({ d: e.days_ago, v: e.vas }));
   if (vnow != null) pain.push({ d: 0, v: vnow });
-  const band = pain.length || vmax != null, top = 32, bh = band ? 74 : 0, y0 = top + bh; // pain 0 at y0, 10 at top
+  const band = pain.length || vmax != null, top = 22, bh = band ? 74 : 0, y0 = top + bh; // pain 0 at y0, 10 at top
   const py = v => y0 - v / 10 * bh, ay = y0 + (band ? 26 : 10);
   let svg = '';
   if (band) {
     svg += [0, 5, 10].map(v => `<line class="grid" x1="${padL}" y1="${py(v)}" x2="${W - padR}" y2="${py(v)}"/><text class="tick" x="${W - padR + 14}" y="${py(v) + 4}" text-anchor="middle">${v}</text>`).join('');
-    svg += `<text class="tick" x="${W - padR + 20}" y="${top - 16}" text-anchor="start">כאב (\u20660–10\u2069)</text>`;
     if (vmax != null && !pain.some(p => p.v === vmax)) svg += `<line class="peak" x1="${padL}" y1="${py(vmax)}" x2="${W - padR}" y2="${py(vmax)}"/><text class="plab" x="${W - padR - 4}" y="${py(vmax) - 5}" text-anchor="start">שיא ${vmax}</text>`;
     const pts = pain.sort((a, b) => b.d - a.d);
     if (pts.length > 1) svg += `<polyline class="pline" points="${pts.map(p => `${x(p.d)},${py(p.v)}`).join(' ')}"/>`;
@@ -2682,13 +2695,13 @@ function renderHome() {
 }
 
 /* ---------------- the session screen ---------------- */
-const NAV = [['live', 'מפגש', 'live'], ['form', 'טופס', 'form'], ['transcript', 'תמלול', 'chat'], ['analysis', 'ניתוח', 'analysis']];
+const NAV = [['live', 'מפגש', 'live'], ['form', 'טופס', 'form'], ['summary', 'סיכום', 'clip'], ['analysis', 'ניתוח', 'analysis']];
 function navHtml() {
   return NAV.map(([id, label, ic]) => `<button class="nav-i" data-act="tab" data-tab="${id}"${tab === id ? ' aria-current="page"' : ''}>${ICON[ic]}<span class="lab">${label}</span><span class="n" data-n="${id}"></span></button>`).join('');
 }
 function renderSession() {
   const s = session;
-  document.body.className = 'sess';
+  document.body.className = 'sess'; syncStage();
   $('#app').innerHTML = `<div class="shell">
   <aside class="rail" aria-label="ניווט"><div class="rail-in glass">
     <button class="home" data-act="home" aria-label="כל המפגשים" title="כל המפגשים"><span class="logo">${ICON.mark}</span><span class="htl"><b>Thalamus</b><span>עוזר קליני</span></span></button>
@@ -2703,7 +2716,7 @@ function renderSession() {
       ${islandHtml()}
       <div class="trail"><div class="capsule glass tools">
         <button class="icon-btn opt" data-act="focus" aria-pressed="${!!settings.focus}" aria-label="מצב פוקוס" title="מצב פוקוס">${ICON.focus}</button>
-        <button class="icon-btn" data-act="more" aria-haspopup="dialog" aria-label="עוד: תצוגה, תמלול, מפה" title="עוד">${ICON.more}</button>
+        <button class="icon-btn" data-act="more" aria-haspopup="dialog" aria-label="עוד: תצוגה, מפה, הגדרות" title="עוד">${ICON.more}</button>
         <button class="btn sm primary" data-act="finish">סיום</button>
       </div></div>
     </div>
@@ -2712,6 +2725,8 @@ function renderSession() {
   </main>
   ${sideShown() ? `<aside class="insp" id="sidePane" aria-label="תמלול"></aside>` : ''}
   </div>
+  ${trOverlay() ? `<aside class="insp overlay" id="sidePane" aria-label="תמלול"></aside>` : ''}
+  ${!sideShown() && !trOverlay() && !settings.focus ? `<button class="trtab glass" data-act="trOpen" aria-label="פתח את התמלול" title="תמלול">${ICON.chat}<span id="trCount">${s.segments.length || ''}</span></button>` : ''}
   <nav class="tabbar glass" aria-label="תצוגות המפגש">${navHtml()}</nav>`;
   renderTab(); renderRecState(); renderSide(); refreshTabLabels(); tickTimer(); updateIsland();
   setFillStatus(lastStatus.html, lastStatus.err, lastStatus.raw);
@@ -2723,6 +2738,9 @@ WIDE_MQ.addEventListener?.('change', e => { wide = e.matches; applyLayout(); if 
 // the therapist's own layout: transcript pane width, focus mode, density
 const SIDE_LABEL = { hidden: 'מוסתרת', narrow: 'צרה', medium: 'בינונית', wide: 'רחבה' };
 const sideShown = () => wide && (settings.sideW || 'medium') !== 'hidden' && !settings.focus;
+let trOpenNarrow = false; // below 1000px the transcript opens as a panel over the session
+const trOverlay = () => !wide && trOpenNarrow && !settings.focus;
+const TR_SIZE = { narrow: 'צר', medium: 'בינוני', wide: 'רחב' };
 function applyLayout() {
   const r = document.documentElement;
   r.dataset.side = settings.sideW || 'medium';
@@ -2733,7 +2751,10 @@ function applyLayout() {
 applyLayout();
 function renderSide() {
   const side = $('#sidePane'); if (!side) return;
-  side.innerHTML = `<div class="insp-in" id="inspIn"><div class="insp-h"><h2>תמלול</h2><span class="cnt" id="sideCount">${session.segments.length}</span></div>${transcriptHtml(true)}</div>`;
+  const cur = settings.sideW || 'medium';
+  side.innerHTML = `<div class="insp-in" id="inspIn"><div class="insp-h"><h2>תמלול</h2><span class="cnt" id="sideCount">${session.segments.length}</span>
+    <span class="end">${wide ? `<span class="seg sz" role="group" aria-label="רוחב חלונית התמלול">${Object.entries(TR_SIZE).map(([k, l]) => `<button data-act="sideW" data-v="${k}" aria-pressed="${cur === k}">${l}</button>`).join('')}</span>` : ''}
+    <button class="icon-btn hide" data-act="trHide" aria-label="הסתר את התמלול" title="הסתר">${wide ? ICON.chev : ICON.close}</button></span></div>${transcriptHtml(true)}</div>`;
   renderInterim(); renderAudioBox();
   sideToLatest();
 }
@@ -2779,31 +2800,39 @@ async function renderTestLinks() {
 }
 function ptitleHtml() {
   const s = session;
-  return `<div class="ptitle"><div><h1>${esc(s.patientName)}</h1><div class="sub">${esc(s.region)} · ${esc(s.type)} · <span class="savestate" id="saveState" role="status"></span></div></div>
-    <div class="seg" id="stageChips" role="group" aria-label="שלב המפגש">${STAGES.map(x => { const all = stageFields(s, x.id); return all.length ? `<button data-act="stage" data-stage="${x.id}" aria-pressed="${s.stage === x.id}">${x.label} <span class="cnt" id="scc-${x.id}">${all.filter(f => s.fields[f.id]?.value).length}/${all.length}</span></button>` : ''; }).join('')}</div></div>`;
+  return `<div class="ptitle"><div><h1>${esc(s.patientName)}</h1><div class="sub">${esc(s.region)} · ${esc(s.type)} · <span class="savestate" id="saveState" role="status"></span></div></div></div>`;
 }
 function renderTab() {
-  if (sideShown() && tab === 'transcript') tab = 'live';
+  if (!NAV.some(n => n[0] === tab)) tab = 'live';
   $$('.nav-i[data-tab]').forEach(b => { if (b.dataset.tab === tab) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
   const body = $('#tabBody'); if (!body) return;
   body.setAttribute('aria-label', NAV.find(n => n[0] === tab)?.[1] || '');
   if (tab === 'live') body.innerHTML = liveHtml();
   else if (tab === 'form') body.innerHTML = ptitleHtml() + formHtml();
-  else if (tab === 'transcript') body.innerHTML = ptitleHtml() + `<section class="card">${transcriptHtml(false)}</section>`;
+  else if (tab === 'summary') body.innerHTML = ptitleHtml() + summaryHtml();
   else { body.innerHTML = ptitleHtml() + analysisHtml(); renderTestLinks(); }
-  if (tab === 'form') $$('#tabBody textarea').forEach(autosize);
-  if (tab === 'transcript') { renderInterim(); renderAudioBox(); }
+  if (tab === 'form' || tab === 'summary') $$('#tabBody textarea').forEach(autosize);
   const nb = $('#noteBar');
   if (nb) nb.innerHTML = tab === 'live' && smart().notes ? `<form class="notebar glass" data-act="noteForm" onsubmit="return false"><span class="gl" aria-hidden="true">${ICON.note}</span>
     <input class="ni" id="noteIn" autocomplete="off" placeholder="פתק: מה לבדוק או לזכור" aria-label="פתק חדש: מה לבדוק, מה ראית, מה לזכור">
     <button class="send" data-act="addNote" aria-label="הוסף פתק">${ICON.send}</button></form>` : '';
   renderSaveState();
 }
+// the session so far as one page: every graphic, the record, and the closing fields (impression, treatment, plan)
+function summaryHtml() {
+  const s = session, viz = vizCards('all', true);
+  const closing = sectionsFor(s).filter(sec => sec.id === 'summary').flatMap(sec => sec.fields);
+  const tasks = (s.notes || []).filter(n => n.task);
+  return (viz.length ? `<div class="grid">${viz.join('')}</div>` : smartGraphics() ? `<section class="card compact"><div class="card-h cat-hyp"><span class="glyph">${ICON.clip}</span><h2>סיכום חזותי</h2></div><span class="hint">ייבנה ממה שייאסף במפגש</span></section>` : '') +
+    (smart().record ? recordHtml() : '') +
+    `<section class="card" aria-labelledby="sumH"><div class="card-h cat-rec"><span class="glyph">${ICON.clip}</span><h2 id="sumH">סיכום המפגש</h2><span class="end meta">התרשמות, טיפול והמשך</span></div><div class="fields flat">${closing.map(fieldHtml).join('')}</div></section>` +
+    (tasks.length ? `<section class="card cat-note"><div class="card-h"><span class="glyph">${ICON.note}</span><h2>משימות מהפתקים <span class="muted num">${tasks.length}</span></h2></div>${notesListHtml(tasks)}</section>` : '');
+}
 function refreshTabLabels() {
   if (!session) return;
   const all = fieldsFor(session), filled = all.filter(f => session.fields[f.id]?.value).length;
   $$('[data-n="form"]').forEach(n => n.textContent = `${filled}/${all.length}`);
-  $$('[data-n="transcript"]').forEach(n => n.textContent = session.segments.length || '');
+  const tc = $('#trCount'); if (tc) tc.textContent = session.segments.length || '';
   const sc = $('#sideCount'); if (sc) sc.textContent = session.segments.length;
 }
 
@@ -2846,7 +2875,6 @@ const FEED_N = 6;
 function moreHtml() {
   return `<h3>עוד <button class="icon-btn x" data-act="popClose" aria-label="סגור">${ICON.close}</button></h3>
     <div class="more"><span class="lbl" id="mThL">מצב תצוגה</span><div class="seg" role="group" aria-labelledby="mThL">${THEMES.map(([id, label]) => `<button data-act="theme" data-theme="${id}" aria-pressed="${getTheme() === id}">${label}</button>`).join('')}</div>
-    ${wide ? `<span class="lbl" id="mSwL">חלונית התמלול</span><div class="seg" role="group" aria-labelledby="mSwL">${['hidden', 'narrow', 'medium', 'wide'].map(k => `<button data-act="sideW" data-v="${k}" aria-pressed="${(settings.sideW || 'medium') === k}">${SIDE_LABEL[k]}</button>`).join('')}</div>` : ''}
     <div class="more-l">${MAP_URL ? `<a class="btn" href="${mapLink(session.region)}" target="_blank" rel="noopener">${ICON.map} מפת הדרך לאזור</a>` : ''}<button class="btn" data-act="focus">${ICON.focus} ${settings.focus ? 'יציאה ממצב פוקוס' : 'מצב פוקוס'}</button><button class="btn" data-act="settings">${ICON.gear} כל ההגדרות</button></div></div>`;
 }
 function feedHtml() {
@@ -2975,8 +3003,23 @@ const IMP_LABEL = { 1: 'חובה', 2: 'חשוב', 3: 'כדאי' };
 const impOf = f => IMPORTANCE[f.id] || 3;
 let missOpen = {}; // which of the lower levels (2 important, 3 useful) are open in "still not said"
 // every unanswered field of the current stage, most important first (form order within a level)
+function autoStage(s) {
+  const has = id => stageFields(s, id).some(f => f.id !== 'name' && s.fields[f.id]?.value);
+  return has('summary') ? 'summary' : has('exam') ? 'exam' : 'anamnesis';
+}
+function syncStage() {
+  if (!session) return;
+  const st = autoStage(session); if (st === session.stage) return;
+  session.stage = st; openStages.add(st); saveSession(); renderRecState();
+}
+// still not said: the current phase's fields, and any must-ask from an earlier phase that was skipped
 function missingFields(s) {
-  return stageFields(s, s.stage).filter(f => !s.fields[f.id]?.value).map((f, i) => ({ f, i, imp: impOf(f) })).sort((a, b) => a.imp - b.imp || a.i - b.i);
+  const cur = STAGES.findIndex(x => x.id === s.stage), out = [];
+  STAGES.forEach((st, si) => {
+    if (si > cur) return;
+    stageFields(s, st.id).forEach((f, i) => { if (s.fields[f.id]?.value) return; const imp = impOf(f); if (si < cur && imp !== 1) return; out.push({ f, i: si * 100 + i, imp }); });
+  });
+  return out.sort((a, b) => a.imp - b.imp || a.i - b.i);
 }
 const missRow = ({ f, imp }) => `<button class="mrow" data-act="jump" data-fid="${f.id}"><i class="d${imp}" aria-hidden="true"></i><span>${esc(shortLabel(f.label))}</span>${ICON.chev}</button>`;
 function missingHtml() {
@@ -3036,7 +3079,7 @@ function jumpTo(id, edit = false) {
   if (edit) setTimeout(() => $('#t-' + id)?.focus({ preventScroll: true }), 350);
 }
 function refreshField(id, flash = false) {
-  if (tab !== 'form') return;
+  if (tab !== 'form' && tab !== 'summary') return;
   const el = $('#f-' + id); if (!el) return;
   const ta = $('#t-' + id);
   if (ta && document.activeElement === ta) return;
@@ -3058,7 +3101,6 @@ function refreshCounts() {
   for (const st of STAGES) {
     const all = stageFields(session, st.id), n = `${all.filter(f => session.fields[f.id]?.value).length}/${all.length}`;
     const c = $('#scnt-' + st.id); if (c) c.textContent = n;
-    const d = $('#scc-' + st.id); if (d) d.textContent = n;
   }
   if (tab !== 'form') return;
   for (const sec of sectionsFor(session)) {
@@ -3322,11 +3364,6 @@ document.addEventListener('click', async e => {
     case 'island': if (popKey === 'feed') closePop(); else openPop($('#island'), feedHtml(), 'feed'); break;
     case 'popClose': closePop(); break;
     case 'more': if (popKey === 'more') closePop(); else openPop(t, moreHtml(), 'more'); break;
-    case 'stage':
-      session.stage = t.dataset.stage; saveSession(); openStages.add(session.stage);
-      $$('#stageChips button').forEach(c => c.setAttribute('aria-pressed', c.dataset.stage === session.stage));
-      { const g = $('#stg-' + session.stage); if (g) g.open = true; }
-      renderRecState(); refreshLive(); break;
     case 'tab': tab = t.dataset.tab; closePop(); renderTab(); window.scrollTo(0, 0); break;
     case 'jump': if (view !== 'session') { view = 'session'; render(); } jumpTo(t.dataset.fid); break;
     case 'edit': jumpTo(t.dataset.fid, true); break;
@@ -3399,7 +3436,14 @@ document.addEventListener('click', async e => {
     case 'testSoniox': testSoniox(t); break;
     case 'refreshKb': refreshKb(t); break;
     case 'theme': setTheme(t.dataset.theme); $$('[data-act="theme"]').forEach(b => b.setAttribute('aria-pressed', b === t)); break;
+    case 'trOpen':
+      if (wide) { settings.sideW = settings.sideLast || 'medium'; saveSettings(); applyLayout(); } else trOpenNarrow = true;
+      renderSession(); break;
+    case 'trHide':
+      if (wide) { if ((settings.sideW || 'medium') !== 'hidden') settings.sideLast = settings.sideW || 'medium'; settings.sideW = 'hidden'; saveSettings(); applyLayout(); } else trOpenNarrow = false;
+      renderSession(); $('.trtab')?.focus({ preventScroll: true }); break;
     case 'sideW': case 'density':
+      if (act === 'sideW' && t.dataset.v !== 'hidden') settings.sideLast = t.dataset.v;
       settings[act === 'sideW' ? 'sideW' : 'density'] = t.dataset.v; saveSettings(); applyLayout();
       $$(`[data-act="${act}"]`).forEach(b => b.setAttribute('aria-pressed', b === t));
       if (act === 'sideW' && view === 'session' && session) { const reopen = popKey === 'more'; renderSession(); if (reopen) openPop($('[data-act="more"]'), moreHtml(), 'more'); } break;
@@ -3424,7 +3468,7 @@ document.addEventListener('click', async e => {
 });
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { if ($('#drawer')) { closeSettings(); return; } if (popEl) { const a = popAnchor; closePop(); a?.focus?.(); return; } }
+  if (e.key === 'Escape') { if ($('#drawer')) { closeSettings(); return; } if (trOverlay()) { trOpenNarrow = false; renderSession(); return; } if (popEl) { const a = popAnchor; closePop(); a?.focus?.(); return; } }
   if (e.key === 'Enter' && e.target.id === 'noteIn') { e.preventDefault(); addNote(); return; }
   const t = e.target;
   if (t.matches?.('.dr-tab') && ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) {
@@ -3449,7 +3493,7 @@ document.addEventListener('input', e => {
     const id = t.dataset.fid, val = t.value;
     session.fields[id] = { ...(session.fields[id] || {}), value: val, source: 'manual', locked: true, needsCheck: false, at: Date.now() };
     if (!val.trim()) session.fields[id] = { value: '', locked: false };
-    markDirty([id]); touch(); refreshCounts();
+    markDirty([id]); syncStage(); touch(); refreshCounts();
   }
   if (t.id === 'noteIn') { const b = t.closest('form')?.querySelector('.send'); if (b) b.disabled = !t.value.trim(); }
 });
