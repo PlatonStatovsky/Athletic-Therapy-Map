@@ -131,8 +131,8 @@ svg{flex:none}
 .inp{display:block;width:100%;min-height:44px;padding:10px 12px;border:0;border-radius:var(--r-s);background:var(--fill-2);font-size:var(--fs-body)}
 .inp:focus{outline:2px solid var(--focus);outline-offset:0}
 textarea.inp{min-height:90px;resize:vertical;line-height:1.45}
-select.inp{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--label-2) 50%),linear-gradient(135deg,var(--label-2) 50%,transparent 50%);background-position:14px 50%,19px 50%;background-size:5px 5px;background-repeat:no-repeat;padding-inline-start:12px;padding-inline-end:36px}
-select.inp.ltr{background-position:calc(100% - 19px) 50%,calc(100% - 14px) 50%;padding-left:12px;padding-right:36px}
+select.inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.5l4.5 4.5 4.5-4.5' fill='none' stroke='%238e8e93' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-position:left 14px center;background-size:12px 8px;background-repeat:no-repeat;padding-inline-start:12px;padding-inline-end:38px}
+select.inp.ltr{background-position:right 14px center;padding-left:12px;padding-right:38px}
 ::placeholder{color:#737378;opacity:1}
 :root[data-theme="dark"] ::placeholder{color:#8e8e93}
 .lbl{display:block;margin:14px 0 6px;font-size:var(--fs-foot);font-weight:600;color:var(--label-2)}
@@ -156,6 +156,17 @@ select.inp.ltr{background-position:calc(100% - 19px) 50%,calc(100% - 14px) 50%;p
 .tok.i1 i{background:var(--red)} .tok.i2 i{background:var(--orange)}
 .tok.i1{font-weight:600}
 .tok.more{color:var(--tint-ink);font-weight:600}
+.mlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));column-gap:22px}
+.mrow{display:flex;align-items:center;gap:10px;min-height:46px;padding:6px 2px;border:0;border-bottom:.5px solid var(--sep);background:transparent;text-align:start;font-size:var(--fs-body);color:var(--label)}
+.mrow:hover{background:var(--fill-2)}
+.mrow > span{flex:1;min-width:0}
+.mrow i{width:10px;height:10px;border-radius:50%;flex:none;background:var(--label-3)}
+.mrow i.d1{background:var(--red)} .mrow i.d2{background:var(--orange)}
+.mrow svg{width:16px;height:16px;color:var(--label-3)}
+.mrow.disc{grid-column:1/-1;font-weight:600}
+.mrow.disc .cnt{flex:none;color:var(--label-2);font-weight:500;font-variant-numeric:tabular-nums}
+.mrow.disc svg{transition:transform .25s}
+.mrow.disc[aria-expanded="true"] svg{transform:rotate(-90deg)}
 
 /* ---------- shell ---------- */
 #app{min-height:100dvh}
@@ -204,16 +215,21 @@ html[data-focus] .rail{display:none}
 }
 
 /* toolbar: capsules floating over the content */
-.toolbar{position:sticky;top:0;z-index:25;display:flex;align-items:center;gap:10px;padding:10px 0 8px;margin:0 auto;width:100%;max-width:1080px;pointer-events:none}
+.toolbar{position:sticky;top:0;z-index:25;display:flex;align-items:flex-start;gap:10px;height:72px;padding:10px 0 0;margin:0 auto;width:100%;max-width:1080px;pointer-events:none}
+.toolbar .lead,.toolbar .trail{min-height:52px}
+.toolbar.page{height:auto;padding-bottom:8px}
 .toolbar > *{pointer-events:auto}
-.toolbar .lead,.toolbar .trail{display:flex;align-items:center;gap:6px}
+.toolbar .lead,.toolbar .trail{display:flex;align-items:center;gap:6px;align-self:flex-start}
 .toolbar .lead{flex:1 1 0;min-width:0}
 .toolbar .trail{flex:1 0 auto;justify-content:flex-end}
 .capsule{display:inline-flex;align-items:center;gap:2px;padding:4px;border-radius:999px}
 .toolbar .back{display:none}
 
 /* the recording island: timer, stage and the newest captured fact, morphing as facts land */
-.island{flex:0 1 auto;display:flex;align-items:center;gap:10px;min-width:220px;max-width:460px;min-height:52px;padding:6px 6px 6px 14px;padding-inline:6px 14px;border-radius:999px;transition:max-width .5s cubic-bezier(.16,1,.3,1),box-shadow .3s}
+.island{flex:1 1 auto;display:flex;align-items:center;gap:10px;min-width:220px;max-width:540px;min-height:52px;padding:6px 6px 6px 14px;padding-inline:6px 14px;border-radius:30px;transition:max-width .55s cubic-bezier(.16,1,.3,1),padding .45s cubic-bezier(.16,1,.3,1),box-shadow .3s}
+.island.expanded{max-width:760px;padding-block:10px;box-shadow:var(--glass-sh),var(--spec),0 0 0 3px var(--tint-soft)}
+.island.expanded .isl-cap{white-space:normal;max-height:4.6em;font-size:var(--fs-body);font-weight:600}
+.island.expanded .isl-cap .k{display:block !important;font-size:var(--fs-foot);font-weight:600;color:var(--tint-ink)}
 .isl-rec{flex:none;display:grid;place-items:center;width:42px;height:42px;border:0;border-radius:50%;background:var(--red);color:#fff;box-shadow:0 2px 8px rgba(255,59,48,.35)}
 .isl-rec svg{width:20px;height:20px}
 .isl-rec.on{background:#fff;color:var(--red);box-shadow:0 0 0 2px var(--red) inset}
@@ -224,11 +240,12 @@ html[data-focus] .rail{display:none}
 .isl-top .dot{width:7px;height:7px;border-radius:50%;background:var(--label-3);align-self:center}
 .island.rec .isl-top .dot{background:var(--red);animation:blink 1.6s ease-in-out infinite}
 @keyframes blink{50%{opacity:.25}}
-.isl-cap{font-size:var(--fs-sub);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--label)}
-.isl-cap .k{color:var(--label-2);font-weight:500}
+.isl-cap{font-size:var(--fs-sub);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--label);max-height:1.6em;transition:max-height .5s cubic-bezier(.16,1,.3,1)}
+.isl-cap .k{display:none;color:var(--label-2);font-weight:500}
+.isl-cap.withk .k{display:inline}
 .isl-cap.idle{color:var(--label-2);font-weight:400}
 .isl-badge.err{background:var(--red-soft);color:var(--red-ink)}
-.isl-badge{flex:none;display:inline-flex;align-items:center;min-height:26px;padding:0 10px;border:0;border-radius:999px;background:var(--tint-soft);color:var(--tint-ink);font-size:var(--fs-cap);font-weight:700;white-space:nowrap}
+.isl-badge{flex:none;display:inline-flex;align-items:center;gap:4px;min-height:26px;padding:0 10px;border:0;border-radius:999px;background:var(--tint-soft);color:var(--tint-ink);font-size:var(--fs-cap);font-weight:700;white-space:nowrap}
 .island.new{animation:islPulse .9s cubic-bezier(.16,1,.3,1)}
 .island.new .isl-cap{animation:capIn .7s cubic-bezier(.16,1,.3,1)}
 @keyframes islPulse{0%{transform:scale(1)}30%{transform:scale(1.035)}100%{transform:scale(1)}}
@@ -284,22 +301,28 @@ html[data-focus] .rail{display:none}
 .bm figure{margin:0;text-align:center}
 .bm figcaption{font-size:var(--fs-cap);color:var(--label-2);margin-top:2px}
 .bm svg{width:min(108px,36vw);height:auto;display:block}
-.bm .z{fill:var(--bm-body);stroke:var(--bm-line);stroke-width:.8}
-.bm .z.k-pain{fill:var(--bm-pain);stroke:none}
-.bm .z.k-radiation{fill:var(--bm-rad);stroke:none}
-.bm .z.k-paresthesia{fill:var(--bm-par);stroke:none}
-.bm .z.unv{fill-opacity:.45}
+.bm .sil{fill:var(--bm-body)}
+.bm .mk.k-pain{fill:var(--bm-pain)}
+.bm .mk.k-radiation{fill:var(--bm-rad)}
+.bm .mk.k-paresthesia{fill:var(--bm-par)}
+.bm .mk.unv{fill-opacity:.45}
 .bm .side{font-size:9px;fill:var(--label-2);font-family:inherit}
 .zlist{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:4px;font-size:var(--fs-foot)}
 .zlist li{display:flex;align-items:baseline;gap:8px}
 .zlist li i{width:9px;height:9px;border-radius:3px;background:var(--k);flex:none;align-self:center}
 .tl svg{width:100%;height:auto;display:block;overflow:visible}
 .tl .axis{stroke:var(--sep-strong);stroke-width:1}
-.tl .tick{fill:var(--label-2);font-size:11px;font-family:inherit}
+.tl .grid{stroke:var(--sep);stroke-width:1}
+.tl .peak{stroke:var(--pink);stroke-width:1;opacity:.6}
+.tl .plab{fill:var(--pink-ink);font-size:12px;font-weight:600;font-family:inherit}
+.tl .pline{fill:none;stroke:var(--pink);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.tl .pdot{fill:var(--pink);stroke:var(--card);stroke-width:2}
+.tl .pval{fill:var(--label);font-size:13px;font-weight:700;font-family:inherit}
+.tl .tick{fill:var(--label-2);font-size:12px;font-family:inherit}
 .tl .ev{fill:var(--purple);stroke:var(--card);stroke-width:2}
 .tl .ev.now{fill:var(--card);stroke:var(--purple);stroke-width:2}
-.tl .lab{fill:var(--label);font-size:12px;font-family:inherit}
-.tl .when{fill:var(--label-2);font-size:11px;font-family:inherit}
+.tl .lab{fill:var(--label);font-size:13.5px;font-family:inherit}
+.tl .when{fill:var(--label-2);font-size:12px;font-weight:600;font-family:inherit}
 .tl .stem{stroke:var(--sep-strong);stroke-width:1}
 .tl-list{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px;font-size:var(--fs-foot)}
 .tl-list li{display:grid;grid-template-columns:7.5em 1fr;gap:8px}
@@ -334,8 +357,9 @@ html[data-focus] .rail{display:none}
 .test .nm{min-width:0}
 .test .nm a{font-weight:600;text-decoration:none}
 .test .sd{font-size:var(--fs-cap);color:var(--label-2)}
-.hyps{display:grid;gap:10px}
-.hyp{display:grid;grid-template-columns:1fr auto;gap:6px 12px;padding:12px 14px;border-radius:var(--r-m);background:var(--fill-2)}
+.hyps{display:grid;border-top:.5px solid var(--sep)}
+.hyp{display:grid;grid-template-columns:1fr auto;gap:6px 12px;padding:12px 0;border-bottom:.5px solid var(--sep)}
+.hyp:last-child{border-bottom:0}
 .hyp h3{font-size:var(--fs-body);font-weight:700;line-height:1.3}
 .hyp .st{display:inline-flex;align-items:center;gap:8px;font-size:var(--fs-foot);font-weight:700;white-space:nowrap}
 .hyp .st .lv{display:inline-flex;gap:3px}
@@ -366,8 +390,9 @@ html[data-focus] .rail{display:none}
 .rec-raw .k{color:var(--label-2)}
 
 /* notes */
-.notes{list-style:none;margin:0;padding:0;display:grid;gap:8px}
-.notes li{display:grid;grid-template-columns:1fr auto;align-items:center;gap:6px 10px;padding:10px 12px;border-radius:var(--r-m);background:var(--yellow-soft)}
+.notes{list-style:none;margin:0;padding:0;display:grid}
+.notes li{display:grid;grid-template-columns:1fr auto;align-items:center;gap:4px 10px;padding:10px 0;border-bottom:.5px solid var(--sep)}
+.notes li:last-child{border-bottom:0}
 .notes li p{font-size:var(--fs-sub)}
 .notes li .to{grid-column:1/-1;font-size:var(--fs-cap);color:var(--label-2);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .notes li .to b{color:var(--label);font-weight:600}
@@ -390,8 +415,9 @@ html[data-focus] .rail{display:none}
 .card.ai{position:relative;background:var(--card);isolation:isolate}
 .card.ai::before{content:"";position:absolute;inset:-1.5px;border-radius:calc(var(--r-l) + 1.5px);background:conic-gradient(from 210deg,#0a84ff,#bf5af2,#ff375f,#ff9f0a,#30d158,#0a84ff);z-index:-1;opacity:.75}
 .card.ai::after{content:"";position:absolute;inset:0;border-radius:var(--r-l);background:var(--card);z-index:-1}
-.nexts{list-style:none;margin:0;padding:0;display:grid;gap:8px}
-.nexts li{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 12px;border-radius:var(--r-m);background:var(--fill-2)}
+.nexts{list-style:none;margin:0;padding:0;display:grid}
+.nexts li{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:.5px solid var(--sep)}
+.nexts li:last-child{border-bottom:0}
 .nexts li .ic{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--indigo-soft);color:var(--indigo-ink)}
 .nexts li .ic svg{width:16px;height:16px}
 .nexts li p{font-size:var(--fs-sub);font-weight:600}
@@ -411,6 +437,11 @@ html[data-focus] .rail{display:none}
 .pop .fv{font-size:var(--fs-body);font-weight:500;white-space:pre-wrap}
 .pop .fl{font-size:var(--fs-cap);color:var(--label-2);font-weight:600}
 .pop + .pop{display:none}
+.more{display:grid;gap:4px}
+.more .lbl{margin:8px 0 4px}
+.more .seg{width:100%}
+.more-l{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.more-l .btn svg{width:17px;height:17px}
 .feed{display:grid;gap:2px}
 .feed-row{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;padding:10px 4px;border-bottom:.5px solid var(--sep)}
 .feed-row:last-child{border-bottom:0}
@@ -488,7 +519,8 @@ html[data-focus] .rail{display:none}
 .hl-legend{display:flex;flex-wrap:wrap;gap:8px;font-size:var(--fs-foot)}
 
 /* ---------- lists (home, finish) ---------- */
-.list{list-style:none;margin:0;padding:0;border-radius:var(--r-m);background:var(--card-2);overflow:hidden}
+.list{list-style:none;margin:0;padding:0}
+.list li,.list .li{padding-inline:0 !important}
 .list li,.list .li{display:flex;align-items:center;gap:12px;min-height:52px;padding:8px 14px;border-bottom:.5px solid var(--sep)}
 .list li:last-child,.list .li:last-child{border-bottom:0}
 .list .grow{flex:1;min-width:0;display:flex;flex-direction:column}
@@ -506,11 +538,16 @@ html[data-focus] .rail{display:none}
 .hero-title h1 .logo svg{width:28px;height:28px}
 .hero-title p{color:var(--label-2);margin-top:4px}
 .toolbar.page{justify-content:space-between}
-.vrow{padding:12px 14px;border-bottom:.5px solid var(--sep)}
+.vrows{border-top:.5px solid var(--sep)}
+.vrow{display:grid;grid-template-columns:1fr auto;align-items:center;gap:6px 14px;padding:12px 0;border-bottom:.5px solid var(--sep)}
 .vrow:last-child{border-bottom:0}
-.vrow .vl{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
-.vrow .vb{display:flex;gap:8px;margin-top:8px}
-.vrow textarea.inp{min-height:52px}
+.vrow .vl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:var(--fs-foot);color:var(--label-2)}
+.vrow .vl b{color:var(--label-2);font-weight:600}
+.vin{display:block;width:100%;min-height:28px;margin:2px 0 0;padding:2px 0;border:0;border-radius:6px;background:transparent;resize:none;overflow:hidden;font-size:var(--fs-body);line-height:1.45}
+.vin:focus{outline:none;background:var(--tint-soft)}
+.vq{font-size:var(--fs-foot);color:var(--label-2);margin-top:2px}
+.vrow .vb{display:flex;gap:6px}
+@media (max-width:759px){ .vrow{grid-template-columns:1fr} }
 .callout{margin-top:8px;padding:8px 10px;border-radius:var(--r-s);background:var(--fill-2);font-size:var(--fs-foot);color:var(--label-2)}
 .done{padding:12px 14px;border-radius:var(--r-m);background:var(--green-soft);color:var(--green-ink);font-weight:600}
 .err{padding:12px 14px;border-radius:var(--r-m);background:var(--red-soft);color:var(--red-ink);font-size:var(--fs-sub)}
@@ -825,7 +862,8 @@ const ICON = (() => {
     angle: S('<path d="M4 20h16M4 20 15.5 5"/><path d="M10.5 20a6.5 6.5 0 0 0-2.2-4.8"/>', 2),
     dumbbell: S('<path d="M6.5 6.5v11M17.5 6.5v11M3.5 9.5v5M20.5 9.5v5M6.5 12h11"/>', 2),
     bulb: S('<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/>'),
-    drive: S('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>', 2)
+    drive: S('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>', 2),
+    more: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="8" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="16" cy="12" r="1.1" fill="currentColor" stroke="none"/></svg>'
   };
 })();
 let toastTimer = null;
@@ -1208,7 +1246,7 @@ Parts:
 - record: for each section id in RECORD_SECTIONS that has content, one paragraph of the clinical record: 1–3 sentences of fluent clinical Hebrew in the third person ("המטופל מדווח…", "נמצא…"), only the facts in that section's fields. No headings, no lists, no interpretation.
 - notes: for each pending therapist note (by id): "field" = the form field id the note belongs in (it will be appended there), or "" when it is not a fact for the form; "task" = when the note is something to do, check or remember later (e.g. "לבדוק Hawkins", "לשלוח הפניה"), a short imperative task in Hebrew, else "". A note can be both or neither.
 - body: where the symptoms are, from location / chief_complaint / neuro_symptoms: one item per zone and side. kind: pain = the pain itself; radiation = pain that spreads or radiates to another area; paresthesia = numbness, tingling, pins and needles. view: front / back / both, by where on the body it was described (both when not said). side: right / left / both / center (center for the spine, head, chest and abdomen when no side was said). label: 2–5 Hebrew words as said.
-- timeline: the injury story in time order: onset, mechanism, changes, earlier episodes, treatments, imaging. "when" as said, in Hebrew. "days_ago": your numeric estimate before the session date (a week = 7, a month = 30, a year = 365); -1 when no time was given. "event": up to 6 Hebrew words.
+- timeline: the injury story in time order: onset, mechanism, changes, earlier episodes, treatments, imaging. "when" as said, in Hebrew. "days_ago": your numeric estimate before the session date (a week = 7, a month = 30, a year = 365); -1 when no time was given. "event": up to 6 Hebrew words. "vas": the pain level 0–10 at that time when one was said for it (e.g. "בהתחלה 8"), else -1; today's level is vas_now and needs no item.
 - exam: rom = each range of motion given in degrees, one item per motion and side ("motion" short, e.g. "Flexion" or "סיבוב חיצוני"; painful = pain was reported at that range); mmt = each muscle or motion with a 0–5 grade (4+ = 4.5, 4- = 3.75); tests = each special test that was named, with its result. test_id = the catalog id when the test is in the MAP CATALOG, else "". Nothing that was not measured or named.
 - hypotheses: up to 4 working hypotheses the findings so far point to, for the therapist's own reasoning and never as a diagnosis. Prefer the pathways in the MAP CATALOG ("path" = its exact name, "" when not from the map). status: supported = several findings fit and none argue against; possible = fits but still untested; weakened = a finding argues against it. support / against: up to 3 short facts each, from the form. tests: catalog test ids that would help tell these hypotheses apart and were not done yet. With fewer than 3 relevant facts known, return an empty list.
 - next: up to 3 next steps for the current stage that matter most now: kind "question" (to ask) or "test" (to examine); text = the question in Hebrew as the therapist would ask it, or the test's name; why = up to 10 Hebrew words; test_id = catalog id or "". Prefer key items not yet asked and what tells the hypotheses apart. Never something already in the form.`;
@@ -1222,7 +1260,7 @@ function insightSchema(parts) {
     if (p === 'record') P.record = arr(obj({ section: { type: 'string', enum: sectionsFor(session).map(x => x.id) }, text: { type: 'string' }, fields: fieldsArr }));
     if (p === 'notes') P.notes = arr(obj({ id: { type: 'string' }, field: { type: 'string', enum: ['', ...ids] }, task: { type: 'string' } }));
     if (p === 'body') P.body = arr(obj({ zone: { type: 'string', enum: BODY_ZONES }, side: { type: 'string', enum: ['right', 'left', 'both', 'center'] }, view: { type: 'string', enum: ['front', 'back', 'both'] }, kind: { type: 'string', enum: ['pain', 'radiation', 'paresthesia'] }, label: { type: 'string' }, fields: fieldsArr }));
-    if (p === 'timeline') P.timeline = arr(obj({ when: { type: 'string' }, days_ago: { type: 'number' }, event: { type: 'string' }, fields: fieldsArr }));
+    if (p === 'timeline') P.timeline = arr(obj({ when: { type: 'string' }, days_ago: { type: 'number' }, event: { type: 'string' }, vas: { type: 'number' }, fields: fieldsArr }));
     if (p === 'exam') P.exam = obj({
       rom: arr(obj({ motion: { type: 'string' }, side: { type: 'string', enum: ['right', 'left'] }, degrees: { type: 'number' }, painful: { type: 'boolean' }, fields: fieldsArr })),
       mmt: arr(obj({ motion: { type: 'string' }, side: { type: 'string', enum: ['right', 'left'] }, grade: { type: 'number' }, fields: fieldsArr })),
@@ -1373,74 +1411,98 @@ const vasCtx = v => String(v || '').replace(/^[^\d]*\d+(?:\.\d+)?\s*(?:\/\s*10)?
 
 function courseCard() {
   const s = session, ins = insState(s);
-  const row = (id, label) => {
-    const v = s.fields[id]?.value, n = vasOf(v);
-    return `<div class="vas-r"><span class="k">${label}</span><div class="meter${n == null ? ' none' : ''}" role="img" aria-label="${label}: ${n == null ? 'לא נאמר' : n + ' מתוך 10'}"><i style="width:${(n || 0) * 10}%"></i></div><span class="v">${n == null ? '<small>—</small>' : `${n}<small>/10</small>`}</span>${n != null && vasCtx(v) ? `<span class="ctx">${esc(vasCtx(v))}</span>` : ''}</div>`;
-  };
-  const ev = ins.timeline.filter(t => t.days_ago >= 0).sort((a, b) => b.days_ago - a.days_ago), list = [...ins.timeline].sort((a, b) => (b.days_ago < 0 ? -1 : b.days_ago) - (a.days_ago < 0 ? -1 : a.days_ago));
+  const vmax = vasOf(s.fields.vas_max?.value), vnow = vasOf(s.fields.vas_now?.value);
+  const ev = ins.timeline.filter(t => t.days_ago >= 0).sort((a, b) => b.days_ago - a.days_ago);
+  const undated = ins.timeline.filter(t => !(t.days_ago >= 0));
+  const ctx = [vmax != null && vasCtx(s.fields.vas_max.value) ? `שיא <bdi dir="ltr">${vmax}/10</bdi>: ${esc(vasCtx(s.fields.vas_max.value))}` : '', vnow != null && vasCtx(s.fields.vas_now.value) ? `עכשיו <bdi dir="ltr">${vnow}/10</bdi>: ${esc(vasCtx(s.fields.vas_now.value))}` : ''].filter(Boolean);
   return `<section class="card">${cardHead('course', atMeta('timeline'))}
-    <div class="vas">${row('vas_max', 'כאב מירבי')}${row('vas_now', 'כאב עכשיו')}</div>
-    ${ev.length ? `<div class="tl" style="margin-top:14px">${timelineSvg(ev)}</div>` : ''}
-    ${list.length ? `<ul class="tl-list">${list.map(t => `<li${unvOf(s, t.fields) ? ' title="מבוסס על שדה שלא אומת"' : ''}><b>${esc(t.when || '—')}</b><span>${esc(t.event)}${unvOf(s, t.fields) ? UNV : ''}</span></li>`).join('')}</ul>` : ''}</section>`;
+    <div class="tl">${courseSvg(ev, vmax, vnow)}</div>
+    ${undated.length ? `<p class="fine">בלי זמן: ${undated.map(t => esc(t.event) + (unvOf(s, t.fields) ? ' (לא נמצא בתמלול)' : '')).join(' · ')}</p>` : ''}
+    ${ctx.length ? `<p class="fine">${ctx.join(' · ')}</p>` : ''}</section>`;
 }
-// time runs right to left, as Hebrew reads: the oldest event on the right, today on the left
-function timelineSvg(ev) {
-  const W = 560, pad = 34, max = Math.max(1, ...ev.map(e => e.days_ago));
-  const x = d => pad + (d / max) * (W - 2 * pad);
-  const short = t => { t = String(t); return t.length > 22 ? t.slice(0, 21) + '…' : t; };
-  let lastX = -1e3, tier = 0; const pos = ev.map(e => { const cx = x(e.days_ago); tier = Math.abs(cx - lastX) < 130 ? 1 - tier : 0; lastX = cx; return { e, cx, tier }; });
-  const y = pos.some(p => p.tier) ? 74 : 44;
-  const marks = pos.map(({ e, cx, tier }) => {
-    const top = y - 14 - tier * 30, ax = Math.min(Math.max(cx, 62), W - 62);
-    return `<line class="stem" x1="${cx}" y1="${y}" x2="${cx}" y2="${top + 4}"/><circle class="ev" cx="${cx}" cy="${y}" r="5"/>
-      <text class="lab" x="${ax}" y="${top}" text-anchor="middle">${esc(short(e.event))}</text><text class="when" x="${ax}" y="${top - 14}" text-anchor="middle">${esc(short(e.when))}</text>`;
+// one graphic for the course: pain (0–10) above, the injury's events on a time axis below.
+// Time runs right to left, as Hebrew reads: the oldest event on the right, today on the left.
+function wrapLabel(t, n = 15) {
+  const words = String(t).split(/\s+/), lines = ['']; for (const w of words) { const cur = lines[lines.length - 1]; if (cur && (cur + ' ' + w).length > n) lines.push(w); else lines[lines.length - 1] = cur ? cur + ' ' + w : w; }
+  if (lines.length > 2) { lines.length = 2; lines[1] = lines[1].slice(0, n - 1) + '…'; }
+  return lines;
+}
+function courseSvg(ev, vmax, vnow) {
+  const W = 560, padR = 40, padL = 26, max = Math.max(1, ...ev.map(e => e.days_ago));
+  const x = d => padL + (d / max) * (W - padL - padR);
+  const pain = ev.filter(e => e.vas >= 0 && e.vas <= 10).map(e => ({ d: e.days_ago, v: e.vas }));
+  if (vnow != null) pain.push({ d: 0, v: vnow });
+  const band = pain.length || vmax != null, top = 32, bh = band ? 74 : 0, y0 = top + bh; // pain 0 at y0, 10 at top
+  const py = v => y0 - v / 10 * bh, ay = y0 + (band ? 26 : 10);
+  let svg = '';
+  if (band) {
+    svg += [0, 5, 10].map(v => `<line class="grid" x1="${padL}" y1="${py(v)}" x2="${W - padR}" y2="${py(v)}"/><text class="tick" x="${W - padR + 14}" y="${py(v) + 4}" text-anchor="middle">${v}</text>`).join('');
+    svg += `<text class="tick" x="${W - padR + 20}" y="${top - 16}" text-anchor="start">כאב (\u20660–10\u2069)</text>`;
+    if (vmax != null && !pain.some(p => p.v === vmax)) svg += `<line class="peak" x1="${padL}" y1="${py(vmax)}" x2="${W - padR}" y2="${py(vmax)}"/><text class="plab" x="${W - padR - 4}" y="${py(vmax) - 5}" text-anchor="start">שיא ${vmax}</text>`;
+    const pts = pain.sort((a, b) => b.d - a.d);
+    if (pts.length > 1) svg += `<polyline class="pline" points="${pts.map(p => `${x(p.d)},${py(p.v)}`).join(' ')}"/>`;
+    const hi = pts.reduce((m, p) => p.v > m.v ? p : m, pts[0] || { v: -1 });
+    svg += pts.map(p => `<circle class="pdot" cx="${x(p.d)}" cy="${py(p.v)}" r="5"/>${p === hi || p.d === 0 ? `<text class="pval" x="${x(p.d)}" y="${py(p.v) - 10}" text-anchor="middle">${p.v}</text>` : ''}`).join('');
+  }
+  svg += `<line class="axis" x1="${padL}" y1="${ay}" x2="${W - padR + 8}" y2="${ay}"/>`;
+  let lastX = 1e4, tier = 0, deepest = 0;
+  const labels = ev.map(e => {
+    const cx = x(e.days_ago); tier = Math.abs(lastX - cx) < 118 ? 1 - tier : 0; lastX = cx;
+    const ax = Math.min(Math.max(cx, padL + 44), W - padR - 30), base = ay + 18 + tier * 48, lines = wrapLabel(e.event);
+    deepest = Math.max(deepest, base + 14 * lines.length);
+    return `<line class="stem" x1="${cx}" y1="${ay}" x2="${cx}" y2="${base - 12}"/><circle class="ev" cx="${cx}" cy="${ay}" r="5"/>
+      <text class="when" x="${ax}" y="${base}" text-anchor="middle">${esc(e.when || '')}</text>${lines.map((l, i) => `<text class="lab" x="${ax}" y="${base + 15 + i * 14}" text-anchor="middle">${esc(l)}</text>`).join('')}`;
   }).join('');
-  return `<svg viewBox="0 0 ${W} ${y + 22}" role="img" aria-label="ציר הזמן של הפציעה: ${esc(ev.map(e => e.when + ' ' + e.event).join('; '))}">
-    <line class="axis" x1="${pad - 10}" y1="${y}" x2="${W - pad + 10}" y2="${y}"/>${marks}
-    <circle class="ev now" cx="${pad - 10}" cy="${y}" r="5"/><text class="tick" x="${pad - 10}" y="${y + 19}" text-anchor="middle">היום</text></svg>`;
+  svg += labels + `<circle class="ev now" cx="${padL}" cy="${ay}" r="5"/><text class="tick" x="${padL}" y="${ay + 18}" text-anchor="middle">היום</text>`;
+  const H = Math.max(deepest + 8, ay + 26);
+  const al = ['מהלך הפציעה', ...ev.map(e => `${e.when}: ${e.event}${e.vas >= 0 ? ', כאב ' + e.vas : ''}`), vnow != null ? 'היום: כאב ' + vnow : '', vmax != null ? 'שיא כאב ' + vmax : ''].filter(Boolean).join('; ');
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(al)}">${svg}</svg>`;
 }
-// a schematic body chart: front and back, each zone a shape; the patient's right is on the viewer's left from the front
-const BM = {
-  head: [['e', 50, 15, 10, 12]], neck: [['r', 45, 27, 10, 8, 3]],
-  shoulder: { L: [['e', 34, 40, 9, 7]], R: [['e', 66, 40, 9, 7]] },
-  upper_arm: { L: [['r', 20, 44, 10, 34, 5]], R: [['r', 70, 44, 10, 34, 5]] },
-  elbow: { L: [['e', 25, 83, 5.5, 5]], R: [['e', 75, 83, 5.5, 5]] },
-  forearm: { L: [['r', 18, 88, 10, 30, 5]], R: [['r', 72, 88, 10, 30, 5]] },
-  wrist_hand: { L: [['e', 22, 127, 6, 9]], R: [['e', 78, 127, 6, 9]] },
-  chest: { L: [['r', 35, 46, 15, 20, 3]], R: [['r', 50, 46, 15, 20, 3]] },
-  upper_back: { L: [['r', 35, 46, 15, 22, 3]], R: [['r', 50, 46, 15, 22, 3]] },
-  abdomen: { L: [['r', 36, 67, 14, 24, 3]], R: [['r', 50, 67, 14, 24, 3]] },
-  low_back: { L: [['r', 36, 69, 14, 22, 3]], R: [['r', 50, 69, 14, 22, 3]] },
-  hip: { L: [['r', 34, 92, 16, 18, 5]], R: [['r', 50, 92, 16, 18, 5]] },
-  thigh: { L: [['r', 35, 111, 14, 40, 6]], R: [['r', 51, 111, 14, 40, 6]] },
-  knee: { L: [['e', 42, 157, 7, 6.5]], R: [['e', 58, 157, 7, 6.5]] },
-  lower_leg: { L: [['r', 36, 164, 12, 34, 6]], R: [['r', 52, 164, 12, 34, 6]] },
-  ankle_foot: { L: [['e', 42, 205, 7, 6]], R: [['e', 58, 205, 7, 6]] }
+
+// the body chart: one continuous silhouette, front and back; marks are painted inside its contour.
+// From the front the patient's right is on the viewer's left; from the back it is on the viewer's right.
+const BODY_HALF = [[45.5, 24], [45.5, 31], [40, 33.5], [32, 36], [27, 39.5], [24.5, 45], [22.5, 56], [21.5, 68], [20.5, 80], [19, 92], [17.5, 104], [16.5, 114], [15, 120], [14, 127], [15.5, 134], [19, 136], [21.5, 131], [22, 124], [23.5, 114], [25.5, 102], [27, 90], [28.5, 80], [29.5, 68], [31, 58], [33, 52], [33.5, 62], [34.5, 74], [35, 84], [34, 94], [33, 104], [33.5, 118], [35, 134], [37, 150], [37.5, 160], [37, 172], [38.5, 188], [40, 198], [38, 205], [37.5, 210], [44, 211], [46.5, 206], [46.5, 198], [46.5, 186], [46.5, 172], [47, 160], [47.5, 148], [48.5, 132], [49.5, 116], [50, 110]];
+const BODY_PATH = (() => {
+  const pts = [...BODY_HALF, ...BODY_HALF.slice(0, -1).reverse().map(([x, y]) => [100 - x, y])], n = pts.length, f = v => +v.toFixed(2);
+  let d = `M${pts[0][0]},${pts[0][1]}`;
+  for (let i = 0; i < n; i++) { // closed Catmull-Rom spline as cubic Béziers
+    const p0 = pts[(i - 1 + n) % n], p1 = pts[i], p2 = pts[(i + 1) % n], p3 = pts[(i + 2) % n];
+    d += `C${f(p1[0] + (p2[0] - p0[0]) / 6)},${f(p1[1] + (p2[1] - p0[1]) / 6)} ${f(p2[0] - (p3[0] - p1[0]) / 6)},${f(p2[1] - (p3[1] - p1[1]) / 6)} ${p2[0]},${p2[1]}`;
+  }
+  return d + 'Z';
+})();
+// where each zone sits on the viewer's left half ([kind, …geometry]); the right half mirrors it
+const ZONE_GEO = {
+  head: ['e', 50, 13, 10, 12], neck: ['r', 44, 23, 12, 10],
+  shoulder: ['e', 31, 40, 9, 8], upper_arm: ['e', 25.5, 62, 7, 15], elbow: ['e', 22.5, 84, 6.5, 6.5], forearm: ['e', 20.5, 103, 6.5, 13], wrist_hand: ['e', 18.5, 126, 7, 11],
+  chest: ['r', 33, 35, 17, 27], upper_back: ['r', 33, 35, 17, 30], abdomen: ['r', 33, 62, 17, 30], low_back: ['r', 33, 65, 17, 28], hip: ['r', 32, 92, 18, 22],
+  thigh: ['e', 41.5, 130, 9, 20], knee: ['e', 42.5, 154, 6.5, 7], lower_leg: ['e', 42.5, 177, 6, 17], ankle_foot: ['e', 42.5, 203, 7, 9]
 };
-const FRONT_ONLY = ['chest', 'abdomen'], BACK_ONLY = ['upper_back', 'low_back'];
-const shape = (p, cls) => p[0] === 'e' ? `<ellipse class="${cls}" cx="${p[1]}" cy="${p[2]}" rx="${p[3]}" ry="${p[4]}"/>` : `<rect class="${cls}" x="${p[1]}" y="${p[2]}" width="${p[3]}" height="${p[4]}" rx="${p[5]}"/>`;
+const FRONT_ONLY = ['chest', 'abdomen'], BACK_ONLY = ['upper_back', 'low_back'], CENTRAL = ['head', 'neck'];
 const KIND_RANK = { pain: 3, paresthesia: 2, radiation: 1 };
+let bmSeq = 0;
+function zoneShape(z, vs, cls) {
+  const g = ZONE_GEO[z], m = v => vs === 'R' ? 100 - v : v;
+  if (CENTRAL.includes(z)) return g[0] === 'e' ? `<ellipse class="${cls}" cx="${g[1]}" cy="${g[2]}" rx="${g[3]}" ry="${g[4]}"/>` : `<rect class="${cls}" x="${g[1]}" y="${g[2]}" width="${g[3]}" height="${g[4]}"/>`;
+  if (g[0] === 'e') return `<ellipse class="${cls}" cx="${m(g[1])}" cy="${g[2]}" rx="${g[3]}" ry="${g[4]}"/>`;
+  return `<rect class="${cls}" x="${vs === 'R' ? 100 - g[1] - g[3] : g[1]}" y="${g[2]}" width="${g[3]}" height="${g[4]}"/>`;
+}
 function bodySvg(items, view) {
-  const s = session, paint = {}; // viewer side "L"/"R" or "C" → zone → item
+  const s = session, paint = {}, id = 'bm' + (++bmSeq);
   for (const b of items) {
-    if (b.view !== 'both' && b.view !== view && !(FRONT_ONLY.includes(b.zone) && view === 'front') && !(BACK_ONLY.includes(b.zone) && view === 'back')) continue;
     if ((view === 'front' && BACK_ONLY.includes(b.zone)) || (view === 'back' && FRONT_ONLY.includes(b.zone))) continue;
-    const sides = b.side === 'right' ? ['P_R'] : b.side === 'left' ? ['P_L'] : ['P_R', 'P_L'];
+    if (b.view !== 'both' && b.view !== view && !FRONT_ONLY.includes(b.zone) && !BACK_ONLY.includes(b.zone)) continue;
+    const sides = CENTRAL.includes(b.zone) ? ['C'] : b.side === 'right' ? ['P_R'] : b.side === 'left' ? ['P_L'] : ['P_R', 'P_L'];
     for (const ps of sides) {
-      const vs = view === 'front' ? (ps === 'P_R' ? 'L' : 'R') : (ps === 'P_R' ? 'R' : 'L');
-      const k = b.zone + ':' + vs, cur = paint[k];
-      if (!cur || KIND_RANK[b.kind] > KIND_RANK[cur.kind]) paint[k] = b;
+      const vs = ps === 'C' ? 'C' : view === 'front' ? (ps === 'P_R' ? 'L' : 'R') : (ps === 'P_R' ? 'R' : 'L');
+      const k = b.zone + ':' + vs; if (!paint[k] || KIND_RANK[b.kind] > KIND_RANK[paint[k].kind]) paint[k] = b;
     }
   }
-  let svg = '';
-  for (const z of BODY_ZONES) {
-    if ((view === 'front' && BACK_ONLY.includes(z)) || (view === 'back' && FRONT_ONLY.includes(z))) continue;
-    const def = BM[z];
-    if (Array.isArray(def)) { const it = paint[z + ':L'] || paint[z + ':R']; svg += def.map(p => shape(p, 'z' + (it ? ' k-' + it.kind + (unvOf(s, it.fields) ? ' unv' : '') : ''))).join(''); }
-    else for (const vs of ['L', 'R']) { const it = paint[z + ':' + vs]; svg += def[vs].map(p => shape(p, 'z' + (it ? ' k-' + it.kind + (unvOf(s, it.fields) ? ' unv' : '') : ''))).join(''); }
-  }
+  const marks = Object.entries(paint).map(([k, it]) => { const [z, vs] = k.split(':'); return zoneShape(z, vs, 'mk k-' + it.kind + (unvOf(s, it.fields) ? ' unv' : '')); }).join('');
   const lr = view === 'front' ? ['ימין', 'שמאל'] : ['שמאל', 'ימין'];
-  return `<svg viewBox="0 0 100 222" aria-hidden="true">${svg}<text class="side" x="17" y="218" text-anchor="middle">${lr[0]}</text><text class="side" x="83" y="218" text-anchor="middle">${lr[1]}</text></svg>`;
+  return `<svg viewBox="0 0 100 222" aria-hidden="true"><defs><clipPath id="${id}"><path d="${BODY_PATH}"/><ellipse cx="50" cy="13" rx="9.5" ry="11.5"/></clipPath></defs>
+    <path class="sil" d="${BODY_PATH}"/><ellipse class="sil" cx="50" cy="13" rx="9.5" ry="11.5"/><g clip-path="url(#${id})">${marks}</g>
+    <text class="side" x="17" y="220" text-anchor="middle">${lr[0]}</text><text class="side" x="83" y="220" text-anchor="middle">${lr[1]}</text></svg>`;
 }
 function bodyCard() {
   const s = session, items = insState(s).body, kinds = [...new Set(items.map(b => b.kind))];
@@ -2523,10 +2585,10 @@ async function openFinish() {
 const needsReview = f => { const v = session.fields[f.id]; return v?.value && (v.needsCheck || v.unverified); };
 function verRowHtml(f) {
   const v = session.fields[f.id];
-  return `<div class="vrow" id="v-${f.id}"><div class="vl"><b>${esc(shortLabel(f.label))}</b>${v.unverified ? '<span class="badge bad">לא נמצא בתמלול</span>' : '<span class="badge chk">לאמת</span>'}</div>
-    <textarea class="inp" id="vt-${f.id}" rows="2" aria-label="${esc(f.label)}">${esc(v.value)}</textarea>
-    ${v.quote ? `<div class="callout">${v.unverified ? 'המודל ציטט, אבל זה לא נמצא בתמלול' : 'נשמע בתמלול'}: «${esc(v.quote)}»</div>` : ''}
-    <div class="vb"><button class="btn primary sm" data-act="vConfirm" data-fid="${f.id}">אשר</button><button class="btn sm" data-act="vClear" data-fid="${f.id}">נקה את השדה</button></div></div>`;
+  return `<div class="vrow" id="v-${f.id}"><div class="vmain"><div class="vl"><b>${esc(shortLabel(f.label))}</b>${v.unverified ? '<span class="badge bad">לא נמצא בתמלול</span>' : '<span class="badge chk">לאמת</span>'}</div>
+    <textarea class="vin" id="vt-${f.id}" rows="1" aria-label="${esc(f.label)}">${esc(v.value)}</textarea>
+    ${v.quote ? `<div class="vq">${v.unverified ? 'המודל ציטט, אבל זה לא נמצא בתמלול' : 'נשמע בתמלול'}: «${esc(v.quote)}»</div>` : ''}</div>
+    <div class="vb"><button class="btn primary sm" data-act="vConfirm" data-fid="${f.id}">אשר</button><button class="btn sm" data-act="vClear" data-fid="${f.id}">נקה</button></div></div>`;
 }
 function saveRowHtml(nv) {
   const s = session;
@@ -2546,6 +2608,7 @@ function renderFinish() {
   const all = fieldsFor(s), ver = all.filter(needsReview), must = all.filter(f => !s.fields[f.id]?.value && impOf(f) === 1);
   const tasks = (s.notes || []).filter(n => n.task);
   const viz = vizCards('all', true);
+  setTimeout(() => $$('.vin').forEach(autosize));
   $('#app').innerHTML = `<div class="shell"><main class="main">
   <div class="toolbar page"><div class="lead"><button class="icon-btn glass" data-act="resume" aria-label="חזרה למפגש">${ICON.back}</button></div>
     <div class="trail"><button class="icon-btn glass" data-act="settings" aria-label="הגדרות">${ICON.gear}</button></div></div>
@@ -2556,13 +2619,14 @@ function renderFinish() {
       ${fin.filling ? '<p class="lead"><span class="spin"></span> ממלא את הטופס ממה שנאמר בסוף…</p>' : ''}
       ${insighting ? '<p class="lead"><span class="spin"></span> מעדכן את הסיכום החזותי…</p>' : ''}</section>
     ${viz.length ? `<h2 class="sr">סיכום חזותי</h2><div class="grid">${viz.join('')}</div>` : ''}
+    ${smart().record ? recordHtml() : ''}
     <section class="card fin-sec" aria-labelledby="fVer"><div class="card-h cat-rec"><span class="glyph">${ICON.check}</span><h2 id="fVer">לאימות <span class="muted num">${ver.length}</span></h2></div>
-      ${ver.length ? '<p class="lead">שדות שה-AI מילא וצריכים את האישור שלך. אפשר לתקן לפני האישור.</p><div class="list">' + ver.map(verRowHtml).join('') + '</div>' : '<p class="lead">כל השדות שמולאו אומתו.</p>'}</section>
+      ${ver.length ? '<p class="lead">שדות שה-AI מילא וצריכים את האישור שלך. אפשר לתקן בשורה עצמה לפני האישור.</p><div class="vrows">' + ver.map(verRowHtml).join('') + '</div>' : '<p class="lead">כל השדות שמולאו אומתו.</p>'}</section>
     ${tasks.length ? `<section class="card fin-sec" aria-labelledby="fTask"><div class="card-h cat-note"><span class="glyph">${ICON.note}</span><h2 id="fTask">משימות מהפתקים <span class="muted num">${tasks.length}</span></h2></div>
       ${notesListHtml(tasks)}</section>` : ''}
     ${must.length ? `<section class="card fin-sec" aria-labelledby="fMust"><div class="card-h cat-gap"><span class="glyph">${ICON.alert}</span><h2 id="fMust">שדות חובה שלא נאמרו <span class="muted num">${must.length}</span></h2></div>
       <p class="lead">אם המטופל עוד כאן, זה הזמן לשאול.</p>
-      <div class="toks">${must.map(f => `<button class="tok i1" data-act="jump" data-fid="${f.id}"><i></i>${esc(shortLabel(f.label))}</button>`).join('')}</div></section>` : ''}
+      <div class="mlist">${must.map(f => missRow({ f, imp: 1 })).join('')}</div></section>` : ''}
     <section class="card fin-sec" aria-labelledby="fCon"><div class="card-h cat-str"><span class="glyph">${ICON.check}</span><h2 id="fCon">הסכמה</h2></div>
       <p class="lead">המטופל הסכים להקלטה · סומן ב-${hhmm(new Date(s.consentAt || s.startedAt).getTime())}. ההסכמה נרשמת במסמך המפגש.</p></section>
     <section class="card fin-sec" aria-labelledby="fAn"><div class="card-h cat-hyp"><span class="glyph">${ICON.analysis}</span><h2 id="fAn">ניתוח</h2></div>
@@ -2637,11 +2701,8 @@ function renderSession() {
       <div class="lead"><button class="icon-btn glass back" data-act="home" aria-label="כל המפגשים">${ICON.back}</button><span class="sr" id="fillStatus" role="status" aria-live="polite"></span></div>
       ${islandHtml()}
       <div class="trail"><div class="capsule glass tools">
-        ${MAP_URL ? `<a class="icon-btn opt" href="${mapLink(s.region)}" target="_blank" rel="noopener" aria-label="מפת הדרך לאזור" title="מפת הדרך לאזור">${ICON.map}</a>` : ''}
-        ${wide && !settings.focus ? `<button class="icon-btn opt" data-act="pane" aria-label="רוחב חלונית התמלול: ${SIDE_LABEL[settings.sideW || 'medium']}" title="רוחב חלונית התמלול">${ICON.pane}</button>` : ''}
         <button class="icon-btn opt" data-act="focus" aria-pressed="${!!settings.focus}" aria-label="מצב פוקוס" title="מצב פוקוס">${ICON.focus}</button>
-        <button class="icon-btn opt" data-act="cycleTheme" aria-label="מצב תצוגה" title="מצב תצוגה">${ICON.theme}</button>
-        <button class="icon-btn ph-only" data-act="settings" aria-label="הגדרות">${ICON.gear}</button>
+        <button class="icon-btn" data-act="more" aria-haspopup="dialog" aria-label="עוד: תצוגה, תמלול, מפה" title="עוד">${ICON.more}</button>
         <button class="btn sm primary" data-act="finish">סיום</button>
       </div></div>
     </div>
@@ -2733,7 +2794,7 @@ function renderTab() {
   if (tab === 'transcript') { renderInterim(); renderAudioBox(); }
   const nb = $('#noteBar');
   if (nb) nb.innerHTML = tab === 'live' && smart().notes ? `<form class="notebar glass" data-act="noteForm" onsubmit="return false"><span class="gl" aria-hidden="true">${ICON.note}</span>
-    <input class="ni" id="noteIn" autocomplete="off" placeholder="פתק: מה לבדוק, מה ראית, מה לזכור…" aria-label="פתק חדש">
+    <input class="ni" id="noteIn" autocomplete="off" placeholder="פתק: מה לבדוק או לזכור" aria-label="פתק חדש: מה לבדוק, מה ראית, מה לזכור">
     <button class="send" data-act="addNote" aria-label="הוסף פתק">${ICON.send}</button></form>` : '';
   renderSaveState();
 }
@@ -2756,18 +2817,37 @@ function islandHtml() {
     <span class="isl-badge" id="islBadge" hidden></span>
   </div>`;
 }
+let islT = null;
+// compact island: "label: value" when both fit, the value alone when the label would push it out
+function fitIsland() {
+  const cap = $('#islCap'), isl = $('#island'); if (!cap || !isl || isl.classList.contains('expanded') || cap.classList.contains('idle')) return;
+  cap.classList.add('withk');
+  if (cap.scrollWidth > cap.clientWidth + 1) cap.classList.remove('withk');
+}
+window.addEventListener('resize', () => fitIsland());
 const aiRecent = s => (s.recent || []).filter(r => s.fields[r.id]?.value && s.fields[r.id].source === 'ai');
 function updateIsland(fresh = false) {
   const cap = $('#islCap'), badge = $('#islBadge'), isl = $('#island'); if (!cap || !session) return;
   const r = aiRecent(session)[0];
-  if (r) { const v = session.fields[r.id]; cap.className = 'isl-cap'; cap.innerHTML = `<span class="k">${esc(shortLabel(FIELD[r.id].label))}:</span> ${esc(v.value)}`; }
+  if (r) { const v = session.fields[r.id], k = shortLabel(FIELD[r.id].label); cap.className = 'isl-cap'; cap.title = k; cap.innerHTML = `<span class="k">${esc(k)}: </span>${esc(v.value)}`; }
   else { cap.className = 'isl-cap idle'; cap.textContent = recording ? 'מקשיב… מה שייאמר יופיע כאן' : 'כשהמידע ייקלט מהשיחה, הוא יופיע כאן'; }
   const n = fieldsFor(session).filter(needsReview).length;
   badge.classList.toggle('err', !!lastStatus.err);
-  badge.hidden = !n && !lastStatus.err; badge.innerHTML = lastStatus.err ? '!<span class="bl"> המילוי נכשל</span>' : n ? `${n}<span class="bl"> לאימות</span>` : '';
-  if (fresh && isl) { isl.classList.remove('new'); void isl.offsetWidth; isl.classList.add('new'); }
+  badge.hidden = !n && !lastStatus.err; badge.innerHTML = lastStatus.err ? '!<span class="bl">המילוי נכשל</span>' : n ? `${n}<span class="bl">לאימות</span>` : '';
+  if (fresh && isl) { // the island opens to show the whole fact, then settles back to compact
+    isl.classList.remove('new'); void isl.offsetWidth; isl.classList.add('new', 'expanded');
+    clearTimeout(islT); islT = setTimeout(() => { $('#island')?.classList.remove('expanded'); setTimeout(fitIsland, 560); }, 3800);
+  }
+  fitIsland();
 }
 const FEED_N = 6;
+// the toolbar's overflow: display, transcript pane, the map and all settings, one tap away
+function moreHtml() {
+  return `<h3>עוד <button class="icon-btn x" data-act="popClose" aria-label="סגור">${ICON.close}</button></h3>
+    <div class="more"><span class="lbl" id="mThL">מצב תצוגה</span><div class="seg" role="group" aria-labelledby="mThL">${THEMES.map(([id, label]) => `<button data-act="theme" data-theme="${id}" aria-pressed="${getTheme() === id}">${label}</button>`).join('')}</div>
+    ${wide ? `<span class="lbl" id="mSwL">חלונית התמלול</span><div class="seg" role="group" aria-labelledby="mSwL">${['hidden', 'narrow', 'medium', 'wide'].map(k => `<button data-act="sideW" data-v="${k}" aria-pressed="${(settings.sideW || 'medium') === k}">${SIDE_LABEL[k]}</button>`).join('')}</div>` : ''}
+    <div class="more-l">${MAP_URL ? `<a class="btn" href="${mapLink(session.region)}" target="_blank" rel="noopener">${ICON.map} מפת הדרך לאזור</a>` : ''}<button class="btn" data-act="focus">${ICON.focus} ${settings.focus ? 'יציאה ממצב פוקוס' : 'מצב פוקוס'}</button><button class="btn" data-act="settings">${ICON.gear} כל ההגדרות</button></div></div>`;
+}
 function feedHtml() {
   const s = session, rows = aiRecent(s).slice(0, FEED_N);
   const t = ms => { const d = new Date(ms); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
@@ -2789,7 +2869,7 @@ function closePop() {
   $$('.rec-s.on').forEach(e => e.classList.remove('on')); $$('.seg.sourced').forEach(e => e.classList.remove('sourced'));
   document.removeEventListener('pointerdown', popOutside, true);
 }
-function popOutside(e) { if (popEl && !popEl.contains(e.target) && !e.target.closest('[data-act="island"],[data-act="srcRec"],[data-act="src"],[data-act="verifyPart"]')) closePop(); }
+function popOutside(e) { if (popEl && !popEl.contains(e.target) && !e.target.closest('[data-act="island"],[data-act="srcRec"],[data-act="src"],[data-act="verifyPart"],[data-act="more"]')) closePop(); }
 function placePop() {
   if (!popEl || !popAnchor) return;
   const r = popAnchor.getBoundingClientRect(), w = popEl.offsetWidth, h = popEl.offsetHeight;
@@ -2892,19 +2972,20 @@ const IMPORTANCE = {
 };
 const IMP_LABEL = { 1: 'חובה', 2: 'חשוב', 3: 'כדאי' };
 const impOf = f => IMPORTANCE[f.id] || 3;
-let missOpen = false; // phone: the "useful" level shown after one tap, kept until the session view closes
+let missOpen = {}; // which of the lower levels (2 important, 3 useful) are open in "still not said"
 // every unanswered field of the current stage, most important first (form order within a level)
 function missingFields(s) {
   return stageFields(s, s.stage).filter(f => !s.fields[f.id]?.value).map((f, i) => ({ f, i, imp: impOf(f) })).sort((a, b) => a.imp - b.imp || a.i - b.i);
 }
+const missRow = ({ f, imp }) => `<button class="mrow" data-act="jump" data-fid="${f.id}"><i class="d${imp}" aria-hidden="true"></i><span>${esc(shortLabel(f.label))}</span>${ICON.chev}</button>`;
 function missingHtml() {
   const m = missingFields(session), st = stageLabel(session.stage);
   if (!m.length) return `<div class="banner info" id="missing">כל השדות בשלב ${esc(st)} מולאו</div>`;
-  const n = k => m.filter(x => x.imp === k).length, n3 = n(3);
-  return `<section class="card missing${missOpen ? ' open' : ''}" id="missing" aria-labelledby="missH">
-    <div class="card-h cat-gap"><span class="glyph">${ICON.alert}</span><h2 id="missH">עוד לא נאמר · ${esc(st)} <span class="muted num">${m.length}</span></h2>
-      <span class="end legend" style="margin:0">${[1, 2, 3].filter(n).map(k => `<span><i style="--k:var(${k === 1 ? '--red' : k === 2 ? '--orange' : '--label-3'});border-radius:50%"></i>${IMP_LABEL[k]} ${n(k)}</span>`).join('')}</span></div>
-    <div class="toks">${m.map(({ f, imp }) => `<button class="tok i${imp}" data-act="jump" data-fid="${f.id}" aria-label="${esc(shortLabel(f.label))}, ${IMP_LABEL[imp]}"><i aria-hidden="true"></i>${esc(shortLabel(f.label))}</button>`).join('')}${n3 ? `<button class="tok more" data-act="missMore" aria-expanded="false">עוד ${n3} ${IMP_LABEL[3]}</button>` : ''}</div></section>`;
+  const lv = k => m.filter(x => x.imp === k);
+  const disc = k => lv(k).length ? `<button class="mrow disc" data-act="missLevel" data-k="${k}" aria-expanded="${!!missOpen[k]}"><i class="d${k}" aria-hidden="true"></i><span>${IMP_LABEL[k]}</span><span class="cnt">${lv(k).length}</span>${ICON.chev}</button>${missOpen[k] ? lv(k).map(missRow).join('') : ''}` : '';
+  return `<section class="card missing" id="missing" aria-labelledby="missH">
+    <div class="card-h cat-gap"><span class="glyph">${ICON.alert}</span><h2 id="missH">עוד לא נאמר · ${esc(st)} <span class="muted num">${m.length}</span></h2></div>
+    <div class="mlist">${lv(1).map(missRow).join('')}${disc(2)}${disc(3)}</div></section>`;
 }
 
 /* ---------------- the form, as review ---------------- */
@@ -3239,6 +3320,7 @@ document.addEventListener('click', async e => {
     case 'rec': recording ? stopRec() : startRec(); break;
     case 'island': if (popKey === 'feed') closePop(); else openPop($('#island'), feedHtml(), 'feed'); break;
     case 'popClose': closePop(); break;
+    case 'more': if (popKey === 'more') closePop(); else openPop(t, moreHtml(), 'more'); break;
     case 'stage':
       session.stage = t.dataset.stage; saveSession(); openStages.add(session.stage);
       $$('#stageChips button').forEach(c => c.setAttribute('aria-pressed', c.dataset.stage === session.stage));
@@ -3292,7 +3374,7 @@ document.addEventListener('click', async e => {
     case 'noteUnfile': unfileNote(t.dataset.nid); break;
     case 'addManual': { const ta = $('#manualText'); if (ta.value.trim()) { addSegment(ta.value, true); ta.value = ''; } break; }
     case 'segPlay': playSeg(+t.dataset.i); break;
-    case 'missMore': missOpen = true; $('#missing')?.classList.add('open'); break;
+    case 'missLevel': missOpen[t.dataset.k] = !missOpen[t.dataset.k]; refreshLive(); break;
     case 'plToggle':
       if (!PL.audio) break;
       if (PL.audio.paused) { if (recording) { toast('ההשמעה זמינה כשההקלטה עצורה', true); break; } PL.audio.play().catch(() => { }); }
@@ -3319,8 +3401,8 @@ document.addEventListener('click', async e => {
     case 'sideW': case 'density':
       settings[act === 'sideW' ? 'sideW' : 'density'] = t.dataset.v; saveSettings(); applyLayout();
       $$(`[data-act="${act}"]`).forEach(b => b.setAttribute('aria-pressed', b === t));
-      if (act === 'sideW' && view === 'session' && session) renderSession(); break;
-    case 'focus': settings.focus = !settings.focus; saveSettings(); applyLayout(); renderSession(); toast(settings.focus ? 'מצב פוקוס' : 'יציאה ממצב פוקוס', false, 1300); break;
+      if (act === 'sideW' && view === 'session' && session) { const reopen = popKey === 'more'; renderSession(); if (reopen) openPop($('[data-act="more"]'), moreHtml(), 'more'); } break;
+    case 'focus': closePop(); settings.focus = !settings.focus; saveSettings(); applyLayout(); renderSession(); toast(settings.focus ? 'מצב פוקוס' : 'יציאה ממצב פוקוס', false, 1300); break;
     case 'pane': { const order = ['hidden', 'narrow', 'medium', 'wide'], cur = settings.sideW || 'medium';
       settings.sideW = order[(order.indexOf(cur) + 1) % order.length]; saveSettings(); applyLayout(); renderSession();
       toast('חלונית התמלול: ' + SIDE_LABEL[settings.sideW], false, 1300); break; }
