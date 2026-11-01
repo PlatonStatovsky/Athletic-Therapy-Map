@@ -311,20 +311,30 @@ html[data-focus] .rail{display:none}
 .zlist{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:4px;font-size:var(--fs-foot)}
 .zlist li{display:flex;align-items:baseline;gap:8px}
 .zlist li i{width:9px;height:9px;border-radius:3px;background:var(--k);flex:none;align-self:center}
+.tl{min-height:60px}
 .tl svg{width:100%;height:auto;display:block;overflow:visible}
 .tl .axis{stroke:var(--sep-strong);stroke-width:1}
 .tl .grid{stroke:var(--sep);stroke-width:1}
-.tl .peak{stroke:var(--pink);stroke-width:1;opacity:.6}
+.tl .peak{stroke:var(--pink);stroke-width:1.25;stroke-dasharray:5 4;opacity:.8}
 .tl .plab{fill:var(--pink-ink);font-size:12px;font-weight:600;font-family:inherit}
-.tl .pline{fill:none;stroke:var(--pink);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
-.tl .pdot{fill:var(--pink);stroke:var(--card);stroke-width:2}
+.tl .pline{fill:none;stroke:var(--k);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.tl .pmk{fill:var(--k);stroke:var(--card);stroke-width:2}
+.tl .pmk.unv,.tl .ev.unv{opacity:.45}
+.tl .pmk.ring,.legend svg.mk .pmk.ring{fill:var(--card);stroke:var(--k);stroke-width:2}
 .tl .pval{fill:var(--label);font-size:13px;font-weight:700;font-family:inherit}
-.tl .tick{fill:var(--label-2);font-size:12px;font-family:inherit}
+.tl .tick{fill:var(--label-2);font-size:var(--tk,12px);font-family:inherit}
+.tl .tk{stroke:var(--sep-strong);stroke-width:1}
+.tl .tlab{fill:var(--label-3);font-size:11px;font-family:inherit}
+.tl .brk-bg{fill:var(--card)}
+.tl .brk{stroke:var(--label-2);stroke-width:1.25;fill:none}
 .tl .ev{fill:var(--purple);stroke:var(--card);stroke-width:2}
 .tl .ev.now{fill:var(--card);stroke:var(--purple);stroke-width:2}
-.tl .lab{fill:var(--label);font-size:13.5px;font-family:inherit}
-.tl .when{fill:var(--label-2);font-size:12px;font-weight:600;font-family:inherit}
+.tl .lab{fill:var(--label);font-size:var(--fs,13px);font-family:inherit}
+.tl .when{fill:var(--label-2);font-size:calc(var(--fs,13px) - .5px);font-weight:600;font-family:inherit}
 .tl .stem{stroke:var(--sep-strong);stroke-width:1}
+.legend svg.mk{width:12px;height:12px;overflow:visible}
+.legend svg.mk .pmk{fill:var(--k);stroke:none}
+.legend i.ln.dash{height:0;border-radius:0;background:none;border-top:2px dashed var(--k);width:14px}
 .tl-list{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px;font-size:var(--fs-foot)}
 .tl-list li{display:grid;grid-template-columns:7.5em 1fr;gap:8px}
 .tl-list li b{font-weight:600;color:var(--label-2)}
@@ -332,13 +342,16 @@ html[data-focus] .rail{display:none}
 .exam h3{font-size:var(--fs-foot);font-weight:700;color:var(--label-2);margin-bottom:8px;display:flex;align-items:center;gap:6px}
 .exam h3 svg{width:16px;height:16px;color:var(--ci)}
 .bars{display:grid;gap:8px}
-.bar-g .bl{display:flex;justify-content:space-between;gap:8px;font-size:var(--fs-foot);margin-bottom:2px}
+.bar-g .bl{display:flex;align-items:baseline;gap:8px;font-size:var(--fs-foot);margin-bottom:2px}
 .bar-g .bl .pain{color:var(--pink-ink);font-weight:600}
+.bar-g .bl .nrm{margin-inline-start:auto;font-size:var(--fs-cap);color:var(--label-2);white-space:nowrap}
 .bar{display:grid;grid-template-columns:3.2em 1fr 3.4em;align-items:center;gap:8px;height:15px;font-size:var(--fs-cap);color:var(--label-2)}
 .bar .tr{position:relative;height:10px}
 .bar .tr i{position:absolute;inset-block:0;inset-inline-start:0;border-radius:0 4px 4px 0;background:var(--k)}
 .bar .tr::before{content:"";position:absolute;inset-block:0;inset-inline-start:0;width:1px;background:var(--sep-strong)}
 .bar .v{font-variant-numeric:tabular-nums;color:var(--label);text-align:end}
+.bar .tr .nl{position:absolute;top:-3px;bottom:-3px;width:2px;margin-inline-start:-1px;border-radius:1px;background:var(--label);opacity:.6}
+.legend i.nl-k{width:2px;height:13px;border-radius:1px;background:var(--label);opacity:.6}
 .dots{display:grid;gap:8px}
 .dot-r{display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 10px;font-size:var(--fs-foot)}
 .dot-r .vals{color:var(--label-2);font-variant-numeric:tabular-nums}
@@ -355,6 +368,7 @@ html[data-focus] .rail{display:none}
 .test .res.pos{color:var(--red-ink)} .test .res.pos i{background:var(--red)}
 .test .res.neg{color:var(--label-2)} .test .res.neg i{border:2px solid var(--label-3)}
 .test .res.eq{color:var(--orange-ink)} .test .res.eq i{background:linear-gradient(90deg,var(--orange) 50%,transparent 50%);border:1.5px solid var(--orange)}
+.test .res.val{color:var(--label);white-space:normal;max-width:12em;font-variant-numeric:tabular-nums}
 .test .nm{min-width:0}
 .test .nm a{font-weight:600;text-decoration:none}
 .test .sd{font-size:var(--fs-cap);color:var(--label-2)}

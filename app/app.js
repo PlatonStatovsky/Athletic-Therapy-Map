@@ -12,6 +12,9 @@
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// numbers keep their own direction inside Hebrew text, so "150°", "4+", "1/9", "17:30" never flip
+const NUM_RE = /(&[#a-z0-9]+;)|(\d+(?:[.,:]\d+)*(?:[+-](?!\s?\d))?(?:\s?(?:°|%))?(?:\s?[\/–-]\s?\d+(?:[.,:]\d+)*(?:[+-](?!\s?\d))?(?:\s?(?:°|%))?)?)/gi;
+const escN = t => esc(t).replace(NUM_RE, (m, ent, num) => ent || `<bdi dir="ltr">${num}</bdi>`);
 const pad = n => String(n).padStart(2, '0');
 
 /* ---------------- storage ---------------- */
@@ -363,10 +366,10 @@ function fillSchema(s) {
       updates: {
         type: 'array',
         items: {
-          type: 'object', additionalProperties: false, required: ['id', 'value', 'quote', 'uncertain'],
+          type: 'object', additionalProperties: false, required: ['id', 'value', 'quote', 'quote_source', 'uncertain'],
           properties: {
             id: { type: 'string', enum: fieldsFor(s).map(f => f.id) },
-            value: { type: 'string' }, quote: { type: 'string' }, uncertain: { type: 'boolean' }
+            value: { type: 'string' }, quote: { type: 'string' }, quote_source: { type: 'string', enum: ['patient', 'finding', 'question'] }, uncertain: { type: 'boolean' }
           }
         }
       }
@@ -416,12 +419,12 @@ Rules:
 2. Recognition errors: map a garbled term to a clinical term only when the sounds clearly match (see the list below), and then set "uncertain": true. If you cannot tell, write what was heard in quotes followed by "?" — e.g. "פולקן" (Full Can?). Never replace a heard term with a different test.
 3. Do not reconstruct words or numbers that recognition dropped. E.g. "מתוך 5 בצד ימין" without the first number → "?/5 ימין" with "uncertain": true — never guess the missing number.
 4. Return an update only for fields whose content changes because of the NEW transcript. "value" is the complete new content of that field: merge the current value with the new information. When the speaker explicitly corrects an earlier value, replace it and add "(תוקן)" — only if both the old and the new value appear in the transcript.
-5. Write values in short, telegraphic clinical Hebrew. Keep standard English terms (VAS, AROM, MMT, Lachman, ULTT). Numbers as digits. State the side (ימין / שמאל / דו-צדדי) only when it was said.
+5. Write values in short, telegraphic clinical Hebrew. Keep standard English terms (VAS, AROM, MMT, Lachman, ULTT). Numbers as digits. State the side (ימין / שמאל / דו-צדדי) only when it was said. When both sides were measured, write them in one line, right first: "<motion>: ימין X · שמאל Y", e.g. "Flexion: ימין 150° (כאב) · שמאל 175°", one line per motion.
 6. Pain intensity fields: the number 0–10 first, then short context, e.g. "7 (בירידה במדרגות)".
-7. special_tests: one line per test that was actually named — "שם המבדק — צד — חיובי/שלילי — הערה". A test that was not named never appears.
+7. special_tests: one line per test that was actually named — "שם המבדק — צד — תוצאה — הערה". Write the side only when it was said for that test, otherwise leave that part out. The result as it was said: "חיובי" / "שלילי" only when the speaker said so or confirmed it; a score as said (e.g. "Beighton — 1/9"); otherwise the words that were said (e.g. "ללא כאב", "מתיחה בהמסטרינג בלבד"), never turned into positive or negative. A test that was not named never appears.
 8. red_flags: one line per screening question actually asked, with the answer. A general statement such as "אין דגלים אדומים" is recorded as said, without inventing which questions were asked.
 9. Fields marked LOCKED were edited by the therapist — never return updates for them.
-10. "quote": copy the supporting words exactly as they appear in the NEW TRANSCRIPT, up to 15 words — no paraphrase and no correction of recognition errors. "uncertain": true when the recognition is garbled, a term was mapped through the list below, or it is unclear who said it.
+10. "quote": copy the supporting words exactly as they appear in the NEW TRANSCRIPT, up to 15 words — no paraphrase and no correction of recognition errors. Quote the patient's own words, or the therapist stating a finding or an observation ("הוקינס חיובי מימין"). Never quote the therapist's question as the support: when the fact rests on a short answer to a question ("יש כאב בלילה?" — "כן"), quote the answer with the question and set "quote_source": "question". "quote_source": "patient" (the patient's words), "finding" (the therapist states a finding or observation) or "question" (only a question and a short answer support it). "uncertain": true when the recognition is garbled, a term was mapped through the list below, or it is unclear who said it.
 11. Ignore small talk, logistics and anything that does not belong to a field. If nothing new belongs in the form, return an empty updates array.
 
 Common recognition errors (meaning ← as heard):
@@ -515,6 +518,13 @@ function quoteFound(quote, hay) {
   const words = q.split(' ').filter(w => w.length > 1); if (!words.length) return false;
   return words.filter(w => hay.includes(w)).length / words.length >= 0.75;
 }
+// a quote that is the therapist's question (or says so) is not the patient's words or a finding
+const Q_START = /^(האם|מה|מתי|איפה|היכן|כמה|איך|למה|מדוע|יש לך|יש לכם|זה כואב|כואב לך|אתה מרגיש|את מרגישה|הרגשת)(?=[\s?,.]|$)/;
+function isQuestionQuote(u) {
+  if (u.quote_source === 'question') return true;
+  const q = String(u.quote || '').trim();
+  return /[?？]\s*$/.test(q) || Q_START.test(q.replace(/^[«"'״]+/, ''));
+}
 function applyUpdates(updates, transcriptText = '') {
   let n = 0; const changed = [];
   const hay = normQ(transcriptText);
@@ -526,7 +536,8 @@ function applyUpdates(updates, transcriptText = '') {
     if (cur && cur.value === val) continue;
     if (cur && cur.rejected === val) continue; // the therapist undid exactly this value
     const verified = !hay || quoteFound(u.quote, hay);
-    session.fields[u.id] = { value: val, source: 'ai', quote: String(u.quote || '').trim(), needsCheck: !!(def.critical || u.uncertain || !verified), unverified: !verified, locked: false, at: Date.now() };
+    const asked = isQuestionQuote(u); // supported only by the therapist's question: the therapist confirms it
+    session.fields[u.id] = { value: val, source: 'ai', quote: String(u.quote || '').trim(), needsCheck: !!(def.critical || u.uncertain || !verified || asked), unverified: !verified, asked, locked: false, at: Date.now() };
     session.recent = [{ id: u.id, at: Date.now(), prev: cur && cur.value ? { ...cur } : null }, ...(session.recent || []).filter(r => r.id !== u.id)].slice(0, 20);
     n++; changed.push(u.id);
     refreshField(u.id, true);
@@ -557,6 +568,26 @@ const KIND_VAR = { pain: '--bm-pain', radiation: '--bm-rad', paresthesia: '--bm-
 const SIDE_HE = { right: 'ימין', left: 'שמאל', both: 'דו-צדדי', center: '', none: '' };
 const STATUS_HE = { supported: 'נתמכת', possible: 'אפשרית', weakened: 'נחלשה' };
 const RESULT_HE = { positive: 'חיובי', negative: 'שלילי', equivocal: 'לא חד-משמעי', score: 'ציון', text: 'כפי שנאמר' };
+const TEST_RESULTS = Object.keys(RESULT_HE);
+const resultText = t => (t.result === 'score' || t.result === 'text') ? (t.value || 'לא צוינה תוצאה') : RESULT_HE[t.result] || 'לא צוינה תוצאה';
+// pain level states on the course chart; items stored before states existed read as unspecified
+const PAIN_STATES = ['rest', 'activity', 'night', 'unspecified'];
+const PAIN_STATE_HE = { rest: 'במנוחה', activity: 'בפעילות', night: 'בלילה', unspecified: '' };
+// normal ranges live in norms.js (editable); a movement is looked up in its joint, else in the region's joints
+const NORMS = window.ROM_NORMS || { joints: {}, regions: {} };
+const ROM_JOINTS = Object.keys(NORMS.joints || {});
+const normName = t => ' ' + String(t || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim() + ' ';
+function romNorm(motion, joint, region) {
+  const name = normName(motion), joints = ROM_JOINTS.includes(joint) ? [joint] : (NORMS.regions?.[region] || []);
+  for (const j of joints) {
+    let best = null, len = 0;
+    for (const m of NORMS.joints[j]?.motions || []) for (const a of m.names || []) {
+      const n = normName(a); if (n.length > len && name.includes(n)) { best = m; len = n.length; }
+    }
+    if (best) return best.deg > 0 ? { deg: best.deg, joint: j } : null;
+  }
+  return null;
+}
 
 function insState(s = session) { return s.ins || (s.ins = { record: {}, body: [], timeline: [], exam: { rom: [], mmt: [], tests: [] }, hypo: [], next: [], at: {} }); }
 function markDirty(ids) {
@@ -601,9 +632,9 @@ Parts:
 - record: for each section id in RECORD_SECTIONS that has content, one paragraph of the clinical record: 1–3 sentences of fluent clinical Hebrew in the third person ("המטופל מדווח…", "נמצא…"), only the facts in that section's fields. No headings, no lists, no interpretation.
 - notes: for each pending therapist note (by id): "field" = the form field id the note belongs in (it will be appended there), or "" when it is not a fact for the form; "task" = when the note is something to do, check or remember later (e.g. "לבדוק Hawkins", "לשלוח הפניה"), a short imperative task in Hebrew, else "". A note can be both or neither.
 - body: where the symptoms are, from location / chief_complaint / neuro_symptoms: one item per zone and side. kind: pain = the pain itself; radiation = pain that spreads or radiates to another area; paresthesia = numbness, tingling, pins and needles. view: front / back / both, by where on the body it was described (both when not said). side: right / left / both / center (center for the spine, head, chest and abdomen when no side was said). label: 2–5 Hebrew words as said.
-- timeline: the injury story in time order: onset, mechanism, changes, earlier episodes, treatments, imaging. "when" as said, in Hebrew. "days_ago": your numeric estimate before the session date (a week = 7, a month = 30, a year = 365); -1 when no time was given. "event": up to 6 Hebrew words. "vas": the pain level 0–10 at that time when one was said for it (e.g. "בהתחלה 8"), else -1; today's level is vas_now and needs no item.
-- exam: rom = each range of motion given in degrees, one item per motion and side ("motion" short, e.g. "Flexion" or "סיבוב חיצוני"; painful = pain was reported at that range); mmt = each muscle or motion with a 0–5 grade (4+ = 4.5, 4- = 3.75); tests = each special test that was named, with its result. test_id = the catalog id when the test is in the MAP CATALOG, else "". Nothing that was not measured or named.
-- hypotheses: up to 4 working hypotheses the findings so far point to, for the therapist's own reasoning and never as a diagnosis. Prefer the pathways in the MAP CATALOG ("path" = its exact name, "" when not from the map). status: supported = several findings fit and none argue against; possible = fits but still untested; weakened = a finding argues against it. support / against: up to 3 short facts each, from the form. tests: catalog test ids that would help tell these hypotheses apart and were not done yet. With fewer than 3 relevant facts known, return an empty list.
+- timeline: the injury story in time order: onset, mechanism, changes, earlier episodes, treatments, imaging. "when" as said, in Hebrew. "days_ago": your numeric estimate before the session date (a week = 7, a month = 30, a year = 365); -1 when no time was given; events said to be on the same day get the same number. "event": up to 6 Hebrew words. "vas": the pain level 0–10 at that time when one was said for it (e.g. "בהתחלה 8"), else -1. "pain_state": what the level was measured in, as said — rest (במנוחה, בישיבה), activity (בתנועה, בריצה, במדרגות, באימון, בהרמה), night (בלילה, בשינה), or unspecified; unspecified when there is no level. When levels were given for more than one state at the same time, one item per state. Today's levels (vas_now, and vas_max only when it was said to be today) are items too: days_ago 0, when "היום", event e.g. "כאב במנוחה", one per state.
+- exam: rom = each range of motion given in degrees, one item per motion and side ("motion" short, e.g. "Flexion" or "סיבוב חיצוני"; "joint" = the joint it was measured at, or "other" when unclear; painful = pain was reported at that range); mmt = each muscle or motion with a 0–5 grade (4+ = 4.5, 4- = 3.75); tests = each special test that was named, with its result. side (all three): right / left only when that side was stated for this item, otherwise "none" (tests may also be "both"); never take the side from the complaint. Test result: positive / negative only when the form says חיובי / שלילי for it (said or confirmed); equivocal when it says unclear (לא ברור, לא חד-משמעי); score when the result is a number or score — "value" = the score as written, e.g. "1/9"; text for any other result — "value" = the words as written, e.g. "ללא כאב"; "value" is "" for positive / negative / equivocal. test_id = the catalog id when the test is in the MAP CATALOG, else "". Nothing that was not measured or named.
+- hypotheses: 2–4 working hypotheses the findings so far point to, for the therapist's own reasoning and never as a diagnosis. Start as soon as the complaint, its location and one more relevant fact (onset, mechanism, aggravating factor, an exam finding) are known; early on most will be "possible". Prefer the pathways in the MAP CATALOG ("path" = its exact name, "" when not from the map). status: supported = several findings fit and none argue against; possible = fits but still untested; weakened = a finding argues against it. support / against: up to 3 short facts each, from the form. tests: catalog test ids that would help tell these hypotheses apart and were not done yet. Return an empty list only when there is no complaint or location yet.
 - next: up to 3 next steps for the current stage that matter most now: kind "question" (to ask) or "test" (to examine); text = the question in Hebrew as the therapist would ask it, or the test's name; why = up to 10 Hebrew words; test_id = catalog id or "". Prefer key items not yet asked and what tells the hypotheses apart. Never something already in the form.`;
 
 function insightSchema(parts) {
@@ -615,11 +646,11 @@ function insightSchema(parts) {
     if (p === 'record') P.record = arr(obj({ section: { type: 'string', enum: sectionsFor(session).map(x => x.id) }, text: { type: 'string' }, fields: fieldsArr }));
     if (p === 'notes') P.notes = arr(obj({ id: { type: 'string' }, field: { type: 'string', enum: ['', ...ids] }, task: { type: 'string' } }));
     if (p === 'body') P.body = arr(obj({ zone: { type: 'string', enum: BODY_ZONES }, side: { type: 'string', enum: ['right', 'left', 'both', 'center'] }, view: { type: 'string', enum: ['front', 'back', 'both'] }, kind: { type: 'string', enum: ['pain', 'radiation', 'paresthesia'] }, label: { type: 'string' }, fields: fieldsArr }));
-    if (p === 'timeline') P.timeline = arr(obj({ when: { type: 'string' }, days_ago: { type: 'number' }, event: { type: 'string' }, vas: { type: 'number' }, fields: fieldsArr }));
+    if (p === 'timeline') P.timeline = arr(obj({ when: { type: 'string' }, days_ago: { type: 'number' }, event: { type: 'string' }, vas: { type: 'number' }, pain_state: { type: 'string', enum: PAIN_STATES }, fields: fieldsArr }));
     if (p === 'exam') P.exam = obj({
-      rom: arr(obj({ motion: { type: 'string' }, side: { type: 'string', enum: ['right', 'left'] }, degrees: { type: 'number' }, painful: { type: 'boolean' }, fields: fieldsArr })),
-      mmt: arr(obj({ motion: { type: 'string' }, side: { type: 'string', enum: ['right', 'left'] }, grade: { type: 'number' }, fields: fieldsArr })),
-      tests: arr(obj({ name: { type: 'string' }, test_id: { type: 'string' }, side: { type: 'string', enum: ['right', 'left', 'both', 'none'] }, result: { type: 'string', enum: ['positive', 'negative', 'equivocal'] }, fields: fieldsArr }))
+      rom: arr(obj({ motion: { type: 'string' }, joint: { type: 'string', enum: [...ROM_JOINTS, 'other'] }, side: { type: 'string', enum: ['right', 'left', 'none'] }, degrees: { type: 'number' }, painful: { type: 'boolean' }, fields: fieldsArr })),
+      mmt: arr(obj({ motion: { type: 'string' }, side: { type: 'string', enum: ['right', 'left', 'none'] }, grade: { type: 'number' }, fields: fieldsArr })),
+      tests: arr(obj({ name: { type: 'string' }, test_id: { type: 'string' }, side: { type: 'string', enum: ['right', 'left', 'both', 'none'] }, result: { type: 'string', enum: TEST_RESULTS }, value: { type: 'string' }, fields: fieldsArr }))
     });
     if (p === 'hypo') P.hypotheses = arr(obj({ name: { type: 'string' }, path: { type: 'string' }, status: { type: 'string', enum: ['supported', 'possible', 'weakened'] }, support: arr({ type: 'string' }), against: arr({ type: 'string' }), tests: arr({ type: 'string' }) }));
     if (p === 'next') P.next = arr(obj({ kind: { type: 'string', enum: ['question', 'test'] }, text: { type: 'string' }, why: { type: 'string' }, test_id: { type: 'string' } }));
@@ -627,9 +658,11 @@ function insightSchema(parts) {
   return obj(P);
 }
 let insighting = false, insightAgain = false;
-async function runInsight(force = false) {
+const HYPO_MIN = 3; // filled fields (besides the name) before hypotheses are worth asking for
+// force: every part from scratch; only: just these parts now (the hypotheses button)
+async function runInsight(force = false, only = null) {
   const s = session; if (!s || !aiReady() || !smartAny()) return;
-  if (insighting) { insightAgain = true; return; }
+  if (insighting) { if (only) toast('העדכון הקודם עוד רץ. נסה שוב בעוד רגע.', false, 2200); else insightAgain = true; return; }
   const sm = smart(), d = JSON.parse(JSON.stringify(s.insDirty || { secs: [], parts: [] }));
   const pending = (s.notes || []).filter(n => n.status === 'pending'), sent = new Set(pending.map(n => n.id));
   const filled = fieldsFor(s).filter(f => f.id !== 'name' && s.fields[f.id]?.value);
@@ -637,13 +670,16 @@ async function runInsight(force = false) {
   const recSecs = sm.record ? (force ? secsWith : d.secs.filter(x => secsWith.includes(x))) : [];
   const want = p => force || d.parts.includes(p);
   const parts = [];
+  if (only) parts.push(...only.filter(p => p !== 'hypo' || filled.length >= HYPO_MIN));
+  else {
   if (recSecs.length) parts.push('record');
   if (sm.notes && pending.length) parts.push('notes');
   if (sm.body && want('body') && hasAnyField(PART_FIELDS.body)) parts.push('body');
   if (sm.timeline && want('timeline') && hasAnyField(PART_FIELDS.timeline)) parts.push('timeline');
   if (sm.exam && want('exam') && hasAnyField(PART_FIELDS.exam)) parts.push('exam');
-  if (sm.hypo && want('reason') && filled.length >= 3) parts.push('hypo');
+  if (sm.hypo && want('reason') && filled.length >= HYPO_MIN) parts.push('hypo');
   if (sm.next && want('reason') && filled.length >= 1) parts.push('next');
+  }
   if (!parts.length) { if (force) { s.insDirty = { secs: [], parts: [] }; refreshLive(); } return; }
   insighting = true; refreshLive();
   let cat = null;
@@ -661,7 +697,7 @@ ${JSON.stringify(form, null, 1)}
 ${parts.includes('record') ? `\nRECORD_SECTIONS: ${recSecs.join(', ')}` : ''}${parts.includes('notes') ? `\nPENDING NOTES (JSON): ${JSON.stringify(pending.map(n => ({ id: n.id, text: n.text })))}` : ''}${parts.includes('next') ? `\nSTILL EMPTY in the current stage, most important first: ${empties.join(', ') || '—'}` : ''}${cat ? `\n\nMAP CATALOG\n${cat.text}` : ''}`;
   const ll = fillParams(settings.extractModel);
   const body = {
-    model: settings.extractModel, max_tokens: 5000,
+    model: settings.extractModel, max_tokens: 16000,
     system: [{ type: 'text', text: INSIGHT_SYSTEM, cache_control: { type: 'ephemeral' } }],
     messages: [{ role: 'user', content: user }],
     output_config: { effort: ll.effort === 'medium' ? 'low' : ll.effort, format: { type: 'json_schema', schema: insightSchema(parts) } }
@@ -671,11 +707,11 @@ ${parts.includes('record') ? `\nRECORD_SECTIONS: ${recSecs.join(', ')}` : ''}${p
     const res = await callWithFallback(body);
     if (session !== s) return;
     const json = parseJsonLoose((res.content || []).filter(b => b.type === 'text').map(b => b.text).join(''));
-    if (!json) throw new Error('התשובה לא הייתה JSON תקין');
+    if (!json) throw new Error(res.stop_reason === 'max_tokens' ? 'התשובה נקטעה באורך המקסימלי' : 'התשובה לא הייתה JSON תקין');
     applyInsight(s, json, parts, recSecs, cat, sent);
     // only what was sent is clean now; anything that changed during the call stays dirty
     const cur = s.insDirty || { secs: [], parts: [] };
-    s.insDirty = { secs: cur.secs.filter(x => !recSecs.includes(x)), parts: cur.parts.filter(p => !(d.parts.includes(p) || force)) };
+    if (!only) s.insDirty = { secs: cur.secs.filter(x => !recSecs.includes(x)), parts: cur.parts.filter(p => !(d.parts.includes(p) || force)) };
     saveSession(true);
   } catch (e) {
     if (e.name !== 'AbortError') { toast('עדכון הרשומה והגרפיקה נכשל: ' + humanErr(e), true, 5000); (s.notes || []).forEach(n => { if (sent.has(n.id) && n.status === 'pending') n.status = 'kept'; }); }
@@ -713,16 +749,16 @@ function applyInsight(s, j, parts, recSecs, cat, sent = new Set()) {
     ins.at.body = now;
   }
   if (parts.includes('timeline') && Array.isArray(j.timeline)) {
-    ins.timeline = j.timeline.filter(t => t?.event).map(t => ({ when: str(t.when, 60), days_ago: num(t.days_ago, 0, 36500) ?? -1, event: str(t.event, 120), vas: num(t.vas, 0, 10) ?? -1, fields: okF(t.fields) }));
+    ins.timeline = j.timeline.filter(t => t?.event).map(t => ({ when: str(t.when, 60), days_ago: num(t.days_ago, 0, 36500) ?? -1, event: str(t.event, 120), vas: num(t.vas, 0, 10) ?? -1, pain_state: pick(t.pain_state, PAIN_STATES, 'unspecified'), fields: okF(t.fields) }));
     ins.at.timeline = now;
   }
   if (parts.includes('exam') && j.exam) {
     const tid = id => cat?.ids.has(id) && TEST_ID.test(id) ? id : '';
     const arr = a => Array.isArray(a) ? a : [];
     ins.exam = {
-      rom: arr(j.exam.rom).filter(r => num(r?.degrees, -90, 360) != null).map(r => ({ motion: str(r.motion, 60), side: pick(r.side, ['right', 'left'], 'right'), degrees: num(r.degrees, -90, 360), painful: !!r.painful, fields: okF(r.fields) })),
-      mmt: arr(j.exam.mmt).filter(r => num(r?.grade, 0, 5) != null).map(r => ({ motion: str(r.motion, 60), side: pick(r.side, ['right', 'left'], 'right'), grade: num(r.grade, 0, 5), fields: okF(r.fields) })),
-      tests: arr(j.exam.tests).filter(t => t?.name).map(t => ({ name: str(t.name, 80), test_id: tid(t.test_id), side: pick(t.side, ['right', 'left', 'both', 'none'], 'none'), result: pick(t.result, Object.keys(RESULT_HE), 'text'), value: str(t.value, 80), fields: okF(t.fields) }))
+      rom: arr(j.exam.rom).filter(r => num(r?.degrees, -90, 360) != null).map(r => ({ motion: str(r.motion, 60), joint: pick(r.joint, ROM_JOINTS, ''), side: pick(r.side, ['right', 'left', 'none'], 'none'), degrees: num(r.degrees, -90, 360), painful: !!r.painful, fields: okF(r.fields) })),
+      mmt: arr(j.exam.mmt).filter(r => num(r?.grade, 0, 5) != null).map(r => ({ motion: str(r.motion, 60), side: pick(r.side, ['right', 'left', 'none'], 'none'), grade: num(r.grade, 0, 5), fields: okF(r.fields) })),
+      tests: arr(j.exam.tests).filter(t => t?.name).map(t => ({ name: str(t.name, 80), test_id: tid(t.test_id), side: pick(t.side, ['right', 'left', 'both', 'none'], 'none'), result: pick(t.result, TEST_RESULTS, 'text'), value: str(t.value, 80), fields: okF(t.fields) }))
     };
     ins.at.exam = now;
   }
@@ -750,11 +786,13 @@ function vizCards(stage, summary) {
   const sm = smart(), s = session, ins = insState(s), out = [];
   const has = { course: vasOf(s.fields.vas_max?.value) != null || vasOf(s.fields.vas_now?.value) != null || ins.timeline.length,
     body: ins.body.length, exam: ins.exam.rom.length + ins.exam.mmt.length + ins.exam.tests.length, hypo: ins.hypo.length };
-  const order = stage === 'exam' ? ['exam', 'hypo', 'body', 'course'] : stage === 'summary' ? ['hypo', 'exam', 'course', 'body'] : stage === 'all' ? ['course', 'body', 'exam', 'hypo'] : ['course', 'body'];
+  const order = stage === 'exam' ? ['exam', 'hypo', 'body', 'course'] : stage === 'summary' ? ['hypo', 'exam', 'course', 'body'] : stage === 'all' ? ['course', 'body', 'exam', 'hypo'] : ['course', 'body', 'hypo'];
   const on = { course: sm.timeline, body: sm.body, exam: sm.exam, hypo: sm.hypo };
+  // the empty hypotheses card (with its button) shows once there is enough to reason from
+  const emptyOk = k => k !== 'hypo' || stage !== 'anamnesis' || filledCount(s) >= HYPO_MIN;
   for (const k of order) {
     if (!on[k]) continue;
-    if (!has[k]) { if (!summary && (stage === 'anamnesis' ? ['course', 'body'] : stage === 'exam' ? ['exam', 'hypo'] : ['hypo']).includes(k)) out.push(emptyCard(k)); continue; }
+    if (!has[k]) { if (!summary && emptyOk(k) && (stage === 'anamnesis' ? ['course', 'body', 'hypo'] : stage === 'exam' ? ['exam', 'hypo'] : ['hypo']).includes(k)) out.push(emptyCard(k)); continue; }
     out.push(k === 'course' ? courseCard() : k === 'body' ? bodyCard() : k === 'exam' ? examCard() : hypoCard(true));
   }
   return out;
@@ -766,7 +804,21 @@ const CARD = {
   hypo: ['cat-hyp', 'bulb', 'לוח השערות', 'יופיע אחרי כמה ממצאים מהשיחה']
 };
 function cardHead(k, end = '') { const [cls, ic, title] = CARD[k]; return `<div class="card-h ${cls}"><span class="glyph">${ICON[ic]}</span><h2>${title}</h2>${end ? `<span class="end">${end}</span>` : ''}</div>`; }
-function emptyCard(k) { const [cls, ic, title, hint] = CARD[k]; return `<section class="card compact"><div class="card-h ${cls}"><span class="glyph">${ICON[ic]}</span><h2>${title}</h2></div><span class="hint">${insighting ? '<span class="spin"></span>' : hint}</span></section>`; }
+function emptyCard(k) {
+  const [cls, ic, title, hint] = CARD[k];
+  if (k === 'hypo') return `<section class="card compact hypo-empty"><div class="card-h ${cls}"><span class="glyph">${ICON[ic]}</span><h2>${title}</h2><span class="end">${hypoBtn()}</span></div><span class="hint">${insighting ? '<span class="spin"></span>' : hypoHint()}</span></section>`;
+  return `<section class="card compact"><div class="card-h ${cls}"><span class="glyph">${ICON[ic]}</span><h2>${title}</h2></div><span class="hint">${insighting ? '<span class="spin"></span>' : hint}</span></section>`;
+}
+const filledCount = s => fieldsFor(s).filter(f => f.id !== 'name' && s.fields[f.id]?.value).length;
+// the board is drawn by the same background update as the other graphics, not by "הפק ניתוח"
+function hypoHint() {
+  const s = session, n = filledCount(s), at = insState(s).at.hypo;
+  if (!aiReady()) return 'נדרש קוד גישה בהגדרות, בלשונית API.';
+  if (n < HYPO_MIN) return `מתעדכן לבד אחרי ${HYPO_MIN} שדות מלאים בטופס (עכשיו ${n}). לא תלוי ב"הפק ניתוח".`;
+  if (at) return `בעדכון האחרון (${hhmm(at)}) עוד לא היו מספיק ממצאים להשערות. מתעדכן לבד כשנוסף מידע לטופס.`;
+  return 'מתעדכן לבד אחרי כל מילוי של הטופס. אפשר גם לחשב עכשיו.';
+}
+const hypoBtn = (label = 'חשב השערות') => aiReady() && filledCount(session) >= HYPO_MIN ? `<button class="btn sm" data-act="hypoNow"${insighting ? ' disabled' : ''}>${label}</button>` : '';
 // a card's corner: when it was drawn, and "לאמת" while any field it draws from still waits for the therapist
 const CARD_SRC = { timeline: s => [...PART_FIELDS.timeline, 'vas_max', 'vas_now'], body: () => PART_FIELDS.body, exam: () => PART_FIELDS.exam, hypo: () => [] };
 const atMeta = k => {
@@ -775,57 +827,167 @@ const atMeta = k => {
   return chk + (insighting ? '<span class="meta"><span class="spin"></span></span>' : t ? `<span class="meta">${d.includes(k === 'hypo' ? 'reason' : k) ? 'יתעדכן' : hhmm(t)}</span>` : '');
 };
 function vasOf(v) { const m = String(v || '').match(/(\d+(?:\.\d+)?)/); if (!m) return null; const n = +m[1]; return n >= 0 && n <= 10 ? n : null; }
-const vasCtx = v => String(v || '').replace(/^[^\d]*\d+(?:\.\d+)?\s*(?:\/\s*10)?/, '').replace(/^[\s,:;·–—-]+|[()]/g, ' ').trim();
+const vasCtx = v => String(v || '').replace(/^[^\d]*\d+(?:\.\d+)?\s*(?:\/\s*10)?/, '').replace(/[()]/g, ' ').replace(/^[\s,:;·–—-]+/, '').replace(/\s+([;,.:])/g, '$1').replace(/\s{2,}/g, ' ').trim();
 
 function courseCard() {
-  const s = session, ins = insState(s);
-  const vmax = vasOf(s.fields.vas_max?.value), vnow = vasOf(s.fields.vas_now?.value);
-  const ev = ins.timeline.filter(t => t.days_ago >= 0).sort((a, b) => b.days_ago - a.days_ago);
-  const undated = ins.timeline.filter(t => !(t.days_ago >= 0));
-  const ctx = [vmax != null && vasCtx(s.fields.vas_max.value) ? `שיא <bdi dir="ltr">${vmax}/10</bdi>: ${esc(vasCtx(s.fields.vas_max.value))}` : '', vnow != null && vasCtx(s.fields.vas_now.value) ? `עכשיו <bdi dir="ltr">${vnow}/10</bdi>: ${esc(vasCtx(s.fields.vas_now.value))}` : ''].filter(Boolean);
+  const s = session, d = courseData(s);
+  const states = PAIN_STATES.filter(st => d.pain.some(p => p.st === st));
+  const multi = states.length > 1;
+  const ctx = [d.vmax != null && vasCtx(s.fields.vas_max.value) ? `שיא <bdi dir="ltr">${d.vmax}/10</bdi>: ${esc(vasCtx(s.fields.vas_max.value))}` : '', d.vnow != null && vasCtx(s.fields.vas_now.value) ? `עכשיו <bdi dir="ltr">${d.vnow}/10</bdi>: ${esc(vasCtx(s.fields.vas_now.value))}` : ''].filter(Boolean);
+  const legend = [...states.map(st => `<span><svg class="mk" viewBox="0 0 12 12" aria-hidden="true">${painMark(st, 6, 6, 4.5, '', ringed(d.pain))}</svg>${multi || st !== 'unspecified' ? 'כאב ' + (PAIN_STATE_HE[st] || 'ללא מצב') : 'כאב'} <bdi dir="ltr">(0–10)</bdi></span>`),
+    d.vmax != null && !d.pain.some(p => p.v === d.vmax) ? `<span><i class="ln dash" style="--k:var(--pink)"></i>שיא שדווח</span>` : '',
+    d.events.length ? `<span><i style="--k:var(--purple);border-radius:50%"></i>אירועים</span>` : ''].filter(Boolean);
+  const al = ['מהלך הפציעה', ...d.events.map(e => `${e.when}: ${e.items.map(t => t.event).join(', ')}`), ...d.pain.map(p => `${p.d ? agoLabel(p.d) : 'היום'}: כאב ${PAIN_STATE_HE[p.st] ? PAIN_STATE_HE[p.st] + ' ' : ''}${p.v}`), d.vmax != null ? 'שיא כאב ' + d.vmax : ''].filter(Boolean).join('; ');
   return `<section class="card">${cardHead('course', atMeta('timeline'))}
-    ${vmax != null || vnow != null || ev.some(e => e.vas >= 0) ? `<div class="legend" style="margin:0 0 4px"><span><i class="ln" style="--k:var(--pink)"></i>כאב <bdi dir="ltr">(0–10)</bdi></span><span><i style="--k:var(--purple);border-radius:50%"></i>אירועים</span></div>` : ''}
-    <div class="tl">${courseSvg(ev, vmax, vnow)}</div>
-    ${undated.length ? `<p class="fine">בלי זמן: ${undated.map(t => esc(t.event) + (unvOf(s, t.fields) ? ' (לא נמצא בתמלול)' : '')).join(' · ')}</p>` : ''}
+    ${legend.length ? `<div class="legend" style="margin:0 0 4px">${legend.join('')}</div>` : ''}
+    ${chartSlot('tl', w => courseSvg(d, w), al)}
+    ${d.undated.length ? `<p class="fine">בלי זמן: ${d.undated.map(t => esc(t.event) + (unvOf(s, t.fields) ? ' (לא נמצא בתמלול)' : '')).join(' · ')}</p>` : ''}
     ${ctx.length ? `<p class="fine">${ctx.join(' · ')}</p>` : ''}</section>`;
 }
-// one graphic for the course: pain (0–10) above, the injury's events on a time axis below.
-// Time runs right to left, as Hebrew reads: the oldest event on the right, today on the left.
-function wrapLabel(t, n = 15) {
-  const words = String(t).split(/\s+/), lines = ['']; for (const w of words) { const cur = lines[lines.length - 1]; if (cur && (cur + ' ' + w).length > n) lines.push(w); else lines[lines.length - 1] = cur ? cur + ' ' + w : w; }
-  if (lines.length > 2) { lines.length = 2; lines[1] = lines[1].slice(0, n - 1) + '…'; }
+// pain says what state it was measured in (rest / activity / night) when the timeline item does not
+function painState(t) {
+  t = String(t || '');
+  if (/מנוחה|ישיבה|שכיבה|בשקט/.test(t)) return 'rest';
+  if (/לילה|שינה|כשישן|בבוקר כשמתעורר/.test(t)) return 'night';
+  if (/תנועה|פעילות|ריצה|מדרגות|אימון|הרמה|הליכה|משחק|ספורט|זריקה|קפיצה|מאמץ|עומס/.test(t)) return 'activity';
+  return 'unspecified';
+}
+function courseData(s) {
+  const ins = insState(s), vmax = vasOf(s.fields.vas_max?.value), vnow = vasOf(s.fields.vas_now?.value);
+  const dated = ins.timeline.filter(t => t.days_ago >= 0), st = t => PAIN_STATES.includes(t.pain_state) ? t.pain_state : 'unspecified';
+  const pain = dated.filter(t => t.vas >= 0).map(t => ({ d: t.days_ago, v: t.vas, st: st(t), unv: unvOf(s, t.fields) }));
+  if (vnow != null && !pain.some(p => p.d === 0)) pain.push({ d: 0, v: vnow, st: painState(s.fields.vas_now.value), unv: unvOf(s, ['vas_now']) });
+  // events of the same day share one mark; a pain level said for today sits on the pain series only
+  const days = new Map();
+  for (const t of dated) {
+    if (t.days_ago === 0 && t.vas >= 0) continue;
+    if (!days.has(t.days_ago)) days.set(t.days_ago, { d: t.days_ago, when: t.when, items: [] });
+    const g = days.get(t.days_ago); if (!g.items.some(x => x.event === t.event)) g.items.push(t);
+  }
+  return { vmax, vnow, pain, events: [...days.values()].sort((a, b) => b.d - a.d), undated: ins.timeline.filter(t => !(t.days_ago >= 0)) };
+}
+function agoLabel(d) {
+  let t;
+  if (d < 7) t = d === 1 ? 'יום' : d === 2 ? 'יומיים' : d + ' ימים';
+  else if (d < 30) { const w = Math.round(d / 7); t = w === 1 ? 'שבוע' : w === 2 ? 'שבועיים' : w + ' שבועות'; }
+  else if (d < 365) { const m = Math.round(d / 30); t = m === 1 ? 'חודש' : m === 2 ? 'חודשיים' : m + ' חודשים'; }
+  else { const y = Math.round(d / 365 * 2) / 2; t = y === 1 ? 'שנה' : y === 2 ? 'שנתיים' : y + ' שנים'; }
+  return 'לפני ' + t;
+}
+// time runs right to left, as Hebrew reads: the oldest event on the right, today on the left.
+// The axis is proportional to time; one event far older than the rest is set apart behind a break.
+function timeScale(ds, x0, x1) {
+  const uniq = [...new Set(ds)].sort((a, b) => b - a), max = Math.max(1, uniq[0] || 0), next = uniq[1] || 0, span = x1 - x0;
+  const steps = [1, 2, 3, 7, 14, 30, 61, 91, 182, 365, 730, 1825, 3650];
+  const ticks = (top, f, px) => { const n = Math.max(1, Math.floor(px / 92)), st = steps.find(v => top / v <= n) || steps[steps.length - 1], out = []; for (let d = st; d <= top + 1e-6; d += st) out.push({ d, x: f(d) }); return out; };
+  if (!(max > 60 && next >= 1 && max > 4 * next)) { const f = d => x0 + d / max * span; return { x: f, brk: null, ticks: ticks(max, f, span) }; }
+  const top = Math.max(7, next * 1.15), olds = uniq.filter(d => d > top), oMin = Math.min(...olds), xm = x0 + 0.74 * span, xo = x0 + 0.86 * span;
+  const f = d => d <= top ? x0 + d / top * (xm - x0) : max === oMin ? x1 : xo + (d - oMin) / (max - oMin) * (x1 - xo);
+  return { x: f, brk: (xm + xo) / 2, ticks: ticks(top, f, xm - x0) };
+}
+const PAIN_VAR = { activity: '--pink', unspecified: '--pink', rest: '--bm-par', night: '--indigo' };
+// unspecified pain shares activity's colour, so next to it it is drawn as a ring
+const ringed = pain => pain.some(p => p.st === 'activity') && pain.some(p => p.st === 'unspecified');
+function painMark(st, cx, cy, r, cls = '', ring = false) {
+  const c = `class="pmk ${cls}${ring && st === 'unspecified' ? ' ring' : ''}" style="--k:var(${PAIN_VAR[st]})"`;
+  if (st === 'rest') return `<rect ${c} x="${cx - r}" y="${cy - r}" width="${2 * r}" height="${2 * r}" rx="1.5"/>`;
+  if (st === 'night') return `<path ${c} d="M${cx} ${cy - r * 1.3}L${cx + r * 1.3} ${cy}L${cx} ${cy + r * 1.3}L${cx - r * 1.3} ${cy}Z"/>`;
+  return `<circle ${c} cx="${cx}" cy="${cy}" r="${r}"/>`;
+}
+let measureCtx = null;
+function textW(t, px, weight = 400) {
+  measureCtx ||= document.createElement('canvas').getContext('2d');
+  measureCtx.font = `${weight} ${px}px -apple-system, BlinkMacSystemFont, ThalamusSans, system-ui, sans-serif`;
+  return measureCtx.measureText(String(t)).width;
+}
+function wrapLabel(t, maxW, px = 13, maxLines = 2) {
+  const words = String(t).split(/\s+/).filter(Boolean), lines = [''];
+  for (const w of words) { const cur = lines[lines.length - 1], next = cur ? cur + ' ' + w : w; if (cur && textW(next, px) > maxW) lines.push(w); else lines[lines.length - 1] = next; }
+  if (lines.length > maxLines) { lines.length = maxLines; let l = lines[maxLines - 1]; while (l && textW(l + '…', px) > maxW) l = l.slice(0, -1); lines[maxLines - 1] = l + '…'; }
   return lines;
 }
-function courseSvg(ev, vmax, vnow) {
-  const W = 560, padR = 40, padL = 26, max = Math.max(1, ...ev.map(e => e.days_ago));
-  const x = d => padL + (d / max) * (W - padL - padR);
-  const pain = ev.filter(e => e.vas >= 0 && e.vas <= 10).map(e => ({ d: e.days_ago, v: e.vas }));
-  if (vnow != null) pain.push({ d: 0, v: vnow });
-  const band = pain.length || vmax != null, top = 22, bh = band ? 74 : 0, y0 = top + bh; // pain 0 at y0, 10 at top
-  const py = v => y0 - v / 10 * bh, ay = y0 + (band ? 26 : 10);
+function courseSvg(d, W) {
+  const FS = W < 420 ? 13 : 12.5, TICK = 12, padR = 34, xl = 18, xr = W - padR - 18; // y labels live in the 34px on the right
+  const sc = timeScale([...d.events.map(e => e.d), ...d.pain.map(p => p.d)], xl, xr), x = sc.x;
+  const band = d.pain.length || d.vmax != null, top = 22, bh = band ? 88 : 0, y0 = top + bh;
+  const py = v => y0 - v / 10 * bh, ay = y0 + (band ? 34 : 18), ring = ringed(d.pain);
   let svg = '';
   if (band) {
-    svg += [0, 5, 10].map(v => `<line class="grid" x1="${padL}" y1="${py(v)}" x2="${W - padR}" y2="${py(v)}"/><text class="tick" x="${W - padR + 14}" y="${py(v) + 4}" text-anchor="middle">${v}</text>`).join('');
-    if (vmax != null && !pain.some(p => p.v === vmax)) svg += `<line class="peak" x1="${padL}" y1="${py(vmax)}" x2="${W - padR}" y2="${py(vmax)}"/><text class="plab" x="${W - padR - 4}" y="${py(vmax) - 5}" text-anchor="start">שיא ${vmax}</text>`;
-    const pts = pain.sort((a, b) => b.d - a.d);
-    if (pts.length > 1) svg += `<polyline class="pline" points="${pts.map(p => `${x(p.d)},${py(p.v)}`).join(' ')}"/>`;
-    const hi = pts.reduce((m, p) => p.v > m.v ? p : m, pts[0] || { v: -1 });
-    svg += pts.map(p => `<circle class="pdot" cx="${x(p.d)}" cy="${py(p.v)}" r="5"/>${p === hi || p.d === 0 ? `<text class="pval" x="${x(p.d)}" y="${py(p.v) - 10}" text-anchor="middle">${p.v}</text>` : ''}`).join('');
+    const peakY = d.vmax != null && !d.pain.some(p => p.v === d.vmax) ? py(d.vmax) : null;
+    // y labels: 0 / 5 / 10, and the peak's own label in the same column; a tick too close to the peak yields
+    for (const v of [0, 5, 10]) {
+      svg += `<line class="grid" x1="${xl}" y1="${py(v)}" x2="${xr}" y2="${py(v)}"/>`;
+      if (peakY == null || Math.abs(py(v) - peakY) > 14) svg += `<text class="tick" x="${W - 4}" y="${py(v) + 4}" text-anchor="start">${v}</text>`;
+    }
+    if (peakY != null) svg += `<line class="peak" x1="${xl}" y1="${peakY}" x2="${xr}" y2="${peakY}"/><text class="plab" x="${W - 4}" y="${peakY + 4}" text-anchor="start">שיא ${d.vmax}</text>`;
+    const labels = [];
+    for (const st of PAIN_STATES) {
+      const pts = d.pain.filter(p => p.st === st).sort((a, b) => b.d - a.d); if (!pts.length) continue;
+      if (pts.length > 1) svg += `<polyline class="pline" style="--k:var(${PAIN_VAR[st]})" points="${pts.map(p => `${x(p.d)},${py(p.v)}`).join(' ')}"/>`;
+      const hi = pts.reduce((m, p) => p.v > m.v ? p : m, pts[0]);
+      for (const p of pts) {
+        svg += painMark(st, x(p.d), py(p.v), 5, p.unv ? 'unv' : '', ring);
+        if (p === hi || p.d === 0) labels.push({ x: x(p.d), y: py(p.v), v: p.v });
+      }
+    }
+    // value labels above their mark; when two share a spot, the lower one goes below its mark
+    labels.sort((a, b) => a.y - b.y).forEach((l, i, arr) => {
+      const clash = arr.slice(0, i).some(o => Math.abs(o.x - l.x) < 18 && Math.abs((o.ly ?? o.y - 10) - (l.y - 10)) < 15);
+      l.ly = clash ? l.y + 19 : l.y - 10;
+      svg += `<text class="pval" x="${l.x}" y="${l.ly}" text-anchor="middle">${l.v}</text>`;
+    });
   }
-  svg += `<line class="axis" x1="${padL}" y1="${ay}" x2="${W - padR + 8}" y2="${ay}"/>`;
-  let lastX = 1e4, tier = 0, deepest = 0;
-  const labels = ev.map(e => {
-    const cx = x(e.days_ago); tier = Math.abs(lastX - cx) < 118 ? 1 - tier : 0; lastX = cx;
-    const ax = Math.min(Math.max(cx, padL + 44), W - padR - 30), base = ay + 18 + tier * 48, lines = wrapLabel(e.event);
-    deepest = Math.max(deepest, base + 14 * lines.length);
-    return `<line class="stem" x1="${cx}" y1="${ay}" x2="${cx}" y2="${base - 12}"/><circle class="ev" cx="${cx}" cy="${ay}" r="5"/>
-      <text class="when" x="${ax}" y="${base}" text-anchor="middle">${esc(e.when || '')}</text>${lines.map((l, i) => `<text class="lab" x="${ax}" y="${base + 15 + i * 14}" text-anchor="middle">${esc(l)}</text>`).join('')}`;
-  }).join('');
-  svg += labels + `<circle class="ev now" cx="${padL}" cy="${ay}" r="5"/><text class="tick" x="${padL}" y="${ay + 18}" text-anchor="middle">היום</text>`;
-  const H = Math.max(deepest + 8, ay + 26);
-  const al = ['מהלך הפציעה', ...ev.map(e => `${e.when}: ${e.event}${e.vas >= 0 ? ', כאב ' + e.vas : ''}`), vnow != null ? 'היום: כאב ' + vnow : '', vmax != null ? 'שיא כאב ' + vmax : ''].filter(Boolean).join('; ');
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(al)}">${svg}</svg>`;
+  svg += `<line class="axis" x1="${xl}" y1="${ay}" x2="${xr + 6}" y2="${ay}"/>`;
+  if (sc.brk) svg += `<rect class="brk-bg" x="${sc.brk - 6}" y="${ay - 6}" width="12" height="12"/><path class="brk" d="M${sc.brk - 6} ${ay + 5}l4 -10M${sc.brk + 2} ${ay + 5}l4 -10"/>`;
+  // time ticks sit just above the axis, between the pain band and the events
+  let lastTx = -1e4;
+  for (const t of sc.ticks) {
+    const lab = agoLabel(t.d), w = textW(lab, 11);
+    svg += `<line class="tk" x1="${t.x}" y1="${ay - 3}" x2="${t.x}" y2="${ay + 3}"/>`;
+    if (t.x - w / 2 > lastTx + 8 && t.x + w / 2 < xr + 10 && t.x - w / 2 > xl + 22) { svg += `<text class="tlab" x="${t.x}" y="${ay - 8}" text-anchor="middle">${lab}</text>`; lastTx = t.x + w / 2; }
+  }
+  // event labels hang below the axis in rows; a label goes to the first row where it touches nothing
+  const rows = [[]], LH = FS + 3, gap = 10, LW = Math.min(132, Math.max(84, W / 4));
+  let deepest = ay + 24;
+  const evs = d.events.map(e => {
+    const lines = []; e.items.slice(0, 2).forEach(t => lines.push(...wrapLabel(t.event, LW, FS, e.items.length > 1 ? 1 : 2)));
+    if (e.items.length > 2) lines.push(`ועוד ${e.items.length - 2}`);
+    const when = e.when || agoLabel(e.d), w = Math.max(textW(when, FS - 0.5, 600), ...lines.map(l => textW(l, FS))) + 4;
+    const cx = x(e.d), lx = Math.min(Math.max(cx, xl + w / 2), W - 4 - w / 2);
+    return { e, cx, lx, w, when, lines, unv: e.items.some(t => unvOf(session, t.fields)) };
+  });
+  const today = { cx: xl, lx: Math.max(xl, textW('היום', FS - 0.5, 600) / 2 + 2), w: textW('היום', FS - 0.5, 600) + 4 };
+  rows[0].push([today.lx - today.w / 2, today.lx + today.w / 2]);
+  for (const v of evs) {
+    const span = [v.lx - v.w / 2, v.lx + v.w / 2];
+    let r = rows.findIndex(row => row.every(([a, b]) => span[1] + gap < a || span[0] > b + gap));
+    if (r < 0) { rows.push([]); r = rows.length - 1; }
+    rows[r].push(span);
+    const base = ay + 20 + r * (LH * 3 + 8);
+    deepest = Math.max(deepest, base + LH * v.lines.length + 4);
+    svg += `<line class="stem" x1="${v.cx}" y1="${ay}" x2="${v.cx}" y2="${base - FS}"/><circle class="ev${v.unv ? ' unv' : ''}" cx="${v.cx}" cy="${ay}" r="5"/>
+      <text class="when" x="${v.lx}" y="${base}" text-anchor="middle">${esc(v.when)}</text>${v.lines.map((l, i) => `<text class="lab" x="${v.lx}" y="${base + LH * (i + 1)}" text-anchor="middle">${esc(l)}</text>`).join('')}`;
+  }
+  svg += `<circle class="ev now" cx="${xl}" cy="${ay}" r="5"/><text class="when" x="${today.lx}" y="${ay + 20}" text-anchor="middle">היום</text>`;
+  return `<svg viewBox="0 0 ${W} ${Math.ceil(deepest + 6)}" width="${W}" height="${Math.ceil(deepest + 6)}" aria-hidden="true" style="--fs:${FS}px;--tk:${TICK}px">${svg}</svg>`;
 }
+
+/* charts drawn at the width they get, so their text keeps real pixel sizes on a phone too */
+const CHARTS = new Map(); let chartSeq = 0;
+function chartSlot(cls, draw, label) { const id = 'ch' + (++chartSeq); CHARTS.set(id, draw); return `<div class="${cls}" data-chart="${id}" role="img" aria-label="${esc(label)}"></div>`; }
+const chartRO = typeof ResizeObserver === 'function' ? new ResizeObserver(es => es.forEach(e => { const el = e.target; if (Math.abs(el.clientWidth - (+el.dataset.w || 0)) > 6) drawChart(el); })) : null;
+function drawChart(el) {
+  const draw = CHARTS.get(el.dataset.chart); if (!draw) return;
+  chartRO?.observe(el);
+  const w = Math.floor(el.clientWidth); if (!w || +el.dataset.w === w) return;
+  el.dataset.w = w;
+  try { el.innerHTML = draw(w); } catch (e) { el.textContent = ''; console.error(e); }
+}
+function drawCharts() {
+  document.querySelectorAll('[data-chart]').forEach(drawChart);
+  if (CHARTS.size > 60) for (const id of [...CHARTS.keys()]) if (!document.querySelector(`[data-chart="${id}"]`)) CHARTS.delete(id);
+}
+new MutationObserver(ms => { if (ms.some(m => [...m.addedNodes].some(n => n.nodeType === 1 && (n.matches?.('[data-chart]') || n.querySelector?.('[data-chart]'))))) drawCharts(); }).observe(document.body, { childList: true, subtree: true });
 
 // the body chart: one continuous silhouette, front and back; marks are painted inside its contour.
 // From the front the patient's right is on the viewer's left; from the back it is on the viewer's right.
@@ -892,39 +1054,43 @@ function involvedSide(s) {
 }
 function examCard() {
   const s = session, ex = insState(s).exam, inv = involvedSide(s);
-  const col = side => !inv ? (side === 'right' ? 'var(--orange)' : 'var(--mark-2)') : side === inv ? 'var(--orange)' : 'var(--mark-2)';
-  const colS = side => !inv ? (side === 'right' ? 'var(--green)' : 'var(--mark-2)') : side === inv ? 'var(--green)' : 'var(--mark-2)';
-  const sideLbl = side => SIDE_HE[side] + (inv === side ? ' (צד הפגיעה)' : '');
-  const group = (rows, key) => { const g = new Map(); rows.forEach(r => { const k = r.motion.trim(); if (!g.has(k)) g.set(k, []); g.get(k).push(r); }); return [...g.entries()]; };
+  const col = side => side === 'none' ? 'var(--label-3)' : !inv ? (side === 'right' ? 'var(--orange)' : 'var(--mark-2)') : side === inv ? 'var(--orange)' : 'var(--mark-2)';
+  const colS = side => side === 'none' ? 'var(--label-3)' : !inv ? (side === 'right' ? 'var(--green)' : 'var(--mark-2)') : side === inv ? 'var(--green)' : 'var(--mark-2)';
+  const SIDES = ['right', 'left', 'none'], sideName = sd => SIDE_HE[sd] || 'צד לא צוין';
+  const sideLbl = side => sideName(side) + (inv === side ? ' (צד הפגיעה)' : '');
+  const group = rows => { const g = new Map(); rows.forEach(r => { const k = r.motion.trim(); if (!g.has(k)) g.set(k, []); g.get(k).push(r); }); return [...g.entries()]; };
   let rom = '';
   if (ex.rom.length) {
-    const max = Math.max(180, ...ex.rom.map(r => r.degrees));
-    rom = `<div><h3>${ICON.angle} טווחי תנועה (AROM)</h3><div class="bars">${group(ex.rom).map(([m, rs]) => `<div class="bar-g"><div class="bl"><b>${esc(m)}</b>${rs.some(r => r.painful) ? '<span class="pain">כאב</span>' : ''}</div>
-      ${['right', 'left'].map(sd => { const r = rs.find(x => x.side === sd); return r ? `<div class="bar" title="${esc(m)} ${SIDE_HE[sd]}: ${r.degrees}°"><span>${SIDE_HE[sd]}</span><span class="tr"><i style="width:${Math.max(0, Math.min(100, r.degrees / max * 100))}%;--k:${col(sd)}${unvOf(s, r.fields) ? ';opacity:.45' : ''}"></i></span><span class="v">${r.degrees}°</span></div>` : ''; }).join('')}</div>`).join('')}</div>
-      <div class="legend">${['right', 'left'].filter(sd => ex.rom.some(r => r.side === sd)).map(sd => `<span><i style="--k:${col(sd)}"></i>${sideLbl(sd)}</span>`).join('')}</div></div>`;
+    const groups = group(ex.rom).map(([m, rs]) => [m, rs, romNorm(m, rs.find(r => r.joint)?.joint, s.region)]);
+    const max = Math.max(180, ...ex.rom.map(r => r.degrees), ...groups.map(g => g[2]?.deg || 0));
+    const pct = v => Math.max(0, Math.min(100, v / max * 100));
+    rom = `<div><h3>${ICON.angle} טווחי תנועה (AROM)</h3><div class="bars">${groups.map(([m, rs, nm]) => `<div class="bar-g"><div class="bl"><b>${esc(m)}</b>${rs.some(r => r.painful) ? '<span class="pain">כאב</span>' : ''}${nm ? `<span class="nrm">נורמה <bdi dir="ltr">${nm.deg}°</bdi></span>` : ''}</div>
+      ${SIDES.map(sd => rs.filter(x => x.side === sd).slice(0, 1).map(r => `<div class="bar" title="${esc(m)} ${sideName(sd)}: ${r.degrees}°${nm ? ` (נורמה ${nm.deg}°)` : ''}"><span>${SIDE_HE[sd] || '—'}</span><span class="tr"><i style="width:${pct(r.degrees)}%;--k:${col(sd)}${unvOf(s, r.fields) ? ';opacity:.45' : ''}"></i>${nm ? `<b class="nl" style="inset-inline-start:${pct(nm.deg)}%" aria-hidden="true"></b>` : ''}</span><span class="v"><bdi dir="ltr">${r.degrees}°</bdi></span></div>`).join('')).join('')}</div>`).join('')}</div>
+      <div class="legend">${SIDES.filter(sd => ex.rom.some(r => r.side === sd)).map(sd => `<span><i style="--k:${col(sd)}"></i>${sideLbl(sd)}</span>`).join('')}${groups.some(g => g[2]) ? `<span><i class="nl-k" aria-hidden="true"></i>טווח תקין (${esc(NORMS.source || 'norms.js')})</span>` : ''}</div></div>`;
   }
   let mmt = '';
   if (ex.mmt.length) {
     const W = 200, x = g => 6 + g / 5 * (W - 12);
     const grade = g => g === 4.5 ? '4+' : g === 3.75 ? '4-' : String(g);
-    mmt = `<div><h3>${ICON.dumbbell} כוח (MMT 0–5)</h3><div class="dots">${group(ex.mmt).map(([m, rs]) => `<div class="dot-r"><b>${esc(m)}</b><span class="vals">${['right', 'left'].map(sd => rs.find(r => r.side === sd)).filter(Boolean).map(r => SIDE_HE[r.side] + ' ' + grade(r.grade)).join(' · ')}</span>
-      <svg viewBox="0 0 ${W} 22" role="img" aria-label="${esc(m)}: ${rs.map(r => SIDE_HE[r.side] + ' ' + grade(r.grade)).join(', ')}"><line class="g" x1="6" y1="9" x2="${W - 6}" y2="9"/>${[0, 1, 2, 3, 4, 5].map(g => `<line class="g" x1="${x(g)}" y1="5" x2="${x(g)}" y2="13"/><text class="tk" x="${x(g)}" y="22" text-anchor="middle">${g}</text>`).join('')}
+    mmt = `<div><h3>${ICON.dumbbell} כוח (MMT 0–5)</h3><div class="dots">${group(ex.mmt).map(([m, rs]) => `<div class="dot-r"><b>${esc(m)}</b><span class="vals">${SIDES.map(sd => rs.find(r => r.side === sd)).filter(Boolean).map(r => `${SIDE_HE[r.side] ? SIDE_HE[r.side] + ' ' : ''}<bdi dir="ltr">${grade(r.grade)}</bdi>`).join(' · ')}</span>
+      <svg viewBox="0 0 ${W} 22" role="img" aria-label="${esc(m)}: ${rs.map(r => (SIDE_HE[r.side] ? SIDE_HE[r.side] + ' ' : '') + grade(r.grade)).join(', ')}"><line class="g" x1="6" y1="9" x2="${W - 6}" y2="9"/>${[0, 1, 2, 3, 4, 5].map(g => `<line class="g" x1="${x(g)}" y1="5" x2="${x(g)}" y2="13"/><text class="tk" x="${x(g)}" y="22" text-anchor="middle">${g}</text>`).join('')}
       ${rs.map(r => `<circle cx="${x(r.grade)}" cy="9" r="5.5" fill="${colS(r.side)}"${unvOf(s, r.fields) ? ' fill-opacity=".5"' : ''}/>`).join('')}</svg></div>`).join('')}</div>
-      <div class="legend">${['right', 'left'].filter(sd => ex.mmt.some(r => r.side === sd)).map(sd => `<span><i style="--k:${colS(sd)};border-radius:50%"></i>${sideLbl(sd)}</span>`).join('')}</div></div>`;
+      <div class="legend">${SIDES.filter(sd => ex.mmt.some(r => r.side === sd)).map(sd => `<span><i style="--k:${colS(sd)};border-radius:50%"></i>${sideLbl(sd)}</span>`).join('')}</div></div>`;
   }
   let tests = '';
   if (ex.tests.length) {
-    const cls = { positive: 'pos', negative: 'neg', equivocal: 'eq' };
-    tests = `<div><h3>${ICON.tests} מבדקים מיוחדים</h3><div class="tests">${ex.tests.map(t => `<div class="test"><span class="res ${cls[t.result]}"><i aria-hidden="true"></i>${RESULT_HE[t.result]}</span>
+    // positive / negative / unclear get a mark; a score or words keep exactly what was said
+    const cls = { positive: 'pos', negative: 'neg', equivocal: 'eq', score: 'val', text: 'val' };
+    tests = `<div><h3>${ICON.tests} מבדקים מיוחדים</h3><div class="tests">${ex.tests.map(t => `<div class="test"><span class="res ${cls[t.result] || 'val'}">${cls[t.result] === 'val' ? '' : '<i aria-hidden="true"></i>'}${t.result === 'score' && t.value ? `<bdi dir="ltr">${esc(t.value)}</bdi>` : esc(resultText(t))}</span>
       <span class="nm">${t.test_id && testLink(t.test_id) ? `<a href="${testLink(t.test_id)}" target="_blank" rel="noopener">${esc(t.name)}</a>` : `<b>${esc(t.name)}</b>`}${unvOf(s, t.fields) ? UNV : ''}</span><span class="sd">${SIDE_HE[t.side] || ''}</span></div>`).join('')}</div></div>`;
   }
   return `<section class="card span2">${cardHead('exam', atMeta('exam'))}<div class="exam">${rom}${mmt}${tests}</div></section>`;
 }
 function hypoCard(inGrid) {
   const s = session, list = insState(s).hypo, lvl = '<span class="lv" aria-hidden="true"><i></i><i></i><i></i></span>';
-  return `<section class="card${inGrid ? ' span2' : ''}">${cardHead('hypo', atMeta('hypo'))}
+  return `<section class="card${inGrid ? ' span2' : ''}">${cardHead('hypo', atMeta('hypo') + hypoBtn('עדכן'))}
     <div class="hyps">${list.map(h => `<div class="hyp"><h3>${esc(h.name)}</h3><span class="st ${STATUS_HE[h.status] ? h.status : 'possible'}">${lvl}${STATUS_HE[h.status] || STATUS_HE.possible}</span>
-      ${h.support?.length || h.against?.length ? `<div class="ev"><div><b>תומך</b>${h.support?.length ? `<ul>${h.support.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '<span class="muted">—</span>'}</div><div><b>סותר</b>${h.against?.length ? `<ul>${h.against.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '<span class="muted">—</span>'}</div></div>` : ''}
+      ${h.support?.length || h.against?.length ? `<div class="ev"><div><b>תומך</b>${h.support?.length ? `<ul>${h.support.map(x => `<li>${escN(x)}</li>`).join('')}</ul>` : '<span class="muted">—</span>'}</div><div><b>סותר</b>${h.against?.length ? `<ul>${h.against.map(x => `<li>${escN(x)}</li>`).join('')}</ul>` : '<span class="muted">—</span>'}</div></div>` : ''}
       ${h.tests?.length ? `<div class="ts">מבדקים שיעזרו להבחין: ${h.tests.map(id => testLink(id) ? `<a class="chipl" href="${testLink(id)}" target="_blank" rel="noopener">${esc(testName(id))}</a>` : `<span class="chipl">${esc(testName(id))}</span>`).join('')}</div>` : ''}</div>`).join('')}</div>
     <p class="fine">השערות עבודה לחשיבה קלינית, לא אבחנה. ${MAP_TAB[s.region] ? 'נשענות על המסלולים במפת הדרך לאזור.' : 'לאזור הזה עוד אין מסלולים במפה.'}</p></section>`;
 }
@@ -1932,19 +2098,19 @@ function vizDocHtml(s) {
   if (vm != null || vn != null || ins.timeline?.length) {
     h += '<h3>מהלך הפציעה</h3>';
     if (vm != null || vn != null) h += `<p>כאב מירבי: ${vm ?? '—'}/10 · כאב עכשיו: ${vn ?? '—'}/10</p>`;
-    if (ins.timeline?.length) h += docTable(['מתי', 'אירוע'], [...ins.timeline].sort((a, b) => (b.days_ago < 0 ? -1 : b.days_ago) - (a.days_ago < 0 ? -1 : a.days_ago)).map(t => [esc(t.when || '—'), esc(t.event) + unv(t.fields)]));
+    if (ins.timeline?.length) h += docTable(['מתי', 'אירוע', 'כאב (0–10)'], [...ins.timeline].sort((a, b) => (b.days_ago < 0 ? -1 : b.days_ago) - (a.days_ago < 0 ? -1 : a.days_ago)).map(t => [esc(t.when || '—'), esc(t.event) + unv(t.fields), t.vas >= 0 ? t.vas + (PAIN_STATE_HE[t.pain_state] ? ' ' + PAIN_STATE_HE[t.pain_state] : '') : '—']));
   }
   if (ins.body?.length) h += '<h3>מיקום הסימפטומים</h3>' + docTable(['אזור', 'צד', 'סוג', 'תיאור'], ins.body.map(b => [ZONE_HE[b.zone], SIDE_HE[b.side] || '—', KIND_HE[b.kind], esc(b.label || '') + unv(b.fields)]));
   const ex = ins.exam || {};
   if (ex.rom?.length) {
     const m = [...new Set(ex.rom.map(r => r.motion.trim()))];
-    h += '<h3>טווחי תנועה</h3>' + docTable(['תנועה', 'ימין', 'שמאל', 'כאב'], m.map(k => { const rs = ex.rom.filter(r => r.motion.trim() === k), g = sd => { const r = rs.find(x => x.side === sd); return r ? r.degrees + '°' + unv(r.fields) : '—'; }; return [esc(k), g('right'), g('left'), rs.some(r => r.painful) ? 'כן' : '']; }));
+    h += '<h3>טווחי תנועה</h3>' + docTable(['תנועה', 'ימין', 'שמאל', 'צד לא צוין', 'כאב', 'טווח תקין'], m.map(k => { const rs = ex.rom.filter(r => r.motion.trim() === k), g = sd => { const r = rs.find(x => x.side === sd); return r ? r.degrees + '°' + unv(r.fields) : '—'; }, nm = romNorm(k, rs.find(r => r.joint)?.joint, s.region); return [esc(k), g('right'), g('left'), g('none'), rs.some(r => r.painful) ? 'כן' : '', nm ? nm.deg + '°' : '—']; }));
   }
   if (ex.mmt?.length) {
     const m = [...new Set(ex.mmt.map(r => r.motion.trim()))], gr = g => g === 4.5 ? '4+' : g === 3.75 ? '4-' : String(g);
-    h += '<h3>כוח (MMT)</h3>' + docTable(['שריר / תנועה', 'ימין', 'שמאל'], m.map(k => { const rs = ex.mmt.filter(r => r.motion.trim() === k), g = sd => { const r = rs.find(x => x.side === sd); return r ? gr(r.grade) + '/5' + unv(r.fields) : '—'; }; return [esc(k), g('right'), g('left')]; }));
+    h += '<h3>כוח (MMT)</h3>' + docTable(['שריר / תנועה', 'ימין', 'שמאל', 'צד לא צוין'], m.map(k => { const rs = ex.mmt.filter(r => r.motion.trim() === k), g = sd => { const r = rs.find(x => x.side === sd); return r ? gr(r.grade) + '/5' + unv(r.fields) : '—'; }; return [esc(k), g('right'), g('left'), g('none')]; }));
   }
-  if (ex.tests?.length) h += '<h3>מבדקים מיוחדים</h3>' + docTable(['מבדק', 'צד', 'תוצאה'], ex.tests.map(t => [esc(t.name), SIDE_HE[t.side] || '—', RESULT_HE[t.result] + unv(t.fields)]));
+  if (ex.tests?.length) h += '<h3>מבדקים מיוחדים</h3>' + docTable(['מבדק', 'צד', 'תוצאה'], ex.tests.map(t => [esc(t.name), SIDE_HE[t.side] || '—', esc(resultText(t)) + unv(t.fields)]));
   if (ins.hypo?.length) h += '<h3>השערות עבודה (טיוטה לחשיבה קלינית, לא אבחנה)</h3>' + docTable(['השערה', 'מצב', 'תומך', 'סותר', 'מבדקים שיעזרו להבחין'], ins.hypo.map(x => [esc(x.name), STATUS_HE[x.status] || '', esc((x.support || []).join(' · ')), esc((x.against || []).join(' · ')), esc((x.tests || []).map(testName).join(', '))]));
   return h ? '<h2>סיכום חזותי</h2>' + h : '';
 }
@@ -2033,7 +2199,7 @@ function verRowHtml(f) {
   const v = session.fields[f.id];
   return `<div class="vrow" id="v-${f.id}"><div class="vmain"><div class="vl"><b>${esc(shortLabel(f.label))}</b>${v.unverified ? '<span class="badge bad">לא נמצא בתמלול</span>' : '<span class="badge chk">לאמת</span>'}</div>
     <textarea class="vin" id="vt-${f.id}" rows="1" aria-label="${esc(f.label)}">${esc(v.value)}</textarea>
-    ${v.quote ? `<div class="vq">${v.unverified ? 'המודל ציטט, אבל זה לא נמצא בתמלול' : 'נשמע בתמלול'}: «${esc(v.quote)}»</div>` : ''}</div>
+    ${v.quote ? `<div class="vq">${v.unverified ? 'המודל ציטט, אבל זה לא נמצא בתמלול' : v.asked ? 'נשען על שאלה של המטפל' : 'נשמע בתמלול'}: «${esc(v.quote)}»</div>` : ''}</div>
     <div class="vb"><button class="btn primary sm" data-act="vConfirm" data-fid="${f.id}">אשר</button><button class="btn sm" data-act="vClear" data-fid="${f.id}">נקה</button></div></div>`;
 }
 function saveRowHtml(nv) {
@@ -2292,7 +2458,7 @@ const aiRecent = s => (s.recent || []).filter(r => s.fields[r.id]?.value && s.fi
 function updateIsland(fresh = false) {
   const cap = $('#islCap'), badge = $('#islBadge'), isl = $('#island'); if (!cap || !session) return;
   const r = aiRecent(session)[0];
-  if (r) { const v = session.fields[r.id], k = shortLabel(FIELD[r.id].label); cap.className = 'isl-cap'; cap.title = k; cap.innerHTML = `<span class="k">${esc(k)}: </span>${esc(v.value)}`; }
+  if (r) { const v = session.fields[r.id], k = shortLabel(FIELD[r.id].label); cap.className = 'isl-cap'; cap.title = k; cap.innerHTML = `<span class="k">${esc(k)}: </span>${escN(v.value)}`; }
   else { cap.className = 'isl-cap idle'; cap.textContent = recording ? 'מקשיב… מה שייאמר יופיע כאן' : 'כשהמידע ייקלט מהשיחה, הוא יופיע כאן'; }
   const n = fieldsFor(session).filter(needsReview).length;
   badge.classList.toggle('err', !!lastStatus.err);
@@ -2317,7 +2483,7 @@ function feedHtml() {
     <div class="feed">${rows.length ? rows.map(r => {
       const f = FIELD[r.id], v = s.fields[r.id];
       return `<div class="feed-row"><div><div class="fl">${esc(shortLabel(f.label))} · ${t(r.at)} ${v.needsCheck ? '<span class="badge chk">לאמת</span>' : v.confirmed ? '<span class="badge ok">אומת</span>' : ''}${v.unverified ? '<span class="badge bad">לא נמצא בתמלול</span>' : ''}</div>
-        <div class="fv">${esc(v.value)}</div>${r.prev ? `<div class="fw">היה: ${esc(String(r.prev.value).slice(0, 80))}</div>` : ''}</div>
+        <div class="fv">${escN(v.value)}</div>${r.prev ? `<div class="fw">היה: ${escN(String(r.prev.value).slice(0, 80))}</div>` : ''}</div>
         <div class="fa">${v.needsCheck ? `<button class="ok" data-act="confirm" data-fid="${r.id}">אשר</button>` : ''}${v.quote ? `<button data-act="src" data-fid="${r.id}">מקור</button>` : ''}<button data-act="edit" data-fid="${r.id}">ערוך</button><button data-act="undo" data-fid="${r.id}" aria-label="בטל את המילוי של ${esc(shortLabel(f.label))}">בטל</button></div></div>`;
     }).join('') : `<p class="empty-note">כשה-AI ימלא שדה מתוך השיחה, הוא יופיע כאן לאישור, לעריכה או לביטול.</p>`}</div>
     <div class="pop-foot"><span id="popStatus">${lastStatus.raw ? lastStatus.html : esc(lastStatus.html)}</span><button class="btn sm" data-act="fillNow">מלא עכשיו</button></div>`;
@@ -2369,8 +2535,8 @@ function srcPopHtml(ids, title) {
     const heard = v.quote && i >= 0 && !v.unverified;
     const canPlay = g && !g.manual && s.audioParts;
     const badge = v.unverified ? '<span class="badge bad">לא נמצא בתמלול</span>' : v.needsCheck ? '<span class="badge chk">לאמת</span>' : v.confirmed ? '<span class="badge ok">אומת</span>' : v.source === 'manual' ? '<span class="badge">נכתב ידנית</span>' : v.source === 'note' ? '<span class="badge">מפתק</span>' : '';
-    return `<div style="margin-top:${many ? 12 : 0}px">${many ? `<div class="fl">${esc(shortLabel(f.label))} ${badge}</div>` : ''}<div class="fv">${esc(v.value || '—')}</div>
-      ${v.quote ? `<div class="src-q${heard ? '' : ' bad'}"><div class="m">${heard ? 'נשמע בתמלול' : 'המודל ציטט, אבל זה לא נמצא בתמלול'}${g ? ' · ' + hhmm(g.t) + (g.speaker != null ? ' · דובר ' + esc(g.speaker) : '') : ''}${canPlay ? `<button class="play" data-act="segPlay" data-i="${i}" aria-label="השמע מההקלטה">${ICON.play}</button>` : ''}</div>«${esc(v.quote)}»</div>` : ''}
+    return `<div style="margin-top:${many ? 12 : 0}px">${many ? `<div class="fl">${esc(shortLabel(f.label))} ${badge}</div>` : ''}<div class="fv">${escN(v.value || '—')}</div>
+      ${v.quote ? `<div class="src-q${heard ? '' : ' bad'}"><div class="m">${!heard ? 'המודל ציטט, אבל זה לא נמצא בתמלול' : v.asked ? 'נשען על שאלה של המטפל, לא על דברי המטופל' : 'נשמע בתמלול'}${g ? ' · ' + hhmm(g.t) + (g.speaker != null ? ' · דובר ' + esc(g.speaker) : '') : ''}${canPlay ? `<button class="play" data-act="segPlay" data-i="${i}" aria-label="השמע מההקלטה">${ICON.play}</button>` : ''}</div>«${esc(v.quote)}»</div>` : ''}
       <div class="acts">${v.needsCheck || v.unverified ? `<button class="btn sm primary" data-act="confirm" data-fid="${id}">אשר</button>` : ''}<button class="btn sm" data-act="edit" data-fid="${id}">ערוך</button>${v.source === 'ai' ? `<button class="btn sm" data-act="undo" data-fid="${id}">בטל מילוי</button>` : ''}</div></div>`;
   });
   const one = ids.length === 1 && FIELD[ids[0]];
@@ -2698,7 +2864,7 @@ function recordHtml() {
     const r = ins.record[sec.id], filled = sec.fields.filter(f => f.id !== 'name' && s.fields[f.id]?.value);
     if (r && r.text) {
       const ids = (r.fields || []).filter(id => FIELD[id]);
-      return `<div class="rec-sec"><h3>${esc(sec.title)}</h3><p class="rec-p"><button class="rec-s${dirty.includes(sec.id) ? ' draft' : ''}" data-act="srcRec" data-sec="${sec.id}">${esc(r.text)}</button>${flag(ids)}</p></div>`;
+      return `<div class="rec-sec"><h3>${esc(sec.title)}</h3><p class="rec-p"><button class="rec-s${dirty.includes(sec.id) ? ' draft' : ''}" data-act="srcRec" data-sec="${sec.id}">${escN(r.text)}</button>${flag(ids)}</p></div>`;
     }
     return `<div class="rec-sec"><h3>${esc(sec.title)}</h3><div class="rec-raw">${filled.map(f => `<button class="rec-s" data-act="src" data-fid="${f.id}"><span class="k">${esc(shortLabel(f.label))}:</span> ${esc(s.fields[f.id].value)} ${flag([f.id])}</button>`).join('')}</div></div>`;
   }).join('');
@@ -2935,6 +3101,7 @@ document.addEventListener('click', async e => {
       t.disabled = false; t.checked = !!settings.encrypt; break;
     }
     case 'taskDone': { const n = (session?.notes || []).find(x => x.id === t.dataset.nid); if (n) { n.done = !n.done; touch(); t.setAttribute('aria-pressed', n.done); t.closest('li')?.classList.toggle('done', n.done); } break; }
+    case 'hypoNow': { const before = insState().at.hypo; runInsight(false, ['hypo']).then(() => { const ins = session && insState(); if (ins && ins.at.hypo !== before && !ins.hypo.length) toast('עדיין אין מספיק ממצאים להשערות', false, 2600); }); break; }
     case 'verifyPart': { const s = session, ids = CARD_SRC[t.dataset.part](s).filter(id => s.fields[id]?.value && (s.fields[id].needsCheck || s.fields[id].unverified)); if (ids.length) showSource(ids, t, 'v:' + t.dataset.part); break; }
     case 'noteDel': session.notes = (session.notes || []).filter(n => n.id !== t.dataset.nid); touch(); refreshLive(); if (view === 'finish') renderFinish(); break;
     case 'noteUnfile': unfileNote(t.dataset.nid); break;
@@ -3026,6 +3193,7 @@ document.addEventListener('toggle', e => {
   const d = e.target; if (!d.matches?.('details.stg')) return;
   if (d.open) openStages.add(d.dataset.stage); else openStages.delete(d.dataset.stage);
 }, true);
+let editInsightTimer = null; // a typed field updates the record and graphics too, once the typing pauses
 document.addEventListener('input', e => {
   const t = e.target;
   if (t.matches('#tabBody textarea[data-fid]')) {
@@ -3034,6 +3202,7 @@ document.addEventListener('input', e => {
     session.fields[id] = { ...(session.fields[id] || {}), value: val, source: 'manual', locked: true, needsCheck: false, at: Date.now() };
     if (!val.trim()) session.fields[id] = { value: '', locked: false };
     markDirty([id]); syncStage(); touch(); refreshCounts();
+    clearTimeout(editInsightTimer); editInsightTimer = setTimeout(() => { if (aiReady() && smartAny()) runInsight(); }, 2500);
   }
   if (t.id === 'noteIn') { const b = t.closest('form')?.querySelector('.send'); if (b) b.disabled = !t.value.trim(); }
 });
