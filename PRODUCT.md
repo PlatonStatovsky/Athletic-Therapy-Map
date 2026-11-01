@@ -30,8 +30,9 @@ The only Hebrew tool that ties live session capture to a clinical decision map f
 
 - Hebrew only, right-to-left; English clinical test names and abbreviations inside Hebrew text.
 - Three display themes shared with the map through `localStorage['uqmap-theme']`: light, comfort ("נוח לעין", warm and low-glare), dark.
-- Patient data stays with the therapist: the session lives on the device until saved to the therapist's own Drive; API keys stay on the device; the Soniox account key stays in the server's secrets.
-- Single-file static PWA, no build step (`app/index.html`).
+- Patient data stays with the therapist: the session lives on the device until saved to the therapist's own Drive. With encryption on (Settings → נתונים), the session, patient list and recordings are stored sealed with a key kept in the therapist's Drive app folder, opened by Google sign-in.
+- No API key reaches the browser: Claude and Soniox calls go through the site's own server functions, which hold the keys as secrets; the browser sends only the access code.
+- Static PWA, no build step: `app/index.html` (markup and styles), `app/app.js`, `app/boot.js`, `app/norms.js` (editable normal ROM ranges). A CSP in `_headers` forbids inline scripts.
 - The user wants control over: transcript pane width, a focus mode, and density.
 - Undecided: login and per-user accounts (planned for the beta), subscription pricing.
 
