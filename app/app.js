@@ -464,7 +464,7 @@ function pendingChars() {
   return session.segments.slice(session.processed).reduce((a, g) => a + g.text.length, 0);
 }
 function maybeFill(force = false) {
-  if (!session || filling || !aiReady()) return;
+  if (!session || filling || !aiReady() || recLocked(session)) return;
   const chars = pendingChars();
   if (!chars) { if (force) setFillStatus('אין טקסט חדש למילוי'); return; }
   if (!force) {
@@ -535,6 +535,7 @@ function isQuestionQuote(u) {
   return /[?？]\s*$/.test(q) || Q_START.test(q.replace(/^[«"'״]+/, ''));
 }
 function applyUpdates(updates, transcriptText = '') {
+  if (recLocked(session)) return 0; // a locked record changes only through addenda
   let n = 0; const changed = [];
   const hay = normQ(transcriptText);
   for (const u of updates) {
@@ -670,7 +671,7 @@ let insighting = false, insightAgain = false;
 const HYPO_MIN = 3; // filled fields (besides the name) before hypotheses are worth asking for
 // force: every part from scratch; only: just these parts now (the hypotheses button)
 async function runInsight(force = false, only = null) {
-  const s = session; if (!s || !aiReady() || !smartAny()) return;
+  const s = session; if (!s || !aiReady() || !smartAny() || recLocked(s)) return;
   if (insighting) { if (only) toast('העדכון הקודם עוד רץ. נסה שוב בעוד רגע.', false, 2200); else insightAgain = true; return; }
   const sm = smart(), d = JSON.parse(JSON.stringify(s.insDirty || { secs: [], parts: [] }));
   const pending = (s.notes || []).filter(n => n.status === 'pending'), sent = new Set(pending.map(n => n.id));
@@ -1302,7 +1303,7 @@ async function audioParts(sid) {
   const parts = new Map();
   for (const r of rows) {
     if (!parts.has(r.part)) parts.set(r.part, { part: r.part, mime: r.mime, blobs: [], start: r.t, end: r.t });
-    const p = parts.get(r.part); p.end = r.t;
+    const p = parts.get(r.part); p.end = Math.max(p.end, r.tEnd || r.t);
     if (r.enc) { if (!VAULT.key) throw new Error('ההקלטה מוצפנת: צריך להתחבר ל-Google'); p.blobs.push(new Blob([await crypto.subtle.decrypt({ name: 'AES-GCM', iv: r.iv }, VAULT.key, r.data)])); }
     else p.blobs.push(r.blob);
   }
@@ -1422,6 +1423,7 @@ async function playSeg(i) {
   const s = session, g = s?.segments[i]; if (!g) return;
   if (recording) { toast('ההשמעה זמינה כשההקלטה עצורה — אחרת המיקרופון יקלוט אותה שוב לתמלול', true, 5000); return; }
   let parts = []; try { parts = await audioParts(s.id); } catch { }
+  if (!parts.length && Object.keys(s.audioIds || {}).length) { try { parts = await audioFromDrive(s); } catch (e) { toast('ההורדה של ההקלטה מ-Drive נכשלה: ' + e.message, true, 5000); return; } }
   const t0 = lineStart(g);
   const p = parts.filter(p => partStartOf(s, p) <= t0 + 2000).pop();
   if (!p || t0 > p.end + 5000) { toast('אין הקלטה לקטע זה', true); return; }
@@ -2087,7 +2089,7 @@ async function runAnalysis() {
   const content = [];
   // the knowledge base is the long, stable part — cached, so a re-run within a few minutes costs a fraction
   if (kb.docs.length) content.push({ type: 'text', text: `<knowledge_base>\n${kbBlock(kb.docs)}\n</knowledge_base>`, cache_control: { type: 'ephemeral' } });
-  content.push({ type: 'text', text: `אזור: ${s.region}\nסוג מפגש: ${s.type}\nתאריך: ${fmtDate(s.startedAt)}\n\n<form>\n${formAsText(s)}\n</form>\n\n<transcript>\n${tr || '(אין תמלול)'}\n</transcript>\n\nכתוב את הניתוח לפי המבנה.` });
+  content.push({ type: 'text', text: `אזור: ${s.region}\nסוג מפגש: ${s.type}\nתאריך: ${fmtDate(s.startedAt)}\n\n<form>\n${formAsText(s)}\n</form>${prevAsText(s)}\n\n<transcript>\n${tr || '(אין תמלול)'}\n</transcript>\n\nכתוב את הניתוח לפי המבנה.` });
   const kbLine = kb.docs.length ? `בסיס ידע (${Math.round(kb.chars / 1000)}K תווים): ${kb.docs.map(d => esc(d.title)).join(' · ')}` : 'בלי בסיס ידע';
   st.innerHTML = `<span class="spin"></span> חושב… <div class="small muted">${kbLine}</div>`;
   analysisAbort = new AbortController();
@@ -2142,6 +2144,7 @@ function sessionDocHtml(s) {
   let h = `<h1>מפגש — ${esc(s.patientName)}</h1>`;
   h += `<p>תאריך: ${fmtWhen(s.startedAt)} · אזור: ${esc(s.region)} · ${esc(s.type)}</p>`;
   h += `<p>הסכמת המטופל להקלטה: ניתנה, ${fmtWhen(s.consentAt || s.startedAt)}</p>`;
+  if (s.firstSavedAt) h += `<p>נשמר לראשונה: ${fmtWhen(s.firstSavedAt)} · ${recLocked(s) ? 'נעול לעריכה; אפשר רק להוסיף נספח' : 'אפשר לתקן עד ' + fmtWhen(lockAt(s))}${s.amendments?.length ? ` · תיקונים: ${s.amendments.length}` : ''}${s.addenda?.length ? ` · נספחים: ${s.addenda.length}` : ''}</p>`;
   h += recordDocHtml(s) + vizDocHtml(s) + notesDocHtml(s);
   h += `<h2>הטופס</h2>`;
   for (const sec of sectionsFor(s)) {
@@ -2158,6 +2161,7 @@ function sessionDocHtml(s) {
     h += md(s.analysis, true);
     if (s.analysisKB?.length) h += `<p><i>בסיס ידע: ${esc(s.analysisKB.join(', '))}</i></p>`;
   }
+  h += amendDocHtml(s);
   h += `<p><i>הופק ב-Thalamus, העוזר הקליני. שדות שמולאו אוטומטית מתוך תמלול: יש לאמת מול המטופל.</i></p>`;
   return `<html><head><meta charset="utf-8"></head><body dir="rtl">${rtl(h)}</body></html>`;
 }
@@ -2209,7 +2213,23 @@ async function saveToDrive(onProgress = () => { }) {
   onProgress('מתחבר ל-Google…');
   const root = await ensureRoot();
   const folder = await ensurePatientFolder(root, s.patientName);
-  const stamp = fmtStamp(s.startedAt);
+  const stamp = fmtStamp(s.startedAt), now = Date.now();
+  // after the first save, changed fields become a dated amendment in the document (until the record locks)
+  const first = !s.firstSavedAt, changes = !first && !recLocked(s) && s.savedSnap ? snapDiff(s) : [];
+  if (first) s.firstSavedAt = now;
+  if (changes.length) (s.amendments ||= []).push({ at: now, changes });
+  try { await saveFiles(s, folder, stamp, onProgress); }
+  catch (e) { if (first) s.firstSavedAt = 0; if (changes.length) s.amendments.pop(); throw e; }
+  s.savedSnap = fieldSnap(s);
+  onProgress('שומר את קובץ הנתונים…');
+  s.jsonId = await upsertJson(s.jsonId, `מפגש ${stamp} — ${s.patientName}.thalamus.json`, recordData(s), folder, recordProps(s));
+  s.folderId = folder; s.savedAt = Date.now(); s.changedAt = s.savedAt;
+  upsertPatient({ name: s.patientName, folderId: folder, region: s.region, last: s.startedAt });
+  saveSession(true); renderAudioBox(); renderSaveState();
+  if (REC.list) REC.stale = true;
+  return folder;
+}
+async function saveFiles(s, folder, stamp, onProgress) {
   onProgress('שומר את מסמך המפגש…');
   s.docId = await upsertDoc(s.docId, `מפגש ${stamp} — ${s.patientName}`, sessionDocHtml(s), folder);
   if (s.segments.length) { onProgress('שומר את התמלול…'); s.transcriptDocId = await upsertDoc(s.transcriptDocId, `תמלול ${stamp} — ${s.patientName}`, transcriptDocHtml(s), folder); }
@@ -2222,10 +2242,6 @@ async function saveToDrive(onProgress = () => { }) {
     const id = await uploadBlob(`הקלטה ${stamp}${parts.length > 1 ? ' חלק ' + p.part : ''} — ${s.patientName}.${ext}`, p.blob, folder, p.mime.split(';')[0], s.audioIds[p.part]?.id);
     s.audioIds[p.part] = { id, size: p.blob.size };
   }
-  s.folderId = folder; s.savedAt = Date.now(); s.changedAt = s.savedAt;
-  upsertPatient({ name: s.patientName, folderId: folder, region: s.region, last: s.startedAt });
-  saveSession(true); renderAudioBox(); renderSaveState();
-  return folder;
 }
 function downloadCopy() {
   const s = session; if (!s) return;
@@ -2241,6 +2257,188 @@ function upsertPatient(p) {
   else patients.unshift(p);
   patients.sort((a, b) => String(b.last || '').localeCompare(String(a.last || '')));
   savePatients();
+}
+
+/* ---------------- saved sessions in Drive: open, amend for 24 hours, then addenda only ----------------
+   Every save writes, beside the Google Docs, the whole session as a data file ("… .thalamus.json") in the
+   patient's folder. It is not encrypted: Drive is the therapist's own account, and a lost key must never make
+   years of records unreadable. After the first save, changed fields are logged as dated amendments in the
+   document; 24 hours after the first save the record locks and only addenda can be added. Drive also keeps
+   every version of each file. */
+const LOCK_MS = 24 * 3600e3, REC_FORMAT = 'thalamus-session';
+const lockAt = s => s?.firstSavedAt ? s.firstSavedAt + LOCK_MS : 0;
+const recLocked = s => !!s?.firstSavedAt && Date.now() > lockAt(s);
+function fieldSnap(s) { const o = {}; for (const [id, f] of Object.entries(s.fields || {})) if (f?.value) o[id] = String(f.value); return o; }
+function snapDiff(s) {
+  const prev = s.savedSnap || {}, cur = fieldSnap(s), out = [];
+  for (const id of new Set([...Object.keys(prev), ...Object.keys(cur)]))
+    if ((prev[id] || '') !== (cur[id] || '')) out.push({ id, label: shortLabel(FIELD[id]?.label || id), from: prev[id] || '', to: cur[id] || '' });
+  return out;
+}
+function amendDocHtml(s) {
+  let h = '';
+  if (s.amendments?.length) h += '<h2>תיקונים אחרי השמירה הראשונה</h2>' + s.amendments.map(a => `<h3>תיקון, ${fmtWhen(a.at)}</h3><ul>${a.changes.map(c =>
+    `<li><b>${esc(c.label)}:</b> ${c.from && c.to ? `«${esc(c.from)}» ← «${esc(c.to)}»` : c.to ? `נוסף «${esc(c.to)}»` : `נמחק «${esc(c.from)}»`}</li>`).join('')}</ul>`).join('');
+  if (s.addenda?.length) h += '<h2>נספחים</h2>' + s.addenda.map(a => `<h3>נספח, ${fmtWhen(a.at)}</h3><p>${esc(a.text).replace(/\n/g, '<br>')}</p>`).join('');
+  return h;
+}
+function recordData(s) {
+  const { insDirty, ...rest } = s; // working state that means nothing in a saved record
+  return { format: REC_FORMAT, v: 1, savedAt: new Date().toISOString(), session: rest };
+}
+const recordProps = s => ({ ca: 'session', sid: s.id, started: s.startedAt, region: s.region, type: s.type, doc: s.docId || '', first: String(s.firstSavedAt || '') });
+async function upsertJson(id, name, obj, parent, props) {
+  const boundary = 'thj' + Math.random().toString(36).slice(2);
+  const meta = id ? { name, appProperties: props } : { name, mimeType: 'application/json', parents: [parent], appProperties: props };
+  const body = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(obj)}\r\n--${boundary}--`;
+  const url = id ? `https://www.googleapis.com/upload/drive/v3/files/${encodeURIComponent(id)}?uploadType=multipart&fields=id` : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id';
+  try { return (await (await gfetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': `multipart/related; boundary=${boundary}` }, body })).json()).id; }
+  catch (e) { if (id && (e.status === 404 || e.status === 403)) return upsertJson(null, name, obj, parent, props); throw e; }
+}
+async function driveList(q, fields) {
+  const out = []; let page = '';
+  do {
+    const r = await gfetch(`${DAPI}?q=${encodeURIComponent(q)}&fields=nextPageToken,files(${fields})&spaces=drive&pageSize=200&orderBy=modifiedTime desc${page ? '&pageToken=' + encodeURIComponent(page) : ''}`);
+    const j = await r.json(); out.push(...(j.files || [])); page = j.nextPageToken || '';
+  } while (page && out.length < 3000);
+  return out;
+}
+async function findRoot() {
+  if (settings.rootFolderId && await folderAlive(settings.rootFolderId)) return settings.rootFolderId;
+  return (await driveFind(`mimeType='application/vnd.google-apps.folder' and appProperties has { key='ca' and value='root' } and trashed=false`))[0]?.id || '';
+}
+// the patients screen: every patient folder with its saved sessions (and older sessions saved as documents only)
+let REC = { loading: false, err: '', list: null, q: '', stale: false };
+async function loadRecords() {
+  REC.loading = true; REC.err = ''; if (view === 'records') renderRecords();
+  try {
+    const root = await findRoot();
+    if (!root) { REC.list = []; return; }
+    const folders = await driveList(`mimeType='application/vnd.google-apps.folder' and '${root}' in parents and trashed=false`, 'id,name');
+    const byFolder = new Map(folders.map(f => [f.id, { name: f.name, folderId: f.id, sessions: [], legacy: [] }]));
+    const recs = await driveList(`appProperties has { key='ca' and value='session' } and trashed=false`, 'id,name,parents,modifiedTime,appProperties');
+    const used = new Set();
+    for (const f of recs) {
+      const pt = byFolder.get(f.parents?.[0]); if (!pt) continue;
+      const a = f.appProperties || {};
+      if (a.doc) used.add(a.doc);
+      pt.sessions.push({ id: f.id, started: a.started || f.modifiedTime, region: a.region || '', type: a.type || '', first: +a.first || 0, modified: f.modifiedTime });
+    }
+    const docs = await driveList(`mimeType='application/vnd.google-apps.document' and name contains 'מפגש' and trashed=false`, 'id,name,parents,modifiedTime,webViewLink');
+    for (const d of docs) { const pt = byFolder.get(d.parents?.[0]); if (pt && !used.has(d.id)) pt.legacy.push({ id: d.id, name: d.name, link: d.webViewLink, modified: d.modifiedTime }); }
+    const last = p => [...p.sessions.map(x => x.started), ...p.legacy.map(x => x.modified)].sort().pop() || '';
+    REC.list = [...byFolder.values()].map(p => ({ ...p, sessions: p.sessions.sort((a, b) => String(b.started).localeCompare(String(a.started))), last: last(p) }))
+      .sort((a, b) => String(b.last).localeCompare(String(a.last)));
+    for (const p of REC.list) { const i = patients.findIndex(x => x.name === p.name); if (i < 0) patients.push({ name: p.name, folderId: p.folderId, region: p.sessions[0]?.region || '', last: p.last }); else patients[i].folderId ||= p.folderId; }
+    savePatients(); REC.stale = false;
+  } catch (e) { REC.err = e.message; }
+  finally { REC.loading = false; if (view === 'records') renderRecords(); }
+}
+const recBadge = r => !r.first ? '' : Date.now() > r.first + LOCK_MS ? '<span class="badge">נעול</span>' : `<span class="badge chk">אפשר לתקן עד ${fmtWhen(r.first + LOCK_MS)}</span>`;
+const safeDocLink = u => /^https:\/\/docs\.google\.com\//.test(u || '') ? u : '';
+function recListHtml() {
+  if (REC.loading && !REC.list) return `<section class="card compact"><span class="spin"></span><span class="hint">טוען את המטופלים מ-Drive…</span></section>`;
+  if (REC.err) return `<div class="err" role="alert">הטעינה מ-Drive נכשלה: ${esc(REC.err)}</div><button class="btn" data-act="recReload">נסה שוב</button>`;
+  if (!REC.list) return `<section class="card compact"><span class="hint">המטופלים נטענים מ-Drive אחרי התחברות.</span><button class="btn sm" data-act="recReload">התחבר וטען</button></section>`;
+  const q = REC.q.trim(), list = REC.list.filter(p => !q || p.name.includes(q));
+  if (!list.length) return `<section class="card compact"><span class="hint">${q ? 'אין מטופל בשם הזה.' : 'עוד אין מפגשים שמורים ב-Drive.'}</span></section>`;
+  return list.map(p => `<section class="card"><div class="card-h cat-str"><span class="glyph">${ICON.person}</span><h2>${esc(p.name)}</h2>
+      <span class="end"><button class="btn sm" data-act="followUp" data-name="${esc(p.name)}" data-region="${esc(p.sessions[0]?.region || '')}">מפגש מעקב</button></span></div>
+    <ul class="list">${p.sessions.map(r => `<li><div class="grow"><b>${fmtWhen(r.started)}</b><span>${esc(r.region)}${r.type ? ' · ' + esc(r.type) : ''} ${recBadge(r)}</span></div>
+      <button class="btn sm" data-act="openRec" data-id="${esc(r.id)}">פתח</button></li>`).join('')}
+    ${p.legacy.map(d => `<li><div class="grow"><b>${esc(d.name.replace(/\s*—.*$/, ''))}</b><span>נשמר בגרסה קודמת, בלי קובץ נתונים: לקריאה ב-Drive בלבד</span></div>
+      ${safeDocLink(d.link) ? `<a class="btn sm" href="${esc(safeDocLink(d.link))}" target="_blank" rel="noopener">פתח ב-Drive</a>` : ''}</li>`).join('')}</ul></section>`).join('');
+}
+function renderRecords() {
+  document.body.className = 'home';
+  $('#app').innerHTML = `<div class="shell"><main class="main">
+  <div class="toolbar page"><div class="lead"><button class="icon-btn glass pgback" data-act="home" aria-label="חזרה למסך הבית" title="חזרה">${ICON.back}</button></div><div class="trail"><div class="capsule glass">
+    <button class="icon-btn" data-act="recReload" aria-label="רענן מ-Drive" title="רענן מ-Drive"${REC.loading ? ' disabled' : ''}>${REC.loading ? '<span class="spin"></span>' : ICON.refresh || ICON.clock}</button></div></div></div>
+  <div class="content">
+    <div class="hero-title"><h1>מטופלים</h1><p>המפגשים שנשמרו ב-Drive שלך. מפגש נפתח כאן עם כל הפרטים; 24 שעות אחרי השמירה הראשונה הוא ננעל, ואפשר רק להוסיף לו נספח.</p></div>
+    <input id="recQ" class="inp" type="search" placeholder="חיפוש לפי שם" value="${esc(REC.q)}" aria-label="חיפוש מטופל">
+    <div id="recList" class="recs">${recListHtml()}</div>
+  </div></main></div>`;
+}
+function normalizeRecord(r) {
+  const arr = v => Array.isArray(v) ? v : [];
+  return { processed: 0, analysis: '', cost: 0, stage: 'anamnesis', ...r, segments: arr(r.segments), notes: arr(r.notes), amendments: arr(r.amendments), addenda: arr(r.addenda),
+    fields: r.fields && typeof r.fields === 'object' && !Array.isArray(r.fields) ? r.fields : {} };
+}
+async function openRecord(id) {
+  if (session?.jsonId === id) { tab = 'summary'; return go('session'); }
+  if (session && (!session.savedAt || (session.changedAt || 0) > session.savedAt) && !await confirmDlg('להחליף את המפגש הפתוח?', 'יש מפגש פתוח עם שינויים שלא נשמרו ב-Drive. פתיחת מפגש שמור תחליף אותו במכשיר.', 'פתח בכל זאת', true)) return;
+  toast('טוען את המפגש מ-Drive…', false, 1800);
+  try {
+    const j = await (await gfetch(`${DAPI}/${encodeURIComponent(id)}?alt=media`)).json();
+    if (j?.format !== REC_FORMAT || !j.session?.id || !j.session.patientName) throw new Error('הקובץ לא נראה כמו מפגש של Thalamus');
+    stopPlayer?.();
+    session = normalizeRecord(j.session); session.jsonId = id;
+    saveSession(true); tab = 'summary'; openStages = new Set([session.stage]); lastStatus = { html: '', err: false, raw: false };
+    loadTestNames(); go('session');
+  } catch (e) { toast('הפתיחה נכשלה: ' + e.message, true, 6000); }
+}
+// a reopened session has its recording in Drive; it is downloaded the first time a line is played
+async function audioFromDrive(s) {
+  const ids = Object.entries(s.audioIds || {}); if (!ids.length) return [];
+  toast('מוריד את ההקלטה מ-Drive…', false, 2500);
+  for (const [part, a] of ids) {
+    const blob = await (await gfetch(`${DAPI}/${encodeURIComponent(a.id)}?alt=media`)).blob();
+    const t = s.audioStarts?.[part] || Date.parse(s.startedAt) || Date.now();
+    await audioPut({ sid: s.id, part: +part, t, tEnd: s.audioEnds?.[part] || t + 3 * 3600e3, mime: blob.type || 'audio/webm', blob });
+  }
+  return audioParts(s.id);
+}
+// the previous session of this patient, for a follow-up: shown beside the new one and given to the analysis
+async function attachPrev(s, folderId, interactive = false) {
+  try {
+    await getToken(interactive);
+    const recs = await driveList(`'${folderId}' in parents and appProperties has { key='ca' and value='session' } and trashed=false`, 'id,appProperties');
+    const latest = recs.filter(f => f.appProperties?.sid !== s.id).sort((a, b) => String(b.appProperties?.started).localeCompare(String(a.appProperties?.started)))[0];
+    if (!latest) { s.prev = { none: true }; return; }
+    const j = await (await gfetch(`${DAPI}/${encodeURIComponent(latest.id)}?alt=media`)).json();
+    const ps = j?.session; if (!ps?.fields) return;
+    s.prev = { at: ps.startedAt, region: ps.region, type: ps.type, fields: fieldSnap(ps), exam: ps.ins?.exam || null, id: latest.id };
+    if (session === s) { saveSession(true); if (view === 'session' && tab === 'live') refreshLive(); }
+  } catch { s.prevPending = folderId; }
+}
+const PREV_SECTIONS = ['complaint', 'exam', 'summary'];
+function prevCardHtml() {
+  const s = session, p = s?.prev;
+  if (s?.prevPending && !p) return `<section class="card compact"><div class="card-h cat-hyp"><span class="glyph">${ICON.clock}</span><h2>המפגש הקודם</h2></div><span class="hint">אפשר לטעון את הנתונים מהמפגש הקודם להשוואה.</span><button class="btn sm" data-act="loadPrev">טען מ-Drive</button></section>`;
+  if (!p || p.none) return '';
+  const rows = FORM.filter(sec => PREV_SECTIONS.includes(sec.id)).flatMap(sec => sec.fields).filter(f => p.fields?.[f.id]);
+  return `<details class="card vizfold prev"><summary><span class="glyph">${ICON.clock}</span><h2>המפגש הקודם</h2><span class="muted num">${fmtDate(p.at)}</span>${ICON.chev}</summary>
+    <div class="prev-b"><p class="muted small">${esc(p.region || '')}${p.type ? ' · ' + esc(p.type) : ''}</p><dl>${rows.map(f => `<dt>${esc(shortLabel(f.label))}</dt><dd>${escN(p.fields[f.id])}</dd>`).join('')}</dl>
+    ${p.id ? `<button class="btn sm" data-act="openRec" data-id="${esc(p.id)}">פתח את המפגש הקודם</button>` : ''}</div></details>`;
+}
+const prevAsText = s => !s.prev?.fields ? '' : `\n\n<previous_session date="${fmtDate(s.prev.at)}" region="${s.prev.region || ''}">\n${Object.entries(s.prev.fields).filter(([id]) => FIELD[id] && id !== 'name').map(([id, v]) => `${shortLabel(FIELD[id].label)}: ${v}`).join('\n')}\n</previous_session>`;
+// a locked record: read-only, with addenda
+function renderRecord() {
+  const s = session; document.body.className = 'home';
+  $('#app').innerHTML = `<div class="shell"><main class="main">
+  <div class="toolbar page"><div class="lead"><button class="icon-btn glass pgback" data-act="home" aria-label="חזרה למסך הבית" title="חזרה">${ICON.back}</button></div><div class="trail"><div class="capsule glass">
+    ${s.folderId ? `<a class="icon-btn" href="https://drive.google.com/drive/folders/${encodeURIComponent(s.folderId)}" target="_blank" rel="noopener" aria-label="פתח את התיקייה ב-Drive" title="פתח ב-Drive">${ICON.ext}</a>` : ''}</div></div></div>
+  <div class="content">
+    <div class="ptitle"><div><h1>${esc(s.patientName)}</h1><div class="sub">${esc(s.region)} · ${esc(s.type)} · ${fmtWhen(s.startedAt)}</div></div></div>
+    <div class="banner lockd" role="note">${ICON.key}<span>המפגש נשמר לראשונה ב-${fmtWhen(s.firstSavedAt)} וננעל לעריכה ב-${fmtWhen(lockAt(s))}. אפשר להוסיף נספח: הוא נשמר בסוף המסמך עם התאריך.</span></div>
+    <section class="card" aria-labelledby="addH"><div class="card-h cat-note"><span class="glyph">${ICON.note}</span><h2 id="addH">נספח חדש</h2></div>
+      <textarea id="addText" class="inp" rows="4" placeholder="מה להוסיף לרשומה, למשל תוצאת הדמיה שהגיעה"></textarea>
+      <div id="addErr" class="err" role="alert" hidden></div>
+      <button class="btn primary" data-act="addendum" style="margin-top:10px">הוסף נספח ושמור ב-Drive</button></section>
+    <section class="card" aria-labelledby="docH"><div class="card-h cat-rec"><span class="glyph">${ICON.doc}</span><h2 id="docH">המסמך</h2></div><div class="docprev">${docPrevHtml(s)}</div></section>
+    ${vizFoldHtml(vizCards('all', true))}
+    <button class="btn block" data-act="closeRecord">סגור (המפגש נשאר ב-Drive)</button>
+  </div></main></div>`;
+}
+async function addAddendum(btn) {
+  const s = session, ta = $('#addText'), text = ta?.value.trim(), err = $('#addErr');
+  if (!text) { toast('כתוב את הנספח', true); ta?.focus(); return; }
+  const entry = { at: Date.now(), text };
+  (s.addenda ||= []).push(entry); saveSession(true);
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> שומר…';
+  try { await saveToDrive(m => { btn.innerHTML = `<span class="spin"></span> ${esc(m)}`; }); toast('הנספח נשמר ב-Drive'); renderRecord(); }
+  catch (e) { s.addenda = s.addenda.filter(a => a !== entry); saveSession(true); btn.disabled = false; btn.textContent = 'הוסף נספח ושמור ב-Drive'; if (err) { err.textContent = 'השמירה נכשלה: ' + e.message; err.hidden = false; } }
 }
 
 /* ---------------- views ---------------- */
@@ -2287,12 +2485,16 @@ function saveRowHtml(nv) {
     <button class="btn block" data-act="resume">חזרה למפגש</button>`;
   const err = fin.err ? `<div class="err" role="alert">השמירה נכשלה: ${esc(fin.err)}</div>` : '';
   if (!clientId()) return err + `<div class="err">כדי לשמור ל-Drive צריך Google Client ID בהגדרות, בלשונית API.</div><button class="btn block" data-act="settings" data-tab="api">להגדרות API</button>`;
-  return err + (nv ? `<p class="muted small">${nv === 1 ? 'שדה אחד שלא אומת יסומן' : nv + ' שדות שלא אומתו יסומנו'} במסמך כ"לא אומת".</p>` : '') +
+  const changed = s.firstSavedAt && s.savedSnap ? snapDiff(s).length : 0;
+  const legal = !s.firstSavedAt ? `<div class="banner amend" role="note"><b>אחרי השמירה זו רשומה קלינית.</b> במשך 24 שעות אפשר לתקן אותה, וכל תיקון נרשם במסמך עם התאריך ומה השתנה. אחר כך המפגש ננעל, ואפשר רק להוסיף נספח. Drive שומר גם כל גרסה של הקבצים.</div>`
+    : `<p class="muted small">${changed ? (changed === 1 ? 'שדה אחד השתנה' : changed + ' שדות השתנו') + ' מאז השמירה: השינויים יירשמו במסמך כתיקון.' : 'אין שינויים בטופס מאז השמירה.'} אפשר לתקן עד ${fmtWhen(lockAt(s))}.</p>`;
+  return err + legal + (nv ? `<p class="muted small">${nv === 1 ? 'שדה אחד שלא אומת יסומן' : nv + ' שדות שלא אומתו יסומנו'} במסמך כ"לא אומת".</p>` : '') +
     `<button class="btn primary block" data-act="saveDrive" ${fin.phase !== 'review' || fin.filling ? 'disabled' : ''}>${fin.err ? 'נסה שוב' : s.savedAt ? 'עדכן ב-Drive' : 'שמור ל-Drive'}</button>
     <button class="btn block" data-act="resume">חזרה למפגש</button>`;
 }
 function renderFinish() {
   const s = session; if (!s) { view = 'home'; return renderHome(); }
+  if (recLocked(s)) return renderRecord();
   document.body.className = 'fin';
   const all = fieldsFor(s), ver = all.filter(needsReview), must = all.filter(f => !s.fields[f.id]?.value && impOf(f) === 1);
   const tasks = (s.notes || []).filter(n => n.task);
@@ -2328,6 +2530,8 @@ function render() {
   applyLayout(); closePop();
   if (needsSignin()) return renderSignin();
   if (isLocked()) return renderLocked();
+  if (view === 'records') return renderRecords();
+  if (session && recLocked(session) && (view === 'session' || view === 'finish')) return renderRecord();
   if (view === 'finish' && session) return renderFinish();
   if (view === 'session' && session) return renderSession();
   return renderHome();
@@ -2339,6 +2543,7 @@ function renderHome() {
   $('#app').innerHTML = `<div class="shell"><main class="main">
   <div class="toolbar page"><div class="lead"></div><div class="trail"><div class="capsule glass">
     ${MAP_URL ? `<a class="icon-btn" href="${MAP_URL}" aria-label="מפת הדרך" title="מפת הדרך">${ICON.map}</a>` : ''}
+    <button class="icon-btn" data-act="records" aria-label="מטופלים ומפגשים שמורים" title="מטופלים ומפגשים שמורים">${ICON.person}</button>
     <button class="icon-btn" data-act="cycleTheme" aria-label="מצב תצוגה" title="מצב תצוגה">${ICON.theme}</button>
     <button class="icon-btn" data-act="settings" aria-label="הגדרות" title="הגדרות">${ICON.gear}</button></div></div></div>
   <div class="content">
@@ -2362,10 +2567,10 @@ function renderHome() {
       <label class="check"><span>המטופל/ת הסכים/ה להקלטת המפגש ולתמלולו לצורך תיעוד</span><input type="checkbox" role="switch" class="switch" id="pConsent"></label>
       <button class="btn primary block" style="margin-top:16px" data-act="start">התחל מפגש</button>
     </section>
-    ${patients.length ? `<section class="card" aria-labelledby="ptH"><div class="card-h cat-str"><span class="glyph">${ICON.person}</span><h2 id="ptH">מטופלים</h2><span class="end meta">${patients.length}</span></div><ul class="list">
+    ${patients.length ? `<section class="card" aria-labelledby="ptH"><div class="card-h cat-str"><span class="glyph">${ICON.person}</span><h2 id="ptH">מטופלים</h2><span class="end"><button class="btn sm" data-act="records">כל המפגשים השמורים</button></span></div><ul class="list">
       ${patients.slice(0, 30).map(p => `<li><div class="grow"><b>${esc(p.name)}</b><span>${esc(p.region || '')}${p.last ? ' · ' + fmtDate(p.last) : ''}</span></div>
         <button class="btn sm" data-act="pick" data-name="${esc(p.name)}" data-region="${esc(p.region || '')}">מעקב</button></li>`).join('')}
-    </ul></section>` : ''}
+    </ul></section>` : `<section class="card compact"><div class="card-h cat-str"><span class="glyph">${ICON.person}</span><h2>מטופלים</h2></div><span class="hint">מפגשים שנשמרו ב-Drive נפתחים מכאן עם כל הפרטים.</span><button class="btn sm" data-act="records">פתח</button></section>`}
     </div>
     <p class="muted small" style="text-align:center;margin:16px 0">עלות API מצטברת (הערכה): $${(usage.total || 0).toFixed(2)}</p>
   </div></main></div>`;
@@ -2378,6 +2583,7 @@ function navHtml() {
 }
 function renderSession() {
   const s = session;
+  if (recLocked(s)) return renderRecord(); // a locked record is never shown as an editable workspace
   document.body.className = 'sess'; syncStage();
   $('#app').innerHTML = `<div class="shell">
   <aside class="rail" aria-label="ניווט"><div class="rail-in glass">
@@ -2479,7 +2685,7 @@ async function renderTestLinks() {
 }
 function ptitleHtml() {
   const s = session;
-  return `<div class="ptitle"><div><h1>${esc(s.patientName)}</h1><div class="sub"><button class="rgbtn" data-act="region" aria-haspopup="dialog" aria-label="אזור המפגש: ${esc(s.region)}. לחץ כדי לשנות">${esc(s.region)}${ICON.chev}</button> · ${esc(s.type)} · <span class="savestate" id="saveState" role="status"></span></div></div></div>${regionBanner()}`;
+  return `<div class="ptitle"><div><h1>${esc(s.patientName)}</h1><div class="sub"><button class="rgbtn" data-act="region" aria-haspopup="dialog" aria-label="אזור המפגש: ${esc(s.region)}. לחץ כדי לשנות">${esc(s.region)}${ICON.chev}</button> · ${esc(s.type)} · <span class="savestate" id="saveState" role="status"></span></div></div></div>${regionBanner()}${s.firstSavedAt && !recLocked(s) ? `<div class="banner amend" role="note">המפגש נשמר ב-Drive. אפשר לתקן עד ${fmtWhen(lockAt(s))}: כל שינוי יירשם במסמך כתיקון עם התאריך. אחר כך המפגש ננעל ואפשר רק להוסיף נספח.</div>` : ''}`;
 }
 function renderTab() {
   if (!NAV.some(n => n[0] === tab)) tab = 'live';
@@ -2648,7 +2854,7 @@ addEventListener('scroll', () => { if (popEl && popKey !== 'feed') placePop(); }
 /* ---------------- the live view ---------------- */
 function liveHtml() {
   const sm = smart();
-  return ptitleHtml() +
+  return ptitleHtml() + prevCardHtml() +
     (smartGraphics() ? `<div class="grid" id="vizGrid">${vizCards(session.stage, false).join('')}</div>` : '') +
     missingHtml() +
     (sm.record ? recordHtml() : '') +
@@ -3214,6 +3420,13 @@ document.addEventListener('click', async e => {
     }
     case 'taskDone': { const n = (session?.notes || []).find(x => x.id === t.dataset.nid); if (n) { n.done = !n.done; touch(); t.setAttribute('aria-pressed', n.done); t.closest('li')?.classList.toggle('done', n.done); } break; }
     case 'signOut': signOut(); break;
+    case 'records': go('records'); if (!REC.list || REC.stale) loadRecords(); break;
+    case 'recReload': loadRecords(); break;
+    case 'openRec': openRecord(t.dataset.id); break;
+    case 'addendum': addAddendum(t); break;
+    case 'closeRecord': if (recording) stopRec(); stopPlayer(); if (session) audioDelete(session.id); session = null; saveSession(true); go(REC.list ? 'records' : 'home'); break;
+    case 'loadPrev': if (session?.prevPending) { const f = session.prevPending; delete session.prevPending; attachPrev(session, f, true).then(() => refreshLive()); } break;
+    case 'followUp': go('home'); requestAnimationFrame(() => { const n = $('#pName'); if (!n) return; n.value = t.dataset.name; if (t.dataset.region) $('#pRegion').value = t.dataset.region; setPType('מפגש מעקב'); n.scrollIntoView({ block: 'center' }); }); break;
     case 'hypoNow': { const before = insState().at.hypo; runInsight(false, ['hypo']).then(() => { const ins = session && insState(); if (ins && ins.at.hypo !== before && !ins.hypo.length) toast('עדיין אין מספיק ממצאים להשערות', false, 2600); }); break; }
     case 'verifyPart': { const s = session, ids = CARD_SRC[t.dataset.part](s).filter(id => s.fields[id]?.value && (s.fields[id].needsCheck || s.fields[id].unverified)); if (ids.length) showSource(ids, t, 'v:' + t.dataset.part); break; }
     case 'noteDel': session.notes = (session.notes || []).filter(n => n.id !== t.dataset.nid); touch(); refreshLive(); if (view === 'finish') renderFinish(); break;
@@ -3309,6 +3522,7 @@ document.addEventListener('toggle', e => {
 let editInsightTimer = null; // a typed field updates the record and graphics too, once the typing pauses
 document.addEventListener('input', e => {
   const t = e.target;
+  if (t.id === 'recQ') { REC.q = t.value; const l = $('#recList'); if (l) l.innerHTML = recListHtml(); return; }
   if (t.matches('#tabBody textarea[data-fid]')) {
     autosize(t);
     const id = t.dataset.fid, val = t.value;
@@ -3343,6 +3557,7 @@ async function startSession() {
   saveSession(true); tab = 'live'; openStages = new Set([session.stage]); lastStatus = { html: '', err: false, raw: false };
   loadTestNames();
   go('session');
+  if (type === 'מפגש מעקב' && session.folderId) attachPrev(session, session.folderId, false).then(() => { if (view === 'session' && tab === 'live') refreshLive(); });
 }
 async function testKey(btn) {
   const f = $('#sAccess'); if (f) { settings.accessCode = f.value.trim(); saveSettings(); }
