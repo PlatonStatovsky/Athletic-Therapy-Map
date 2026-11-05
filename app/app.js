@@ -1665,22 +1665,69 @@ async function upsertDoc(id, name, html, parent) {
    With encryption on, the open session, the patient list and the recordings are stored sealed with it.
    The key is fetched after Google sign-in and kept only in memory, so a device without that sign-in
    holds ciphertext only. */
-const VAULT = { key: null };
+const VAULT = { key: null, raw: null };
 const VAULT_FILE = 'thalamus-vault-key.json';
 function b64(buf) { const u = new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); }
 const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
-async function vaultKeyFromDrive() {
+async function driveVaultFind() {
   const q = encodeURIComponent(`name='${VAULT_FILE}'`);
-  const found = await (await gfetch(`${DAPI}?spaces=appDataFolder&q=${q}&fields=files(id)&pageSize=1`)).json();
-  let raw;
-  if (found.files?.length) raw = unb64((await (await gfetch(`${DAPI}/${found.files[0].id}?alt=media`)).json()).k);
-  else {
-    raw = crypto.getRandomValues(new Uint8Array(32));
-    const boundary = 'thl' + Math.random().toString(36).slice(2);
-    const body = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({ name: VAULT_FILE, parents: ['appDataFolder'] })}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${JSON.stringify({ v: 1, k: b64(raw), created: new Date().toISOString() })}\r\n--${boundary}--`;
-    await gfetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', { method: 'POST', headers: { 'Content-Type': `multipart/related; boundary=${boundary}` }, body });
-  }
-  return crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
+  return ((await (await gfetch(`${DAPI}?spaces=appDataFolder&q=${q}&fields=files(id)&pageSize=1`)).json()).files || [])[0] || null;
+}
+async function driveVaultUpload(raw) {
+  const boundary = 'thl' + Math.random().toString(36).slice(2);
+  const body = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({ name: VAULT_FILE, parents: ['appDataFolder'] })}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${JSON.stringify({ v: 1, k: b64(raw), created: new Date().toISOString() })}\r\n--${boundary}--`;
+  await gfetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', { method: 'POST', headers: { 'Content-Type': `multipart/related; boundary=${boundary}` }, body });
+}
+// the key kept in Drive's hidden app folder (created there when there is none)
+async function driveVaultRaw() {
+  const f = await driveVaultFind();
+  if (f) return unb64((await (await gfetch(`${DAPI}/${f.id}?alt=media`)).json()).k);
+  const raw = crypto.getRandomValues(new Uint8Array(32)); await driveVaultUpload(raw); return raw;
+}
+async function importVault(raw) { VAULT.raw = raw; VAULT.key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']); }
+async function openLocked() {
+  if (LOCKED.session) { session = await unseal(LOCKED.session); LOCKED.session = null; }
+  if (LOCKED.patients) { patients = await unseal(LOCKED.patients); LOCKED.patients = null; }
+}
+/* One Google sign-in opens the encrypted data too: the device key is stored on the device wrapped with a
+   per-account key that the server hands only to a signed-in session (/api/session?vault=1). A backup of the
+   device key goes to Drive's hidden app folder the next time a Drive connection is open. */
+const WRAP_KEY = 'ca.vaultWrap';
+const unb64u = s => unb64(String(s).replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((String(s).length + 3) % 4));
+async function serverWrapKey() {
+  const r = await fetch(SESSION_URL() + '?vault=1', { cache: 'no-store', credentials: 'same-origin' });
+  const j = r.ok ? await r.json() : {};
+  if (!j.vault) throw new Error('vault ' + r.status);
+  return crypto.subtle.importKey('raw', unb64u(j.vault), 'AES-GCM', false, ['encrypt', 'decrypt']);
+}
+async function wrapStore(raw) {
+  const wk = await serverWrapKey(), iv = crypto.getRandomValues(new Uint8Array(12));
+  LS.set(WRAP_KEY, { v: 1, email: AUTH.email, iv: b64(iv), ct: b64(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, wk, raw)) });
+}
+async function wrapLoad() {
+  const w = LS.get(WRAP_KEY, null); if (!w || w.email !== AUTH.email) return null;
+  return new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(w.iv) }, await serverWrapKey(), unb64(w.ct)));
+}
+// after sign-in: open what is sealed, and turn encryption on unless the therapist turned it off
+async function vaultBoot() {
+  if (!AUTH.email || VAULT.key || settings.encryptOff) return;
+  const sealed = !!(LOCKED.session || LOCKED.patients);
+  let raw = null;
+  try { raw = await wrapLoad(); } catch { if (sealed) return; } // the lock screen opens it through Drive
+  if (!raw && sealed) return;
+  try {
+    const fresh = !raw;
+    await importVault(raw || crypto.getRandomValues(new Uint8Array(32)));
+    if (fresh) await wrapStore(VAULT.raw);
+    try { await openLocked(); } catch { VAULT.key = VAULT.raw = null; return; } // sealed with an older key
+    if (!settings.encrypt) { settings.encrypt = true; saveSettings(); saveSession(true); savePatients(); await resealAudio(true); }
+    vaultBackup();
+  } catch (e) { VAULT.key = VAULT.raw = null; console.warn('vault', e); }
+}
+async function vaultBackup() {
+  if (settings.vaultBackup || !VAULT.raw) return;
+  try { await getToken(false); } catch { return; } // only with a Drive connection already open; tried again after the next save
+  try { if (!await driveVaultFind()) await driveVaultUpload(VAULT.raw); settings.vaultBackup = true; saveSettings(); } catch { }
 }
 async function seal(obj) {
   const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -1692,14 +1739,17 @@ async function sealBlob(blob) { const iv = crypto.getRandomValues(new Uint8Array
 // sign in (must start inside the tap), fetch the key, open what was stored sealed
 async function vaultUnlock() {
   const t = getToken(true); await t;
-  VAULT.key = await vaultKeyFromDrive();
-  if (LOCKED.session) { session = await unseal(LOCKED.session); LOCKED.session = null; }
-  if (LOCKED.patients) { patients = await unseal(LOCKED.patients); LOCKED.patients = null; }
+  await importVault(await driveVaultRaw());
+  await openLocked();
+  settings.vaultBackup = true; saveSettings();
+  if (AUTH.email) { try { await wrapStore(VAULT.raw); } catch { } } // from now on the sign-in alone opens it
 }
 const isLocked = () => !!(settings.encrypt && !VAULT.key && (LOCKED.session || LOCKED.patients));
 async function setEncryption(on) {
+  settings.encryptOff = !on; saveSettings();
+  if (on && AUTH.email && !VAULT.key) { await vaultBoot(); if (settings.encrypt) return toast('הנתונים במכשיר מוצפנים. הכניסה עם Google פותחת אותם.', false, 4000); }
   if (on) {
-    await vaultUnlock();
+    if (!VAULT.key) await vaultUnlock();
     settings.encrypt = true; saveSettings();
     saveSession(true); savePatients(); await resealAudio(true);
     toast('הנתונים במכשיר מוצפנים. הפתיחה הבאה תבקש התחברות ל-Google.', false, 5000);
@@ -1780,13 +1830,14 @@ async function onGoogleCredential(resp) {
   if (!r.ok) { if (r.status === 403) google.accounts.id.disableAutoSelect(); return renderSignin(j.error || `הכניסה נכשלה (${r.status})`); }
   AUTH.email = j.email; rememberAuth(j.email);
   toast('מחובר כ-' + j.email, false, 2200);
+  await vaultBoot();
   render();
 }
 async function signOut() {
   try { await fetch(SESSION_URL(), { method: 'DELETE', credentials: 'same-origin' }); } catch { }
   try { window.google?.accounts?.id?.disableAutoSelect(); } catch { }
   AUTH.email = ''; rememberAuth('');
-  closeSettings?.(); renderSignin();
+  location.reload(); // the decrypted data leaves memory; the device keeps only the sealed copy
 }
 
 const KB_CACHE = 'ca-kb-v1', KB_PARSER = 2;
@@ -2227,6 +2278,7 @@ async function saveToDrive(onProgress = () => { }) {
   upsertPatient({ name: s.patientName, folderId: folder, region: s.region, last: s.startedAt });
   saveSession(true); renderAudioBox(); renderSaveState();
   if (REC.list) REC.stale = true;
+  vaultBackup();
   return folder;
 }
 async function saveFiles(s, folder, stamp, onProgress) {
@@ -3291,8 +3343,8 @@ function drBody(t) {
     </div><div class="small" id="kbStatus" style="padding:8px 14px 0"></div></div>`;
   return `
     <div class="group"><h3>הצפנה</h3><div class="gl">
-      <label class="gi"><span class="t">הצפן את הנתונים במכשיר עם חשבון Google<small>המפגש, רשימת המטופלים וההקלטות נשמרים מוצפנים. כל פתיחה של האפליקציה מבקשת התחברות ל-Google.</small></span><input type="checkbox" class="switch" role="switch" data-act="encToggle" ${st.encrypt ? 'checked' : ''} ${clientId() ? '' : 'disabled'}></label>
-    </div><p class="gf">${clientId() ? 'המפתח נשמר בתיקייה נסתרת של האפליקציה ב-Drive שלך ולא במכשיר.' : 'כדי להפעיל צריך Google Client ID בלשונית API.'}</p></div>
+      <label class="gi"><span class="t">הצפן את הנתונים במכשיר עם חשבון Google<small>מופעל כברירת מחדל. המפגש, רשימת המטופלים וההקלטות נשמרים מוצפנים, והכניסה עם Google פותחת אותם בלי התחברות נוספת.</small></span><input type="checkbox" class="switch" role="switch" data-act="encToggle" ${st.encrypt ? 'checked' : ''} ${clientId() ? '' : 'disabled'}></label>
+    </div><p class="gf">${AUTH.email ? 'מפתח ההצפנה שמור במכשיר רק בצורה נעולה, ונפתח עם הכניסה לחשבון שלך. עותק גיבוי שלו נשמר בתיקייה נסתרת של האפליקציה ב-Drive.' : 'בלי כניסה עם Google, הפתיחה מבקשת התחברות ל-Drive בכל פעם.'}</p></div>
     <div class="group"><h3>שימוש</h3><div class="gl"><div class="gi"><span class="t">עלות API מצטברת (הערכה)</span><b class="num">$${(usage.total || 0).toFixed(2)}</b></div></div></div>
     <div class="group"><h3>מחיקה</h3><div class="gl"><div class="gi"><span class="t">מחק את כל הנתונים המקומיים<small>מפתחות, רשימת מטופלים ומפגש פתוח. קבצים ב-Drive לא נמחקים.</small></span><button class="btn sm danger" data-act="wipe">מחק</button></div></div></div>`;
 }
@@ -3661,5 +3713,5 @@ async function refreshKb(btn) {
 LS.del(K.kb); // v1 kept document texts in localStorage; they now live in Cache Storage
 applyTheme();
 // first the sign-in check (fast; offline falls back to the last sign-in), then the encryption lock
-authCheck().then(() => { if (needsSignin()) renderSignin(); else if (isLocked()) renderLocked(); else render(); });
+authCheck().then(async () => { if (needsSignin()) return renderSignin(); await vaultBoot(); if (isLocked()) renderLocked(); else render(); });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => { });

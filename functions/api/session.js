@@ -2,6 +2,8 @@
 //   POST {credential}  a Google ID token from "Sign in with Google": checked against Google's keys, this app's
 //                      client ID and the ALLOWED_EMAILS list, then answered with a 30-day session cookie.
 //   GET                {configured, email} of the signed-in account (401 when not signed in).
+//                      With ?vault=1 it also returns "vault": a per-account key the app uses to wrap its device
+//                      encryption key, so the one Google sign-in also opens the encrypted data on the device.
 //   DELETE             signs out (clears the cookie).
 // Settings in Cloudflare (Settings → Variables and Secrets):
 //   ALLOWED_EMAILS     required: the Google accounts allowed in, separated by commas. Kept out of the public repo.
@@ -50,6 +52,12 @@ export async function readSession(request, env) {
     return x * 1000 > Date.now() && allowed(env).includes(e) ? e : '';
   } catch { return ''; }
 }
+// 32 bytes that only a signed-in session of this account can get; derived, never stored
+async function vaultWrapKey(env, email) {
+  const base = await crypto.subtle.importKey('raw', te.encode(env.SESSION_SECRET || env.ANTHROPIC_API_KEY), 'HKDF', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({ name: 'HKDF', hash: 'SHA-256', salt: new Uint8Array(0), info: te.encode('thalamus-vault-v1:' + email) }, base, 256);
+  return b64u(bits);
+}
 const cookie = (value, maxAge) => `${COOKIE}=${value}; Path=/api; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
 
 let JWKS = null, jwksAt = 0;
@@ -91,7 +99,9 @@ export async function onRequestPost({ request, env }) {
 export async function onRequestGet({ request, env }) {
   if (!configured(env)) return json({ configured: false });
   const email = await readSession(request, env);
-  return email ? json({ configured: true, email }) : json({ configured: true }, 401);
+  if (!email) return json({ configured: true }, 401);
+  const vault = new URL(request.url).searchParams.get('vault') === '1' ? await vaultWrapKey(env, email) : undefined;
+  return json({ configured: true, email, ...(vault ? { vault } : {}) });
 }
 export const onRequestDelete = () => json({ ok: true }, 200, { 'set-cookie': cookie('', 0) });
 export const onRequest = () => json({ error: 'method not allowed' }, 405);
