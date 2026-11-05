@@ -1,15 +1,13 @@
 // Cloudflare Pages Function: POST /api/soniox-key
 // Hands the clinic assistant a short-lived Soniox key for one transcription stream.
-// The account key stays here (secret SONIOX_API_KEY). Callers must send the access code
-// (secret APP_ACCESS_CODE) in the x-access-code header; without that secret the function refuses
-// to work, so a deployment without it can never spend Soniox credit for strangers.
+// The account key stays here (secret SONIOX_API_KEY). Who may call is checked in _middleware.js:
+// the Google sign-in cookie, or the access code (APP_ACCESS_CODE) as a fallback.
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), {
   status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }
 });
 
 export async function onRequestPost({ request, env }) {
-  if (!env.APP_ACCESS_CODE || !env.SONIOX_API_KEY) return json({ error: 'השרת לא הוגדר: חסרים APP_ACCESS_CODE או SONIOX_API_KEY' }, 500);
-  if (request.headers.get('x-access-code') !== env.APP_ACCESS_CODE) return json({ error: 'קוד גישה שגוי' }, 401);
+  if (!env.SONIOX_API_KEY) return json({ error: 'השרת לא הוגדר: חסר SONIOX_API_KEY' }, 500);
   const r = await fetch('https://api.soniox.com/v1/auth/temporary-api-key', {
     method: 'POST',
     headers: { Authorization: `Bearer ${env.SONIOX_API_KEY}`, 'Content-Type': 'application/json' },
@@ -22,5 +20,5 @@ export async function onRequestPost({ request, env }) {
 }
 
 // a quick check that the secrets reached this deployment (says nothing about their values)
-export const onRequestGet = ({ env }) => json({ ok: true, configured: Boolean(env.SONIOX_API_KEY && env.APP_ACCESS_CODE) });
+export const onRequestGet = ({ env }) => json({ ok: true, configured: Boolean(env.SONIOX_API_KEY) });
 export const onRequest = () => json({ error: 'method not allowed' }, 405);

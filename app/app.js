@@ -18,7 +18,7 @@ const escN = t => esc(t).replace(NUM_RE, (m, ent, num) => ent || `<bdi dir="ltr"
 const pad = n => String(n).padStart(2, '0');
 
 /* ---------------- storage ---------------- */
-const K = { settings: 'ca.settings', patients: 'ca.patients', session: 'ca.session', kb: 'ca.kbcache', usage: 'ca.usage' };
+const K = { settings: 'ca.settings', patients: 'ca.patients', session: 'ca.session', kb: 'ca.kbcache', usage: 'ca.usage', auth: 'ca.auth' };
 const LS = {
   get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { toast('שמירה מקומית נכשלה: ' + e.message, true); return false; } },
@@ -283,10 +283,12 @@ function trackUsage(model, u) {
   if (session) { session.cost = (session.cost || 0) + cost; saveSession(); }
   return cost;
 }
-// Claude calls go through the site's own function (/api/claude), which holds the API key as a server secret
+// Claude calls go through the site's own function (/api/claude), which holds the API key as a server secret.
+// Who may call: the Google sign-in cookie (sent by the browser itself), or the access code as a fallback.
 const CLAUDE_URL = path => new URL('../api/claude/' + path, location.href).href;
+const apiHeaders = () => ({ 'content-type': 'application/json', ...(settings.accessCode ? { 'x-access-code': settings.accessCode } : {}) });
 function apiErrText(status, msg) {
-  if (status === 401) return /קוד גישה/.test(msg) ? 'קוד הגישה שגוי. בדוק אותו בהגדרות, בלשונית API.' : 'מפתח ה-API בשרת לא תקין (401)';
+  if (status === 401) { if (/Google/.test(msg)) { signinExpired(); return 'החיבור עם Google פג. צריך להיכנס שוב.'; } return /קוד גישה/.test(msg) ? 'קוד הגישה שגוי. בדוק אותו בהגדרות, בלשונית API.' : 'מפתח ה-API בשרת לא תקין (401)'; }
   if (status === 404 || status === 405) return 'שירות ה-AI של האתר לא נמצא. העוזר צריך לרוץ מהכתובת של האתר ב-Cloudflare.';
   if (status === 403) return 'אין הרשאה למודל או לחשבון (403): ' + msg;
   if (status === 429) return 'יותר מדי בקשות / אין יתרה (429): ' + msg;
@@ -295,11 +297,11 @@ function apiErrText(status, msg) {
   return `שגיאת API ${status}: ${msg}`;
 }
 async function callClaude(body, { onText, signal } = {}) {
-  if (!settings.accessCode) throw new Error('חסר קוד גישה. אפשר להוסיף אותו בהגדרות, בלשונית API.');
+  if (!aiReady()) throw new Error('צריך להיכנס עם Google (או להוסיף קוד גישה בהגדרות, בלשונית API).');
   const stream = !!onText;
   const resp = await fetch(CLAUDE_URL('messages'), {
     method: 'POST', signal,
-    headers: { 'content-type': 'application/json', 'x-access-code': settings.accessCode },
+    headers: apiHeaders(),
     body: JSON.stringify({ ...body, stream })
   });
   if (!resp.ok) {
@@ -331,7 +333,7 @@ async function callClaude(body, { onText, signal } = {}) {
 }
 async function countTokens(body) {
   const r = await fetch(CLAUDE_URL('messages/count_tokens'), {
-    method: 'POST', headers: { 'content-type': 'application/json', 'x-access-code': settings.accessCode }, body: JSON.stringify(body)
+    method: 'POST', headers: apiHeaders(), body: JSON.stringify(body)
   });
   if (!r.ok) throw new Error('count_tokens ' + r.status);
   return (await r.json()).input_tokens;
@@ -560,7 +562,7 @@ function applyUpdates(updates, transcriptText = '') {
    so every item points back to fields, and each field points back to the transcript words it came from. */
 const SMART_DEFAULT = { record: true, notes: true, body: true, timeline: true, exam: true, hypo: true, next: false };
 const smart = () => ({ ...SMART_DEFAULT, ...(settings.smart || {}) });
-const aiReady = () => !!settings.accessCode;
+const aiReady = () => !!(AUTH.email || settings.accessCode);
 const smartGraphics = () => { const m = smart(); return m.body || m.timeline || m.exam || m.hypo; };
 const smartAny = () => { const m = smart(); return Object.values(m).some(Boolean); };
 const PART_FIELDS = {
@@ -1486,10 +1488,10 @@ function clinicalTerms() {
 async function sonioxKey() {
   let r;
   try {
-    r = await fetch(new URL('../api/soniox-key', location.href).href, { method: 'POST', headers: { 'content-type': 'application/json', 'x-access-code': settings.accessCode || '' }, body: '{}' });
+    r = await fetch(new URL('../api/soniox-key', location.href).href, { method: 'POST', headers: apiHeaders(), body: '{}' });
   } catch { throw new Error('אין חיבור לשרת של האתר'); }
   if (r.status === 404 || r.status === 405) throw new Error('מנוע Soniox עובד רק מהכתובת של האתר ב-Cloudflare');
-  if (r.status === 401) throw new Error('קוד הגישה לתמלול שגוי — בדוק בהגדרות');
+  if (r.status === 401) { if (!settings.accessCode) signinExpired(); throw new Error(settings.accessCode ? 'קוד הגישה לתמלול שגוי — בדוק בהגדרות' : 'החיבור עם Google פג. צריך להיכנס שוב.'); }
   let j = {}; try { j = await r.json(); } catch { }
   if (!r.ok || !(j.api_key || j.key)) throw new Error('לא התקבל מפתח זמני ל-Soniox' + (j.error ? ': ' + j.error : ` (${r.status})`));
   return j.api_key || j.key;
@@ -1582,11 +1584,11 @@ try { const t = JSON.parse(sessionStorage.getItem('ca.gtoken') || 'null'); if (t
 function getToken(interactive = true) {
   return new Promise((resolve, reject) => {
     if (gToken && Date.now() < gExp - 60000) return resolve(gToken);
-    if (!settings.clientId) return reject(new Error('חסר Google Client ID בהגדרות'));
+    if (!clientId()) return reject(new Error('חסר Google Client ID בהגדרות'));
     if (!window.google?.accounts?.oauth2) return reject(new Error('ספריית ההתחברות של Google לא נטענה — בדוק אינטרנט ורענן'));
     if (!interactive) return reject(new Error('נדרשת התחברות ל-Google'));
     const client = google.accounts.oauth2.initTokenClient({
-      client_id: settings.clientId, scope: SCOPES,
+      client_id: clientId(), scope: SCOPES, ...(AUTH.email ? { login_hint: AUTH.email } : {}),
       callback: r => {
         if (r.error) return reject(new Error(r.error_description || r.error));
         gToken = r.access_token; gExp = Date.now() + (r.expires_in || 3600) * 1000;
@@ -1715,6 +1717,74 @@ function renderLocked(err = '') {
       <p class="fine">המפתח נשמר בתיקייה נסתרת של האפליקציה ב-Google Drive שלך, ונשאר רק בזיכרון של הדפדפן עד שהדף נסגר.</p></section>
     <button class="linkbtn small" style="justify-self:center" data-act="vaultReset">אין לי גישה לחשבון: מחק את הנתונים המוצפנים במכשיר</button>
   </div></main></div>`;
+}
+
+/* ---------------- Google sign-in: the assistant opens only for accounts on the server's list ----------------
+   The server (/api/session) checks the Google ID token and ALLOWED_EMAILS and sets an HttpOnly cookie for 30 days;
+   the paid functions accept that cookie. When the server has no list yet (or the app runs off the site),
+   the app opens as before and the access code still works. */
+const DEFAULT_CLIENT_ID = '1009141837069-m296bl86eh7jvej9fprpfdhhaihrot1m.apps.googleusercontent.com';
+const clientId = () => settings.clientId || DEFAULT_CLIENT_ID;
+const AUTH = { configured: false, email: '', checked: false };
+const SESSION_URL = () => new URL('../api/session', location.href).href;
+const needsSignin = () => AUTH.configured && !AUTH.email;
+function rememberAuth(email) { if (email) LS.set(K.auth, { email, until: Date.now() + 29 * 864e5 }); else { try { localStorage.removeItem(K.auth); } catch { } } }
+async function authCheck() {
+  try {
+    const r = await fetch(SESSION_URL(), { cache: 'no-store', credentials: 'same-origin' });
+    const j = await r.json().catch(() => ({}));
+    AUTH.configured = j.configured === true; // 404 (no server functions) or not configured: open as before
+    AUTH.email = r.ok ? String(j.email || '') : '';
+  } catch { // offline: a sign-in from the last 29 days still opens the app; the server checks again when online
+    const a = LS.get(K.auth, null);
+    AUTH.configured = true; AUTH.email = a && a.until > Date.now() ? a.email : '';
+  }
+  if (AUTH.configured) rememberAuth(AUTH.email);
+  AUTH.checked = true;
+}
+// a cookie that expired mid-session: back to the sign-in screen, but never in the middle of a recording
+function signinExpired() {
+  if (!AUTH.email) return;
+  AUTH.email = ''; rememberAuth('');
+  if (typeof recording !== 'undefined' && recording) return toast('החיבור עם Google פג. ההקלטה ממשיכה; היכנס שוב אחרי שתעצור אותה.', true, 6000);
+  setTimeout(() => renderSignin('החיבור פג. צריך להיכנס שוב.'), 0);
+}
+// the Google library loads async; wait for it instead of failing on a slow connection
+function waitGoogleId(ms = 10000) {
+  return new Promise((res, rej) => { const t0 = Date.now(); (function poll() { if (window.google?.accounts?.id) return res(); if (Date.now() - t0 > ms) return rej(new Error('ספריית ההתחברות של Google לא נטענה — בדוק אינטרנט ורענן')); setTimeout(poll, 150); })(); });
+}
+function renderSignin(err = '') {
+  document.body.className = 'home';
+  $('#app').innerHTML = `<div class="shell"><main class="main"><div class="content lock">
+    <div class="hero-title"><h1><span class="logo">${ICON.mark}</span>Thalamus</h1><p>העוזר הקליני פתוח רק לחשבונות Google מורשים.</p></div>
+    <section class="card signin"><div id="gsiBtn" class="gsi-slot" aria-live="polite"><span class="spin"></span></div>
+      <div class="err" role="alert" id="signinErr"${err ? '' : ' hidden'}>${esc(err)}</div>
+      <p class="fine">אחרי הכניסה החיבור נשמר במכשיר ל-30 יום. הנתונים הקליניים לא עוברים דרך הכניסה: הם נשמרים במכשיר וב-Drive שלך.</p></section>
+    ${MAP_URL ? `<a class="linkbtn small" style="justify-self:center" href="${MAP_URL}">מפת הדרך פתוחה לכולם, בלי כניסה ←</a>` : ''}
+  </div></main></div>`;
+  waitGoogleId().then(() => {
+    google.accounts.id.initialize({ client_id: clientId(), callback: onGoogleCredential, auto_select: true, cancel_on_tap_outside: false, context: 'signin', ux_mode: 'popup', use_fedcm_for_prompt: true });
+    const slot = $('#gsiBtn'); if (!slot) return;
+    slot.textContent = '';
+    google.accounts.id.renderButton(slot, { type: 'standard', theme: document.documentElement.dataset.theme === 'dark' ? 'filled_black' : 'outline', size: 'large', text: 'signin_with', shape: 'pill', locale: 'he', width: Math.min(320, slot.clientWidth || 320) });
+    if (!err) google.accounts.id.prompt();
+  }).catch(e => { const el = $('#signinErr'); if (el) { el.textContent = e.message; el.hidden = false; } const slot = $('#gsiBtn'); if (slot) slot.textContent = ''; });
+}
+async function onGoogleCredential(resp) {
+  const el = $('#signinErr'); if (el) el.hidden = true;
+  let r, j = {};
+  try { r = await fetch(SESSION_URL(), { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ credential: resp.credential }) }); j = await r.json().catch(() => ({})); }
+  catch { return renderSignin('אין חיבור לשרת של האתר. בדוק אינטרנט ונסה שוב.'); }
+  if (!r.ok) { if (r.status === 403) google.accounts.id.disableAutoSelect(); return renderSignin(j.error || `הכניסה נכשלה (${r.status})`); }
+  AUTH.email = j.email; rememberAuth(j.email);
+  toast('מחובר כ-' + j.email, false, 2200);
+  render();
+}
+async function signOut() {
+  try { await fetch(SESSION_URL(), { method: 'DELETE', credentials: 'same-origin' }); } catch { }
+  try { window.google?.accounts?.id?.disableAutoSelect(); } catch { }
+  AUTH.email = ''; rememberAuth('');
+  closeSettings?.(); renderSignin();
 }
 
 const KB_CACHE = 'ca-kb-v1', KB_PARSER = 2;
@@ -1928,7 +1998,7 @@ async function loadKB(region, refresh = false, onStep = () => { }) {
   entries.filter(d => d.bad).forEach(d => problems.push('שורה לא מזוהה: ' + d.bad.slice(0, 40)));
   const wanted = entries.filter(d => d.id && regionMatch(d.regions, region))
     .map((d, i) => ({ ...d, i })).sort((a, b) => ((a.regions ? 0 : 1) - (b.regions ? 0 : 1)) || a.i - b.i);
-  if (wanted.length && !settings.clientId) problems.push('Drive לא מחובר — הסיכומים לא נטענו');
+  if (wanted.length && !clientId()) problems.push('Drive לא מחובר — הסיכומים לא נטענו');
   else for (const [k, d] of wanted.entries()) {
     try {
       onStep(`סיכומים מ-Drive ${k + 1}/${wanted.length}`);
@@ -2216,7 +2286,7 @@ function saveRowHtml(nv) {
     <button class="btn block danger" data-act="discard">סגור את המפגש ומחק אותו מהמכשיר</button>
     <button class="btn block" data-act="resume">חזרה למפגש</button>`;
   const err = fin.err ? `<div class="err" role="alert">השמירה נכשלה: ${esc(fin.err)}</div>` : '';
-  if (!settings.clientId) return err + `<div class="err">כדי לשמור ל-Drive צריך Google Client ID בהגדרות, בלשונית API.</div><button class="btn block" data-act="settings" data-tab="api">להגדרות API</button>`;
+  if (!clientId()) return err + `<div class="err">כדי לשמור ל-Drive צריך Google Client ID בהגדרות, בלשונית API.</div><button class="btn block" data-act="settings" data-tab="api">להגדרות API</button>`;
   return err + (nv ? `<p class="muted small">${nv === 1 ? 'שדה אחד שלא אומת יסומן' : nv + ' שדות שלא אומתו יסומנו'} במסמך כ"לא אומת".</p>` : '') +
     `<button class="btn primary block" data-act="saveDrive" ${fin.phase !== 'review' || fin.filling ? 'disabled' : ''}>${fin.err ? 'נסה שוב' : s.savedAt ? 'עדכן ב-Drive' : 'שמור ל-Drive'}</button>
     <button class="btn block" data-act="resume">חזרה למפגש</button>`;
@@ -2256,6 +2326,7 @@ function renderFinish() {
 }
 function render() {
   applyLayout(); closePop();
+  if (needsSignin()) return renderSignin();
   if (isLocked()) return renderLocked();
   if (view === 'finish' && session) return renderFinish();
   if (view === 'session' && session) return renderSession();
@@ -2264,7 +2335,7 @@ function render() {
 
 function renderHome() {
   document.body.className = 'home';
-  const missing = [!aiReady() && 'קוד גישה (בשביל ה-AI והתמלול)', !settings.clientId && 'Google Client ID (בשביל שמירה ב-Drive)'].filter(Boolean);
+  const missing = [!aiReady() && 'כניסה עם Google או קוד גישה (בשביל ה-AI והתמלול)'].filter(Boolean);
   $('#app').innerHTML = `<div class="shell"><main class="main">
   <div class="toolbar page"><div class="lead"></div><div class="trail"><div class="capsule glass">
     ${MAP_URL ? `<a class="icon-btn" href="${MAP_URL}" aria-label="מפת הדרך" title="מפת הדרך">${ICON.map}</a>` : ''}
@@ -2984,19 +3055,21 @@ function drBody(t) {
       <div class="gi"><label class="t" for="sChars">למלא אחרי כמה תווים חדשים</label><input id="sChars" class="inp num" style="width:110px" type="number" min="80" step="20" data-set="fillChars" data-norm="chars" value="${esc(st.fillChars)}"></div>
     </div></div>`;
   if (t === 'api') return `
-    <div class="group"><h3>גישה לשרת</h3><div class="gl">
-      <div class="gi stack"><label class="lbl" for="sAccess">קוד גישה (APP_ACCESS_CODE בשרת ב-Cloudflare)</label><input id="sAccess" class="inp ltr" type="password" autocomplete="off" data-set="accessCode" data-norm="trim" value="${esc(st.accessCode)}"></div>
-    </div><p class="gf">אותו קוד פותח את ה-AI ואת Soniox. מפתחות החשבון נשמרים רק בשרת, לא במכשיר.</p></div>
+    <div class="group"><h3>חשבון</h3><div class="gl">
+      ${AUTH.email ? `<div class="gi"><span class="t">מחובר עם Google<small class="ltr">${esc(AUTH.email)}</small></span><button class="btn sm" data-act="signOut">התנתק</button></div>`
+        : `<div class="gi"><span class="t">כניסה עם Google<small>${AUTH.configured ? 'לא מחובר' : 'השרת עוד לא הוגדר לכניסה עם Google (חסר ALLOWED_EMAILS)'}</small></span></div>`}
+      <div class="gi stack"><label class="lbl" for="sAccess">קוד גישה (גיבוי, במקום כניסה עם Google)</label><input id="sAccess" class="inp ltr" type="password" autocomplete="off" data-set="accessCode" data-norm="trim" value="${esc(st.accessCode)}"></div>
+    </div><p class="gf">הכניסה עם Google פותחת את ה-AI ואת Soniox. מפתחות החשבון נשמרים רק בשרת, לא במכשיר.</p></div>
     <div class="group"><h3>Claude</h3><div class="gl">
       <div class="gi stack"><label class="lbl" for="sExt">מודל למילוי ולכלים החכמים</label><select id="sExt" class="inp ltr" data-set="extractModel">${modelOpts(st.extractModel)}</select>
         <label class="lbl" for="sAna">מודל לניתוח</label><select id="sAna" class="inp ltr" data-set="analysisModel">${modelOpts(st.analysisModel)}</select></div>
-      <div class="gi"><span class="t">בדיקת חיבור<small>קוד הגישה, השרת והמפתח שבו</small></span><button class="btn sm" data-act="testKey">בדוק חיבור ל-Claude</button></div>
+      <div class="gi"><span class="t">בדיקת חיבור<small>הכניסה, השרת והמפתח שבו</small></span><button class="btn sm" data-act="testKey">בדוק חיבור ל-Claude</button></div>
     </div></div>
     <div class="group"><h3>Soniox</h3><div class="gl">
       <div class="gi"><span class="t">בדיקת חיבור<small>המכשיר מקבל מפתח זמני לכל חיבור</small></span><button class="btn sm" data-act="testSoniox">בדוק חיבור ל-Soniox</button></div>
     </div></div>
     <div class="group"><h3>Google Drive</h3><div class="gl">
-      <div class="gi stack"><label class="lbl" for="sCid">OAuth Client ID</label><input id="sCid" class="inp ltr" autocomplete="off" placeholder="…apps.googleusercontent.com" data-set="clientId" data-norm="trim" value="${esc(st.clientId)}">
+      <div class="gi stack"><label class="lbl" for="sCid">OAuth Client ID (ריק = זה של Thalamus)</label><input id="sCid" class="inp ltr" autocomplete="off" placeholder="${esc(DEFAULT_CLIENT_ID)}" data-set="clientId" data-norm="trim" value="${esc(st.clientId)}">
         <label class="lbl" for="sRoot">שם תיקיית המטופלים</label><input id="sRoot" class="inp" data-set="rootFolderName" data-norm="root" value="${esc(st.rootFolderName)}"></div>
       <div class="gi"><span class="t">התחברות<small>יוצר את תיקיית המטופלים אם אינה קיימת</small></span><button class="btn sm" data-act="testDrive">התחבר ובדוק</button></div>
     </div></div>`;
@@ -3012,8 +3085,8 @@ function drBody(t) {
     </div><div class="small" id="kbStatus" style="padding:8px 14px 0"></div></div>`;
   return `
     <div class="group"><h3>הצפנה</h3><div class="gl">
-      <label class="gi"><span class="t">הצפן את הנתונים במכשיר עם חשבון Google<small>המפגש, רשימת המטופלים וההקלטות נשמרים מוצפנים. כל פתיחה של האפליקציה מבקשת התחברות ל-Google.</small></span><input type="checkbox" class="switch" role="switch" data-act="encToggle" ${st.encrypt ? 'checked' : ''} ${st.clientId ? '' : 'disabled'}></label>
-    </div><p class="gf">${st.clientId ? 'המפתח נשמר בתיקייה נסתרת של האפליקציה ב-Drive שלך ולא במכשיר.' : 'כדי להפעיל צריך Google Client ID בלשונית API.'}</p></div>
+      <label class="gi"><span class="t">הצפן את הנתונים במכשיר עם חשבון Google<small>המפגש, רשימת המטופלים וההקלטות נשמרים מוצפנים. כל פתיחה של האפליקציה מבקשת התחברות ל-Google.</small></span><input type="checkbox" class="switch" role="switch" data-act="encToggle" ${st.encrypt ? 'checked' : ''} ${clientId() ? '' : 'disabled'}></label>
+    </div><p class="gf">${clientId() ? 'המפתח נשמר בתיקייה נסתרת של האפליקציה ב-Drive שלך ולא במכשיר.' : 'כדי להפעיל צריך Google Client ID בלשונית API.'}</p></div>
     <div class="group"><h3>שימוש</h3><div class="gl"><div class="gi"><span class="t">עלות API מצטברת (הערכה)</span><b class="num">$${(usage.total || 0).toFixed(2)}</b></div></div></div>
     <div class="group"><h3>מחיקה</h3><div class="gl"><div class="gi"><span class="t">מחק את כל הנתונים המקומיים<small>מפתחות, רשימת מטופלים ומפגש פתוח. קבצים ב-Drive לא נמחקים.</small></span><button class="btn sm danger" data-act="wipe">מחק</button></div></div></div>`;
 }
@@ -3140,6 +3213,7 @@ document.addEventListener('click', async e => {
       t.disabled = false; t.checked = !!settings.encrypt; break;
     }
     case 'taskDone': { const n = (session?.notes || []).find(x => x.id === t.dataset.nid); if (n) { n.done = !n.done; touch(); t.setAttribute('aria-pressed', n.done); t.closest('li')?.classList.toggle('done', n.done); } break; }
+    case 'signOut': signOut(); break;
     case 'hypoNow': { const before = insState().at.hypo; runInsight(false, ['hypo']).then(() => { const ins = session && insState(); if (ins && ins.at.hypo !== before && !ins.hypo.length) toast('עדיין אין מספיק ממצאים להשערות', false, 2600); }); break; }
     case 'verifyPart': { const s = session, ids = CARD_SRC[t.dataset.part](s).filter(id => s.fields[id]?.value && (s.fields[id].needsCheck || s.fields[id].unverified)); if (ids.length) showSource(ids, t, 'v:' + t.dataset.part); break; }
     case 'noteDel': session.notes = (session.notes || []).filter(n => n.id !== t.dataset.nid); touch(); refreshLive(); if (view === 'finish') renderFinish(); break;
@@ -3279,13 +3353,13 @@ async function testKey(btn) {
   } catch (e) { toast(humanErr(e), true, 6000); }
   finally { btn.disabled = false; btn.textContent = 'בדוק חיבור ל-Claude'; }
 }
-// the whole path, end to end: access code → the site's function → temporary key → a Soniox session
+// the whole path, end to end: sign-in (or access code) → the site's function → temporary key → a Soniox session
 // that gets half a second of silence and is closed at once (costs a fraction of a cent, no microphone)
 async function testSoniox(btn) {
   const f = $('#sAccess'); if (f) { settings.accessCode = f.value.trim(); saveSettings(); }
   btn.disabled = true; btn.innerHTML = '<span class="spin"></span> בודק…';
   try {
-    if (!settings.accessCode) throw new Error('חסר קוד גישה לתמלול');
+    if (!aiReady()) throw new Error('צריך להיכנס עם Google או להוסיף קוד גישה');
     const key = await sonioxKey();
     await new Promise((resolve, reject) => {
       let settled = false;
@@ -3336,7 +3410,7 @@ async function refreshKb(btn) {
     const entries = parseKbDocs(), seen = new Map();
     entries.filter(d => d.bad).forEach(d => lines.push(bad('שורה לא מזוהה: ' + d.bad.slice(0, 50))));
     for (const d of entries.filter(d => d.id)) { if (!seen.has(d.id)) seen.set(d.id, []); seen.get(d.id).push(d); }
-    if (seen.size && !settings.clientId) lines.push(bad('Drive לא מחובר — הוסף Client ID והתחבר כדי לקרוא את הסיכומים'));
+    if (seen.size && !clientId()) lines.push(bad('Drive לא מחובר — הוסף Client ID והתחבר כדי לקרוא את הסיכומים'));
     else {
       let n = 0;
       for (const [id, uses] of seen) {
@@ -3371,5 +3445,6 @@ async function refreshKb(btn) {
 /* ---------------- boot ---------------- */
 LS.del(K.kb); // v1 kept document texts in localStorage; they now live in Cache Storage
 applyTheme();
-if (isLocked()) renderLocked(); else render();
+// first the sign-in check (fast; offline falls back to the last sign-in), then the encryption lock
+authCheck().then(() => { if (needsSignin()) renderSignin(); else if (isLocked()) renderLocked(); else render(); });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => { });

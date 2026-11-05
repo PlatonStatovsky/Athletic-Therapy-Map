@@ -1,8 +1,8 @@
 // Cloudflare Pages Function: POST /api/claude/messages and /api/claude/messages/count_tokens
 // Forwards the clinic assistant's calls to the Anthropic API, so the API key never reaches a browser.
-// The key is the secret ANTHROPIC_API_KEY. Callers must send the access code (secret APP_ACCESS_CODE,
-// the same one the Soniox function uses) in the x-access-code header.
-// Rate limit: a per-IP window kept in this isolate's memory (best effort, always on), plus a per-IP
+// The key is the secret ANTHROPIC_API_KEY. Who may call is checked in ../_middleware.js: the Google sign-in
+// cookie, or the access code (APP_ACCESS_CODE) as a fallback.
+// Rate limit: a per-account (else per-IP) window kept in this isolate's memory (best effort, always on), plus a
 // daily cap when a KV namespace is bound as RATE_KV (optional; see the setup notes).
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), {
   status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }
@@ -12,12 +12,6 @@ const MODELS = new Set(['claude-haiku-5-5', 'claude-sonnet-5-5', 'claude-opus-5-
 const PER_MINUTE = 40, PER_DAY = 1500, MAX_TOKENS = 20000, MAX_BODY = 2_500_000;
 const hits = new Map(); // ip -> timestamps within the last minute (per isolate)
 
-function sameString(a, b) { // constant-time comparison of two strings
-  const ea = new TextEncoder().encode(String(a)), eb = new TextEncoder().encode(String(b));
-  let diff = ea.length ^ eb.length;
-  for (let i = 0; i < Math.max(ea.length, eb.length); i++) diff |= (ea[i] || 0) ^ (eb[i] || 0);
-  return diff === 0;
-}
 function minuteLimited(ip) {
   const now = Date.now(), list = (hits.get(ip) || []).filter(t => now - t < 60_000);
   list.push(now); hits.set(ip, list);
@@ -32,12 +26,11 @@ async function dayLimited(env, ip) {
   return n > PER_DAY;
 }
 
-export async function onRequestPost({ request, env, params }) {
-  if (!env.APP_ACCESS_CODE || !env.ANTHROPIC_API_KEY) return json({ error: 'השרת לא הוגדר: חסרים APP_ACCESS_CODE או ANTHROPIC_API_KEY' }, 503);
-  if (!sameString(request.headers.get('x-access-code') || '', env.APP_ACCESS_CODE)) return json({ error: 'קוד גישה שגוי' }, 401);
+export async function onRequestPost({ request, env, params, data }) {
+  if (!env.ANTHROPIC_API_KEY) return json({ error: 'השרת לא הוגדר: חסר ANTHROPIC_API_KEY' }, 503);
   const path = [].concat(params.path || []).join('/');
   if (!PATHS.has(path)) return json({ error: 'נתיב לא מוכר' }, 404);
-  const ip = request.headers.get('cf-connecting-ip') || 'unknown';
+  const ip = data?.email || request.headers.get('cf-connecting-ip') || 'unknown';
   if (minuteLimited(ip) || await dayLimited(env, ip)) return json({ error: 'יותר מדי בקשות. נסה שוב בעוד דקה.' }, 429);
 
   const raw = await request.text();
@@ -58,5 +51,5 @@ export async function onRequestPost({ request, env, params }) {
 }
 
 // a quick check that the secrets reached this deployment (says nothing about their values)
-export const onRequestGet = ({ env }) => json({ ok: true, configured: Boolean(env.ANTHROPIC_API_KEY && env.APP_ACCESS_CODE), dailyCap: Boolean(env.RATE_KV) });
+export const onRequestGet = ({ env }) => json({ ok: true, configured: Boolean(env.ANTHROPIC_API_KEY), googleSignIn: Boolean(env.ALLOWED_EMAILS), dailyCap: Boolean(env.RATE_KV) });
 export const onRequest = () => json({ error: 'method not allowed' }, 405);

@@ -3,8 +3,9 @@
 Two parts, one static site, no build step:
 - `index.html` (root) — the decision map ("שיקום שמרני מפת דרך"). Platon develops its content in other conversations.
 - `app/` — the clinic assistant (Thalamus, עוזר קליני), a PWA: `index.html` (markup + CSS), `app.js` (all logic), `boot.js` (theme before first paint), `norms.js` (editable normal ROM ranges), `sw.js`. Do not edit it from map-content work.
-- `functions/api/soniox-key.js` — Cloudflare Pages Function that mints short-lived Soniox keys for the assistant's cloud transcription. Needs the secrets `SONIOX_API_KEY` and `APP_ACCESS_CODE` (set for both Production and Preview).
-- `functions/api/claude/[[path]].js` — proxy for the assistant's Claude calls (`/api/claude/messages`, `/api/claude/messages/count_tokens`). Needs the secrets `ANTHROPIC_API_KEY` and `APP_ACCESS_CODE`; optional KV binding `RATE_KV` adds a per-IP daily cap. GET on the same path reports whether the secrets are set.
+- `functions/api/soniox-key.js` — Cloudflare Pages Function that mints short-lived Soniox keys for the assistant's cloud transcription. Needs the secret `SONIOX_API_KEY` (set for both Production and Preview); callers are checked by `_middleware.js`.
+- `functions/api/claude/[[path]].js` — proxy for the assistant's Claude calls (`/api/claude/messages`, `/api/claude/messages/count_tokens`). Needs the secret `ANTHROPIC_API_KEY` (callers are checked by `_middleware.js`); optional KV binding `RATE_KV` adds a per-IP daily cap. GET on the same path reports whether the secrets are set.
+- `functions/api/session.js` + `functions/api/_middleware.js` — Google sign-in for the assistant. `session.js` checks a Google ID token against `ALLOWED_EMAILS` (variable, comma-separated, kept out of the repo) and sets a 30-day HttpOnly cookie; the middleware lets non-GET `/api/*` calls through with that cookie or, as a fallback, `x-access-code` = `APP_ACCESS_CODE`. Without `ALLOWED_EMAILS` the app opens as before (access code only). Every allowed email must also be a test user of the Google Cloud project `thalamus-513815` while it is in Testing.
 - `_headers` — CSP and security headers for `/app/*` (no inline scripts: keep all script in files) and no-store for `/api/*`.
 
 Contracts between the two parts — keep them or update both sides together:
