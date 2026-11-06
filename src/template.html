@@ -595,7 +595,7 @@ const PLAY = '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 0.5 9.5 5 
 // ---------- merge extras into tests ----------
 Object.keys(VIDS).forEach(id => { const t = T[id], x = VIDS[id]; if(!t) return; if(x.v) t.v = x.v; t.ch = x.ch; t.vn = x.vn; t.vx = x.vx; });
 Object.keys(TEST_GEN).forEach(id => { const t = T[id]; if(t && !t.how){ t.how = TEST_GEN[id].how; t.pos = TEST_GEN[id].pos; t.gen = 1; } });
-Object.assign(TX, TX2, TX3, TX4);
+Object.assign(TX, TX2, TX3, TX4, TX5);
 Object.keys(TX).forEach(id => { if(T[id] && TX[id].evs) T[id].ev = TX[id].evs; });
 
 // ---------- bidi + abbreviations ----------
@@ -689,6 +689,7 @@ const addUse = (id, u) => { (USES[id] = USES[id] || []).push(u); };
 REGIONS.forEach(r => {
   r.s1.checks.forEach((c, i) => (c.tests || []).forEach(id => addUse(id, { kind: "chk", id: "chk-" + r.id + "-" + i, name: c.title, rid: r.id })));
   r.s3.patterns.forEach((pt, pi) => pt.paths.forEach((p, ji) => (p.tests || []).forEach(id => addUse(id, { kind: "path", id: r.id + "-" + pi + "-" + ji, name: p.n, rid: r.id }))));
+  ((r.s2 && r.s2.tests) || []).forEach(id => addUse(id, { kind: "go", id: "st-" + r.id + "-3", name: "בדיקה בסיסית", rid: r.id }));
 });
 // topic tabs: cross-region knowledge laid out as numbered topics
 const TOPIC_TABS = [["found", "עקרונות", FOUND], ["tissue", "רקמות", TISSUE]];
@@ -757,6 +758,7 @@ function pathHTML(r, pi, ji, p){
 function regionTests(r){
   const s = [], c = [];
   r.s1.checks.forEach(ch => (ch.tests || []).forEach(id => { if(!s.includes(id)) s.push(id); }));
+  ((r.s2 && r.s2.tests) || []).forEach(id => { if(!c.includes(id) && !s.includes(id)) c.push(id); });
   r.s3.patterns.forEach(pt => pt.paths.forEach(p => (p.tests || []).forEach(id => { if(!c.includes(id) && !s.includes(id)) c.push(id); })));
   return { safety: s, clinical: c };
 }
@@ -784,6 +786,7 @@ function renderRegion(r){
   html += station(r.id, n++, "סינון דגלים אדומים", "", rf, true);
   scope();
   let ex = "<p>" + fx(r.s2.text) + "</p>" + '<div class="blk"><h4>דגשים</h4>' + li(r.s2.rules) + "</div>";
+  if(r.s2.tests) ex += '<div class="blk"><h4>מבדקים בבדיקה הבסיסית</h4>' + chips(r.s2.tests, false) + "</div>";
   if(r.s2.table) ex += '<div class="blk"><h4>' + fx(r.s2.table.h) + "</h4>" + tableHTML(r.s2.table.rows, true) + "</div>";
   if(r.s2.src) ex += '<p class="bsrc">' + rich(r.s2.src) + "</p>";
   ex += '<details class="q"><summary>' + fx("שאלון אזורי — " + r.q.name, { ng: 1 }) + '</summary><div class="q-body"><p>' + fx(r.q.items) + "</p>" + tableHTML(r.q.score, false) + "</div></details>";

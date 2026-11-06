@@ -405,7 +405,8 @@ const TISSUE = {
           ],
           src: "[FCB/Aspetar](https://www.crr-suva.ch/data/documents/SSMS_2015/Muscle_injuryclinical_guide_2015-FCBASPETAR.pdf)"
         },
-        { go: "st-found-4", h: "בעקרונות: חזרה לספורט — רצף, לא רגע" }
+        { go: "st-found-4", h: "בעקרונות: חזרה לספורט — רצף, לא רגע" },
+        { go: "st-hip-4", h: "בירך ומפשעה: קרע בהמסטרינג ובקוואדריספס" }
       ]
     }
 

@@ -246,7 +246,7 @@ const TX4 = {
     pair: ["thigh", "faber", "trend"]
   },
   faber: {
-    aim: "מבדק רחב שמבדיל לפי מיקום הכאב בין האגן לירך.",
+    aim: "מבדק רחב שמבדיל לפי מיקום הכאב — בין האגן, מפרק הירך והצד הלטרלי.",
     pt: "שוכב על הגב; הקרסול של הרגל הנבדקת על הברך הנגדית — ״מספר 4״.",
     th: "יד אחת מקבעת את ה־ASIS הנגדי; השנייה על הברך של הרגל הנבדקת.",
     steps: [
@@ -255,12 +255,12 @@ const TX4 = {
       ["pt", "מדווח אם יש כאב — ואיפה."],
       ["th", "משווה לצד השני: גם את הכאב וגם כמה הברך יורדת."]
     ],
-    pos: "כאב אחורי באותו צד, סביב ה־SI ← מקור SI. כאב קדמי ← מפרק הירך.",
+    pos: "כאב אחורי באותו צד, סביב ה־SI ← מקור SI. כאב קדמי או במפשעה ← מפרק הירך. כאב לטרלי ← ממשיכים לבדוק את הצד הלטרלי (GTPS).",
     neg: "בלי כאב, והברך יורדת כמו בצד השני.",
-    evs: "בלי נתוני דיוק מבוססים לאגן",
-    evd: "הפירוש לפי מיקום הכאב — [Radiopaedia](https://radiopaedia.org/articles/faber-test). ההנחיות האירופיות ל־PGP כוללות את Patrick's FABER — [Vleeming 2008 (Medbridge)](https://www.medbridge.com/blog/pregnancy-related-pelvic-girdle-pain).",
+    evs: "בלי נתוני דיוק מבוססים — מפרשים לפי מיקום הכאב",
+    evd: "הפירוש לפי מיקום הכאב — [Radiopaedia](https://radiopaedia.org/articles/faber-test). ההנחיות האירופיות ל־PGP כוללות את Patrick's FABER — [Vleeming 2008 (Medbridge)](https://www.medbridge.com/blog/pregnancy-related-pelvic-girdle-pain). Doha: מבצעים FABER ו־FADIR בכל ספורטאי עם כאב במפשעה — [Weir 2015](https://repub.eur.nl/pub/79674/Weir-Brukner-BJSM.pdf).",
     tips: ["בלי קיבוע של ה־ASIS הנגדי האגן מתרומם, והמבדק לא תקף."],
-    pair: ["thigh", "aslr"]
+    pair: ["thigh", "aslr", "fadir", "legroll"]
   },
   trend: {
     aim: "יציבות האגן בעמידה על רגל אחת — מרחיקי הירך בצד העומד.",
