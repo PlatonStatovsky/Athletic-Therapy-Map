@@ -1,4 +1,4 @@
-<title>שיקום שמרני מפת דרך</title>
+<title>Ligamentum</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -218,7 +218,7 @@ details.chk[open] > summary::after{content:"−"}
 .chain .nx{font-size:calc(12px * var(--fs)); color:var(--muted); padding-inline-start:10px}
 .dd{display:grid; grid-template-columns:1fr 1fr; gap:8px}
 .dd div{background:var(--surface-2); border-radius:8px; padding:8px 10px; font-size:calc(13.5px * var(--fs))}
-.dd h5{margin:0 0 3px; font-size:calc(13px * var(--fs))}
+.dd h4,.dd h5{margin:0 0 3px; font-size:calc(13px * var(--fs))}
 
 /* chips */
 .chips{display:flex; flex-wrap:wrap; gap:6px; align-items:center}
@@ -487,12 +487,35 @@ p.evd{margin:0; color:var(--ev); font-weight:700; font-size:calc(15px * var(--fs
   .seg.tsize button{padding:4px 8px; min-width:30px}
 }
 @media (prefers-reduced-motion: reduce){ .flash{animation:none} }
+/* link to the clinic assistant (app/) */
+.applink{flex:0 0 auto; display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:999px;
+  background:var(--accent); color:var(--on-accent); font-weight:600; font-size:14px; text-decoration:none; white-space:nowrap}
+.applink:hover{filter:brightness(1.08)} .applink:focus-visible{outline:2px solid var(--bar-ink); outline-offset:2px}
+/* tablet toolbar: display settings fold into one control so search keeps its width; the tests list gets its own button */
+.disp{display:flex; align-items:center; gap:14px}
+.tbtn{display:none; align-items:center; gap:6px; min-height:36px; padding:6px 14px; border-radius:999px; border:1px solid var(--bar-line); background:var(--bar-field); color:var(--bar-ink); font:inherit; font-weight:600; font-size:calc(14px * var(--fs)); cursor:pointer; white-space:nowrap}
+.tbtn[aria-expanded="true"]{border-color:var(--bar-ink)}
+@media (max-width:1180px){
+  .tools{position:relative; gap:8px}
+  .search{flex:1 1 280px; min-width:240px}
+  .tbtn{display:inline-flex}
+  .disp{display:none; position:absolute; top:calc(100% + 8px); inset-inline-end:0; z-index:20; flex-direction:column; align-items:flex-start; gap:8px;
+    background:var(--bar); border:1px solid var(--bar-line); border-radius:12px; padding:12px 14px; box-shadow:0 10px 28px rgb(0 0 0 / .28)}
+  .disp.open{display:flex}
+  .disp .tlabel{display:block}
+  .disp .seg button{white-space:nowrap}
+}
+@media (max-width:900px){ .tools{justify-content:flex-start} .applink{margin-inline-end:auto} }
+/* pattern letters stay readable on the light themes */
+:root:not([data-theme="dark"]) .pat-h .pn{background:color-mix(in srgb, var(--grp) 62%, #000)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]):not([data-theme="comfort"]) .pat-h .pn{background:var(--grp)} }
+abbr.ab[tabindex]:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:3px}
 </style>
 
 <div class="app" id="app" dir="rtl" lang="he">
   <header class="bar" id="bar">
     <div class="brand">
-      <h1>שיקום שמרני מפת דרך</h1>
+      <h1 lang="en" dir="ltr">Ligamentum</h1>
     </div>
     <div class="search" role="search">
       <div class="field">
@@ -504,6 +527,9 @@ p.evd{margin:0; color:var(--ev); font-weight:700; font-size:calc(15px * var(--fs
       <div class="results" id="results" role="listbox" aria-label="תוצאות חיפוש" hidden></div>
     </div>
     <div class="tools">
+      <button type="button" class="tbtn" id="testsBtn" aria-controls="panel">מבדקים</button>
+      <button type="button" class="tbtn" id="dispBtn" aria-expanded="false" aria-controls="disp">תצוגה</button>
+      <div class="disp" id="disp">
       <span class="tlabel" id="fs-l">גודל טקסט</span>
       <div class="seg tsize" role="group" aria-labelledby="fs-l">
         <button type="button" data-fs="1" aria-pressed="true" title="רגיל" aria-label="טקסט רגיל"><span style="font-size:13px">א</span></button>
@@ -515,6 +541,7 @@ p.evd{margin:0; color:var(--ev); font-weight:700; font-size:calc(15px * var(--fs
         <button type="button" id="th-light" data-theme-btn="light" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"></circle><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"></path></svg>בהיר</button>
         <button type="button" id="th-comfort" data-theme-btn="comfort" aria-pressed="false" title="גוונים חמים, פחות אור כחול וסנוור"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12s-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"></path><circle cx="12" cy="12" r="2.8"></circle></svg>נוח לעין</button>
         <button type="button" id="th-dark" data-theme-btn="dark" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"></path></svg>כהה</button>
+      </div>
       </div>
     </div>
   </header>
@@ -568,7 +595,7 @@ const PLAY = '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 0.5 9.5 5 
 // ---------- merge extras into tests ----------
 Object.keys(VIDS).forEach(id => { const t = T[id], x = VIDS[id]; if(!t) return; if(x.v) t.v = x.v; t.ch = x.ch; t.vn = x.vn; t.vx = x.vx; });
 Object.keys(TEST_GEN).forEach(id => { const t = T[id]; if(t && !t.how){ t.how = TEST_GEN[id].how; t.pos = TEST_GEN[id].pos; t.gen = 1; } });
-Object.assign(TX, TX2, TX3);
+Object.assign(TX, TX2, TX3, TX4);
 Object.keys(TX).forEach(id => { if(T[id] && TX[id].evs) T[id].ev = TX[id].evs; });
 
 // ---------- bidi + abbreviations ----------
@@ -603,7 +630,7 @@ function fx(s, o){
     let html;
     if(/[A-Za-zÀ-ɏ0-9]/.test(m)){
       ABRE.lastIndex = 0;
-      html = "<bdi>" + esc(m).replace(ABRE, (all, p1, k) => p1 + '<abbr class="ab" data-k="' + k + '">' + k + "</abbr>") + "</bdi>";
+      html = "<bdi>" + esc(m).replace(ABRE, (all, p1, k) => p1 + '<abbr class="ab" tabindex="0" data-k="' + k + '">' + k + "</abbr>") + "</bdi>";
     } else html = esc(m);
     out += esc(str.slice(pos, a)) + esc(pre) + html + tail + esc(post);
     pos = b;
@@ -721,10 +748,11 @@ function pathHTML(r, pi, ji, p){
   if(p.prog) step("", "פרוגנוזה וחזרה", "<p>" + fx(p.prog) + "</p>");
   if(p.ref) step("r", "מתי מפנים", "<p>" + fx(p.ref) + "</p>");
   if(p.link) step("", "המשך", '<p><button class="golink" type="button" data-path="neck-1-0">למסלול הרדיקולופתיה בצוואר ←</button></p>');
+  const tail = (p.hist ? [].concat(p.hist).map(histHTML).join("") : "") + (p.src ? '<p class="bsrc">' + rich(p.src) + "</p>" : "");
   const tc = (p.tests || []).length;
   return '<div class="path" id="' + id + '"><button class="ph" type="button" aria-expanded="false" aria-controls="' + id + '-b"><span>' + fx(p.n, { ng: 1 }) + '</span><span class="pm">' +
     (tc ? '<span class="tc">' + tc + (tc === 1 ? " מבדק" : " מבדקים") + "</span>" : "") + '<span class="tg" aria-hidden="true">+</span></span></button>' +
-    '<div class="pbody" id="' + id + '-b" hidden>' + about + '<div class="flow">' + f + "</div></div></div>";
+    '<div class="pbody" id="' + id + '-b" hidden>' + about + '<div class="flow">' + f + "</div>" + tail + "</div></div>";
 }
 function regionTests(r){
   const s = [], c = [];
@@ -748,13 +776,16 @@ function renderRegion(r){
     if(c.tests) b += chips(c.tests, false);
     if(c.li) b += li(c.li);
     if(c.table) b += tableHTML(c.table, true);
-    if(c.list5d) b += '<div class="dd"><div><h5>5D\'s</h5>' + li(FIVE_D) + "</div><div><h5>3N's</h5>" + li(THREE_N) + "</div></div>";
+    if(c.list5d) b += '<div class="dd"><div><h4>5D\'s</h4>' + li(FIVE_D) + "</div><div><h4>3N's</h4>" + li(THREE_N) + "</div></div>";
     if(c.note) b += "<p>" + fx(c.note) + "</p>";
+    if(c.src) b += '<p class="bsrc">' + rich(c.src) + "</p>";
     return '<details class="chk" id="chk-' + r.id + "-" + i + '"><summary>' + fx(c.title, { ng: 1 }) + '</summary><div class="chk-body">' + b + "</div></details>";
   }).join("") + "</div>";
   html += station(r.id, n++, "סינון דגלים אדומים", "", rf, true);
   scope();
   let ex = "<p>" + fx(r.s2.text) + "</p>" + '<div class="blk"><h4>דגשים</h4>' + li(r.s2.rules) + "</div>";
+  if(r.s2.table) ex += '<div class="blk"><h4>' + fx(r.s2.table.h) + "</h4>" + tableHTML(r.s2.table.rows, true) + "</div>";
+  if(r.s2.src) ex += '<p class="bsrc">' + rich(r.s2.src) + "</p>";
   ex += '<details class="q"><summary>' + fx("שאלון אזורי — " + r.q.name, { ng: 1 }) + '</summary><div class="q-body"><p>' + fx(r.q.items) + "</p>" + tableHTML(r.q.score, false) + "</div></details>";
   html += station(r.id, n++, "בדיקה בסיסית", "Look ← Feel ← Move ← Special Tests", ex);
   let cl = '<div class="pat-tools"><span class="sub">' + fx(r.s3.q) + '</span><button class="ghost" type="button" data-expand="' + r.id + '">פתיחת כל המסלולים</button></div><div class="pats">';
@@ -772,10 +803,10 @@ function renderRegion(r){
   scope();
   const pg = '<div class="blocks"><div class="blk"><h4>פרוגנוזה</h4>' + li(r.prog) + "</div>" +
     '<div class="blk"><h4>מטרות</h4>' + li(["PSFS — 3 פעילויות שהמטופל בוחר, 1–10", "קצר (עד 3 שבועות) · בינוני (עד 3 חודשים) · ארוך (עד שנה) — לפי המסגרת הכללית", "מדד אזורי: " + r.q.name]) + "</div>" +
-    '<div class="blk key"><h4>' + fx("חזרה לספורט: " + r.rts) + "</h4></div></div>";
+    (r.rts ? '<div class="blk key"><h4>' + fx("חזרה לספורט: " + r.rts) + "</h4></div>" : "") + "</div>";
   html += station(r.id, n++, "פרוגנוזה והצבת מטרות", "", pg);
   scope();
-  let tx = "<p>" + fx(r.tx) + "</p>" + '<div class="blocks"><div class="blk"><h4>שלבי השיקום</h4>' + tableHTML(r.phases, false) + "</div>";
+  let tx = "<p>" + fx(r.tx) + "</p>" + '<div class="blocks">' + (r.phases ? '<div class="blk"><h4>שלבי השיקום</h4>' + tableHTML(r.phases, false) + "</div>" : "");
   if(r.principles) tx += '<div class="blk"><h4>עקרונות</h4>' + li(r.principles) + "</div>";
   if(r.surgery) tx += '<div class="blk stopblk"><h4>' + fx(r.surgery) + "</h4></div>";
   tx += "</div>";
@@ -923,8 +954,12 @@ function renderPanel(){
 }
 function showPanel(){ if(narrowPanel()){ $("#panel").classList.add("shown"); $("#scrim").hidden = false; } }
 function hidePanel(){ $("#panel").classList.remove("shown"); $("#scrim").hidden = true; }
-function openTest(id){
+function openTest(id, fromHistory){
   if(!T[id]) return;
+  if(booted && !fromHistory){
+    const url = "#" + current + "&t=" + id;
+    try{ if(history.state && history.state.card) history.replaceState({ card: id }, "", url); else history.pushState({ card: id }, "", url); }catch(e){}
+  }
   ptest = id; renderPanel();
   $$(".chip.on").forEach(c => c.classList.remove("on"));
   $$('.chip[data-test="' + id + '"]').forEach(c => c.classList.add("on"));
@@ -933,12 +968,23 @@ function openTest(id){
 
 // ---------- navigation ----------
 function flash(el){ el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); }
+let booted = false, fromHistory = false;
+// closing a card that has its own history step goes back one step, so the Back button and the close button agree
+function closeCard(){ if(history.state && history.state.card){ history.back(); return; } ptest = null; $$(".chip.on").forEach(c => c.classList.remove("on")); hidePanel(); renderPanel(); }
+window.addEventListener("popstate", () => {
+  const h = (location.hash || "").slice(1), m = h.match(/^([\w-]*)&t=([\w-]+)$/), tab = m ? m[1] : h, tid = m ? m[2] : "";
+  fromHistory = true;
+  if(tab && tab !== current) show(tab, true);
+  if(tid){ if(ptest !== tid) openTest(tid, true); }
+  else if(ptest || $("#panel").classList.contains("shown")){ ptest = null; $$(".chip.on").forEach(c => c.classList.remove("on")); hidePanel(); renderPanel(); }
+  fromHistory = false;
+});
 function show(id, scroll){
   if(!TABS.some(t => t[0] === id)) id = "general";
   current = id;
   TABS.forEach(([t]) => { $("#p-" + t).hidden = t !== id; $("#t-" + t).setAttribute("aria-selected", String(t === id)); });
   store.set("uqmap-tab", id);
-  if(location.hash !== "#" + id){ try{ history.replaceState(null, "", "#" + id); }catch(e){} }
+  if(location.hash !== "#" + id){ try{ if(booted && !fromHistory) history.pushState(null, "", "#" + id); else history.replaceState(null, "", "#" + id); }catch(e){} }
   renderOutline();
   renderPanel();
   if(scroll) window.scrollTo({ top: 0 });
@@ -1092,7 +1138,7 @@ $("#q").addEventListener("keydown", e => {
 
 // ---------- tooltip for abbreviations ----------
 const tip = $("#tip");
-document.addEventListener("mouseover", e => {
+function showTip(e){
   const a = e.target.closest && e.target.closest("abbr.ab[data-k]");
   if(!a){ tip.hidden = true; return; }
   const k = a.dataset.k, d = ABBR[k]; if(!d) return;
@@ -1102,7 +1148,9 @@ document.addEventListener("mouseover", e => {
   let x = r.left + r.width / 2 - w / 2; x = Math.max(8, Math.min(window.innerWidth - w - 8, x));
   let y = r.bottom + 8; if(y + h > window.innerHeight - 8) y = r.top - h - 8;
   tip.style.left = x + "px"; tip.style.top = y + "px";
-});
+}
+document.addEventListener("mouseover", showTip);
+document.addEventListener("focusin", showTip);
 window.addEventListener("scroll", () => { tip.hidden = true; }, { passive: true, capture: true });
 
 // ---------- toggles ----------
@@ -1133,7 +1181,10 @@ document.addEventListener("click", e => {
   if(t.closest("[data-evguide]")){ const g = $("#evg"); if(g){ g.open = true; g.scrollIntoView({block: "start", behavior: "smooth"}); } return; }
   const yt = t.closest("[data-yt]"); if(yt){ yt.parentElement.innerHTML = ytFrame(yt.dataset.yt); return; }
   const tst = t.closest("[data-test]"); if(tst){ openTest(tst.dataset.test); return; }
-  if(t.closest("[data-back]")){ ptest = null; $$(".chip.on").forEach(c => c.classList.remove("on")); renderPanel(); return; }
+  if(t.closest("[data-back]")){ if(history.state && history.state.card){ history.back(); return; } ptest = null; $$(".chip.on").forEach(c => c.classList.remove("on")); renderPanel(); return; }
+  if(t.closest("#testsBtn")){ ptest = null; $$(".chip.on").forEach(c => c.classList.remove("on")); renderPanel(); $("#panel").scrollTop = 0; showPanel(); return; }
+  const db = t.closest("#dispBtn"); if(db){ const o = !$("#disp").classList.contains("open"); $("#disp").classList.toggle("open", o); db.setAttribute("aria-expanded", String(o)); return; }
+  if(!t.closest("#disp") && $("#disp").classList.contains("open")){ $("#disp").classList.remove("open"); $("#dispBtn").setAttribute("aria-expanded", "false"); }
   const pth = t.closest("[data-path]"); if(pth){ goPath(pth.dataset.path); if(narrowPanel() && t.closest("#panel")) hidePanel(); return; }
   const ck = t.closest("[data-chk]"); if(ck){ goChk(ck.dataset.chk); if(narrowPanel()) hidePanel(); return; }
   const sc = t.closest("[data-scroll]"); if(sc){ goStation(sc.dataset.scroll); return; }
@@ -1143,12 +1194,13 @@ document.addEventListener("click", e => {
     paths.forEach(p => togglePath(p, anyClosed)); ex.textContent = anyClosed ? "סגירת כל המסלולים" : "פתיחת כל המסלולים"; return; }
   const thb = t.closest("[data-theme-btn]"); if(thb){ setTheme(thb.dataset.themeBtn); return; }
   const fsb = t.closest("[data-fs]"); if(fsb){ setFs(fsb.dataset.fs); return; }
-  if(t.closest("#pclose") || t.id === "scrim"){ hidePanel(); return; }
+  if(t.closest("#pclose") || t.id === "scrim"){ if(ptest) closeCard(); else hidePanel(); return; }
 });
 document.addEventListener("keydown", e => {
   const typing = e.target.matches && e.target.matches("input, textarea");
   if(!typing && (e.key === "/" || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k"))){ e.preventDefault(); $("#q").focus(); $("#q").select(); return; }
-  if(e.key === "Escape" && $("#panel").classList.contains("shown")) hidePanel();
+  if(e.key === "Escape" && $("#disp").classList.contains("open")){ $("#disp").classList.remove("open"); $("#dispBtn").setAttribute("aria-expanded", "false"); $("#dispBtn").focus(); return; }
+  if(e.key === "Escape" && $("#panel").classList.contains("shown")){ if(ptest) closeCard(); else hidePanel(); }
   if((e.key === "ArrowDown" || e.key === "ArrowUp") && e.target.matches(".reg")){
     e.preventDefault();
     const ids = TABS.map(x => x[0]); let i = ids.indexOf(e.target.dataset.tab);
@@ -1159,8 +1211,12 @@ function measure(){ const h = $("#bar").offsetHeight; root.style.setProperty("--
 window.addEventListener("resize", () => { measure(); if(!narrowPanel()) hidePanel(); });
 measure();
 
-let start = (location.hash || "").slice(1);
+let start = (location.hash || "").slice(1), startTest = "";
+const deep = start.match(/^([\w-]*)&t=([\w-]+)$/); // "#shoulder&t=hk" — a region plus a test card (links from app/)
+if(deep){ start = deep[1]; startTest = deep[2]; }
 if(!start) start = store.get("uqmap-tab") || "";
 show(start || "general");
+if(startTest) openTest(startTest);
+booted = true;
 })();
 </script>

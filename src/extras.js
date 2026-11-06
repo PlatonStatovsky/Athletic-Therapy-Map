@@ -52,6 +52,13 @@ const ABOUT = {
 
 // סרטונים — ערוץ, הערה, קישורים נוספים. v חדש למבדקים שלא היה להם סרטון
 const VIDS = {
+  slr: { v: "https://www.youtube.com/watch?v=LdAD9GNv8FI", ch: "Physiotutors" },
+  xslr: { v: "https://www.youtube.com/watch?v=Yp7es4deo0Q", ch: "Physiotutors" },
+  slump: { v: "https://www.youtube.com/watch?v=HFGfP84uwEo", ch: "Physiotutors" },
+  sidist: { v: "https://www.youtube.com/watch?v=g8txpsqHYpQ", ch: "Physiotutors", vn: "סרטון אחד לכל אשכול Laslett — ארבעת המבדקים ברצף" },
+  thigh: { v: "https://www.youtube.com/watch?v=g8txpsqHYpQ", ch: "Physiotutors", vn: "סרטון אחד לכל אשכול Laslett — ארבעת המבדקים ברצף" },
+  sicomp: { v: "https://www.youtube.com/watch?v=g8txpsqHYpQ", ch: "Physiotutors", vn: "סרטון אחד לכל אשכול Laslett — ארבעת המבדקים ברצף" },
+  sacthr: { v: "https://www.youtube.com/watch?v=g8txpsqHYpQ", ch: "Physiotutors", vn: "סרטון אחד לכל אשכול Laslett — ארבעת המבדקים ברצף" },
   tug: { v: "https://www.youtube.com/watch?v=brhnt4KM_Oc", ch: "Mission Gait" },
   berg: { v: "https://www.youtube.com/watch?v=hZ8YpcOo9Is", ch: "Bob & Brad" },
   cfrt: { ch: "Physiotutors" }, spurling: { ch: "Physiotutors" }, distraction: { ch: "Physiotutors" }, bakody: { ch: "Physiotutors" },
@@ -242,7 +249,37 @@ const ABBR = {
   "T4": ["Thoracic vertebra 4", "החוליה החזית הרביעית"],
   "T6": ["Thoracic vertebra 6", "החוליה החזית השישית"],
   "T12": ["Thoracic vertebra 12", "החוליה החזית האחרונה, מעל המותן"],
-  "L1": ["Lumbar vertebra 1", "החוליה המותנית הראשונה"]
+  "L1": ["Lumbar vertebra 1", "החוליה המותנית הראשונה"],
+  "L2": ["Lumbar level 2", "רמה מותנית 2 — החוליה, או שורש העצב שיוצא בגובה שלה"],
+  "L3": ["Lumbar level 3", "רמה מותנית 3 — החוליה, או שורש העצב שיוצא בגובה שלה"],
+  "L4": ["Lumbar level 4", "רמה מותנית 4 — החוליה, או שורש העצב שיוצא בגובה שלה"],
+  "L5": ["Lumbar level 5", "רמה מותנית 5 — החוליה המותנית האחרונה, או שורש העצב שיוצא בגובה שלה"],
+  "S1": ["Sacral level 1", "רמה סקרלית 1 — הסגמנט העליון של הסקרום, או שורש העצב שיוצא בגובה שלו"],
+  "S2": ["Sacral level 2", "רמה סקרלית 2 — בערך מרכז הסקרום"],
+  "S4": ["Sacral level 4", "רמה סקרלית 4"],
+  "SI": ["Sacroiliac", "סקרו־איליאקי — המפרק בין הסקרום לעצם הכסל"],
+  "SIJ": ["Sacroiliac Joint", "המפרק בין הסקרום לעצם הכסל"],
+  "PSIS": ["Posterior Superior Iliac Spine", "הבליטה האחורית־עליונה של עצם הכסל — ״הגומות״ בגב התחתון"],
+  "ASIS": ["Anterior Superior Iliac Spine", "הבליטה הקדמית־עליונה של עצם הכסל"],
+  "SLR": ["Straight Leg Raise", "הרמת רגל ישרה — מבדק נוירודינמי"],
+  "PKB": ["Prone Knee Bend", "כיפוף ברך בשכיבה על הבטן — מתח על העצב הפמורלי"],
+  "ASLR": ["Active Straight Leg Raise", "הרמה אקטיבית של רגל ישרה — העברת עומס דרך האגן"],
+  "FABER": ["Flexion, ABduction, External Rotation", "כיפוף, הרחקה וסיבוב חיצוני של הירך — Patrick's Test"],
+  "PGP": ["Pelvic Girdle Pain", "כאב חגורת האגן"],
+  "SPD": ["Symphysis Pubis Dysfunction", "שם ישן לכאב בסימפיזיס — היום חלק מ־PGP"],
+  "P4": ["Posterior Pelvic Pain Provocation Test", "השם של Thigh Thrust בהנחיות האירופיות"],
+  "PLL": ["Posterior Longitudinal Ligament", "הרצועה האורכית האחורית — לאורך הגב של גופי החוליות, בתוך תעלת השדרה"],
+  "EHL": ["Extensor Hallucis Longus", "השריר שמרים את הבוהן הגדולה"],
+  "FTF": ["Fingertip-to-Floor", "מרחק קצות האצבעות מהרצפה בכיפוף קדימה — בס״מ"],
+  "ODI": ["Oswestry Disability Index", "שאלון מוגבלות בכאב גב — 10 סעיפים, 0–100%"],
+  "ACOG": ["American College of Obstetricians and Gynecologists", "האיגוד האמריקאי למיילדות וגינקולוגיה"],
+  "SBRN": ["Sedentary Behaviour Research Network", "רשת המחקר הבינלאומית על התנהגות יושבנית"],
+  "METs": ["Metabolic Equivalents", "יחידות של הוצאת אנרגיה; 1 MET = מנוחה בישיבה"],
+  "MET": ["Metabolic Equivalent", "יחידה של הוצאת אנרגיה; 1 MET = מנוחה בישיבה"],
+  "ICD-11": ["International Classification of Diseases, 11th revision", "הסיווג הבינלאומי של מחלות, המהדורה ה־11"],
+  "JOSPT": ["Journal of Orthopaedic & Sports Physical Therapy", "כתב עת לפיזיותרפיה אורתופדית וספורטיבית"],
+  "CKS": ["Clinical Knowledge Summaries", "תקצירי הידע הקליני של NICE"],
+  "GP": ["General Practitioner", "רופא משפחה"]
 };
 
 if (typeof module !== "undefined") module.exports = { ABOUT, VIDS, TEST_GEN, ABBR };
