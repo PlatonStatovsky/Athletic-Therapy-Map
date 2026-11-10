@@ -595,7 +595,7 @@ const PLAY = '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 0.5 9.5 5 
 // ---------- merge extras into tests ----------
 Object.keys(VIDS).forEach(id => { const t = T[id], x = VIDS[id]; if(!t) return; if(x.v) t.v = x.v; t.ch = x.ch; t.vn = x.vn; t.vx = x.vx; });
 Object.keys(TEST_GEN).forEach(id => { const t = T[id]; if(t && !t.how){ t.how = TEST_GEN[id].how; t.pos = TEST_GEN[id].pos; t.gen = 1; } });
-Object.assign(TX, TX2, TX3, TX4, TX5, TX6);
+Object.assign(TX, TX2, TX3, TX4, TX5, TX6, TX7);
 Object.keys(TX).forEach(id => { if(T[id] && TX[id].evs) T[id].ev = TX[id].evs; });
 
 // ---------- bidi + abbreviations ----------
