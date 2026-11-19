@@ -610,9 +610,12 @@ html:has(body.sess){scroll-padding:84px 0 96px}
 .vrow:last-child{border-bottom:0}
 .vrow .vl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:var(--fs-foot);color:var(--label-2)}
 .vrow .vl b{color:var(--label-2);font-weight:600}
-.vin{display:block;width:100%;min-height:28px;margin:2px 0 0;padding:2px 0;border:0;border-radius:6px;background:transparent;resize:none;overflow:hidden;font-size:var(--fs-body);line-height:1.45}
-.vin:focus{outline:none;background:var(--tint-soft)}
+.vval{margin:2px 0 0;padding:2px 0;font-size:var(--fs-body);line-height:1.45;overflow-wrap:anywhere}
 .vq{font-size:var(--fs-foot);color:var(--label-2);margin-top:2px}
+.vplay{display:inline-grid;place-items:center;width:28px;height:28px;margin-inline-start:6px;vertical-align:middle;border:0;border-radius:50%;background:var(--tint-btn);color:#fff}
+.vplay svg{width:14px;height:14px}
+.fin .grid{align-items:stretch}
+.fin #finAudio .audio-box{margin-top:10px}
 .vrow .vb{display:flex;gap:6px}
 @media (max-width:759px){ .vrow{grid-template-columns:1fr} }
 .callout{margin-top:8px;padding:8px 10px;border-radius:var(--r-s);background:var(--fill-2);font-size:var(--fs-foot);color:var(--label-2)}

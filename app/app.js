@@ -1098,7 +1098,7 @@ function examCard() {
 }
 function hypoCard(inGrid) {
   const s = session, list = insState(s).hypo, lvl = '<span class="lv" aria-hidden="true"><i></i><i></i><i></i></span>';
-  return `<section class="card${inGrid ? ' span2' : ''}">${cardHead('hypo', atMeta('hypo') + hypoBtn('עדכן'))}
+  return `<section class="card${inGrid ? ' span2' : ''}">${cardHead('hypo', atMeta('hypo') + (view === 'finish' ? '' : hypoBtn('עדכן')))}
     <div class="hyps">${list.map(h => `<div class="hyp"><h3>${esc(h.name)}</h3><span class="st ${STATUS_HE[h.status] ? h.status : 'possible'}">${lvl}${STATUS_HE[h.status] || STATUS_HE.possible}</span>
       ${h.support?.length || h.against?.length ? `<div class="ev"><div><b>תומך</b>${h.support?.length ? `<ul>${h.support.map(x => `<li>${escN(x)}</li>`).join('')}</ul>` : '<span class="muted">—</span>'}</div><div><b>סותר</b>${h.against?.length ? `<ul>${h.against.map(x => `<li>${escN(x)}</li>`).join('')}</ul>` : '<span class="muted">—</span>'}</div></div>` : ''}
       ${h.tests?.length ? `<div class="ts">מבדקים שיעזרו להבחין: ${h.tests.map(id => testLink(id) ? `<a class="chipl" href="${testLink(id)}" target="${MAP_TARGET}">${esc(testName(id))}</a>` : `<span class="chipl">${esc(testName(id))}</span>`).join('')}</div>` : ''}</div>`).join('')}</div>
@@ -1361,11 +1361,16 @@ function stopSaver() {
 }
 const fmtBytes = n => n > 1e6 ? (n / 1e6).toFixed(1) + 'MB' : Math.max(1, Math.round(n / 1e3)) + 'KB';
 let audioUrls = [];
-async function renderAudioBox() {
-  const box = $('#audioBox'); if (!box || !session) return;
+// the session screen's transcript tab has #audioBox; the finish screen passes its own box
+async function renderAudioBox(box = $('#audioBox')) {
+  if (!box || !session) return;
   audioUrls.forEach(u => URL.revokeObjectURL(u)); audioUrls = [];
   let parts = []; try { parts = await audioParts(session.id); } catch { }
-  if (!parts.length) { box.innerHTML = settings.saveAudio ? '' : '<p class="muted small">שמירת ההקלטה כבויה בהגדרות.</p>'; return; }
+  if (!parts.length) {
+    box.innerHTML = Object.keys(session.audioIds || {}).length ? '<div class="audio-box"><div class="lbl" style="margin-top:0">ההקלטה שמורה ב-Drive ולא במכשיר הזה</div><button class="btn sm" style="justify-self:start" data-act="audioDrive">הורד אותה כדי לשמוע</button></div>'
+      : settings.saveAudio ? '' : '<p class="muted small">שמירת ההקלטה כבויה בהגדרות.</p>';
+    return;
+  }
   box.innerHTML = `<div class="audio-box"><div class="lbl" style="margin-top:0">הקלטות המפגש: נשמרות במכשיר עד סגירת המפגש, ועולות ל-Drive עם "שמור ל-Drive"</div>` +
     parts.map(p => {
       const url = URL.createObjectURL(p.blob); audioUrls.push(url);
@@ -1375,7 +1380,7 @@ async function renderAudioBox() {
         <a class="btn sm" href="${url}" download="הקלטה ${fmtStamp(session.startedAt).replace(':', '-')} חלק ${p.part}.${ext}">הורד</a>
         <audio controls preload="metadata" src="${url}"></audio></div>`;
     }).join('') + '</div>';
-  $$('#audioBox audio').forEach(a => a.addEventListener('loadedmetadata', () => ensureSeekable(a), { once: true }));
+  box.querySelectorAll('audio').forEach(a => a.addEventListener('loadedmetadata', () => ensureSeekable(a), { once: true }));
 }
 
 /* ---------------- listening back to a transcript line ----------------
@@ -2504,8 +2509,17 @@ const stageFields = (s, id) => { const st = STAGES.find(x => x.id === id) || STA
 /* ---------------- finishing a session: stop, verify what the AI filled, see the picture, save ---------------- */
 let fin = { phase: 'review', msg: '', err: '', filling: false };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+// the finish screen opens once something was recorded or transcribed, or every required anamnesis field is filled;
+// a session already saved to Drive always opens it (that is where a correction is saved)
+function finishBlock(s) {
+  if (s.firstSavedAt || recording || s.segments.length || (s.recordedMs || 0) > 0) return null;
+  const req = stageFields(s, 'anamnesis').filter(f => impOf(f) === 1), miss = req.filter(f => !s.fields[f.id]?.value);
+  return miss.length ? { req, miss } : null;
+}
 async function openFinish() {
   if (!session) return;
+  const block = finishBlock(session);
+  if (block) { toast(`אי אפשר לסיים עדיין: אין תמלול או הקלטה, וחסרים ${block.miss.length} מתוך ${block.req.length} שדות החובה באנמנזה.`, true, 5000); return; }
   const wasRec = recording;
   fin = { phase: wasRec ? 'stopping' : 'review', msg: '', err: '', filling: false };
   if (wasRec) stopRec();
@@ -2518,16 +2532,19 @@ async function openFinish() {
     fin.filling = false;
   }
   if (view === 'finish') renderFinish();
-  // the visual summary is drawn from everything collected; bring it up to date once
-  if (session && aiReady() && smartAny()) { await runInsight(true); if (view === 'finish') renderFinish(); }
+  // the visual summary catches up with what changed since its last update (nothing changed: no call)
+  if (session && aiReady() && smartAny()) { await runInsight(); if (view === 'finish') renderFinish(); }
 }
 const needsReview = f => { const v = session.fields[f.id]; return v?.value && (v.needsCheck || v.unverified); };
+// read-only here: "אשר" marks the value as checked, "ערוך" takes the therapist to the field in the session screen
 function verRowHtml(f) {
-  const v = session.fields[f.id];
+  const s = session, v = s.fields[f.id];
+  const i = v.quote ? findSeg(v.quote) : -1, g = s.segments[i];
+  const play = g && !g.manual && s.audioParts ? `<button class="vplay" data-act="segPlay" data-i="${i}" aria-label="השמע מההקלטה" title="השמע מההקלטה">${ICON.play}</button>` : '';
   return `<div class="vrow" id="v-${f.id}"><div class="vmain"><div class="vl"><b>${esc(shortLabel(f.label))}</b>${v.unverified ? '<span class="badge bad">לא נמצא בתמלול</span>' : '<span class="badge chk">לאמת</span>'}</div>
-    <textarea class="vin" id="vt-${f.id}" rows="1" aria-label="${esc(f.label)}">${esc(v.value)}</textarea>
-    ${v.quote ? `<div class="vq">${v.unverified ? 'המודל ציטט, אבל זה לא נמצא בתמלול' : v.asked ? 'נשען על שאלה של המטפל' : 'נשמע בתמלול'}: «${esc(v.quote)}»</div>` : ''}</div>
-    <div class="vb"><button class="btn primary sm" data-act="vConfirm" data-fid="${f.id}">אשר</button><button class="btn sm" data-act="vClear" data-fid="${f.id}">נקה</button></div></div>`;
+    <div class="vval">${escN(v.value)}</div>
+    ${v.quote ? `<div class="vq">${v.unverified ? 'המודל ציטט, אבל זה לא נמצא בתמלול' : v.asked ? 'נשען על שאלה של המטפל' : 'נשמע בתמלול'}: «${esc(v.quote)}»${play}</div>` : ''}</div>
+    <div class="vb"><button class="btn primary sm" data-act="confirm" data-fid="${f.id}">אשר</button><button class="btn sm" data-act="edit" data-fid="${f.id}">ערוך</button></div></div>`;
 }
 function saveRowHtml(nv) {
   const s = session;
@@ -2547,11 +2564,12 @@ function saveRowHtml(nv) {
 function renderFinish() {
   const s = session; if (!s) { view = 'home'; return renderHome(); }
   if (recLocked(s)) return renderRecord();
-  document.body.className = 'fin';
+  document.body.className = 'fin'; document.body.classList.toggle('has-player', !!PL.audio);
   const all = fieldsFor(s), ver = all.filter(needsReview), must = all.filter(f => !s.fields[f.id]?.value && impOf(f) === 1);
   const tasks = (s.notes || []).filter(n => n.task);
   const viz = vizCards('all', true);
-  setTimeout(() => $$('.vin').forEach(autosize));
+  // the recording player survives a redraw of the screen (confirming a row must not stop the playback)
+  const aud = $('#finAudio'), audKey = [s.id, s.audioParts || 0, JSON.stringify(s.audioEnds || {}), JSON.stringify(s.audioIds || {}), fin.phase === 'stopping'].join('|');
   $('#app').innerHTML = `<div class="shell"><main class="main">
   <div class="toolbar page"><div class="lead"><button class="icon-btn glass" data-act="resume" aria-label="חזרה למפגש">${ICON.back}</button></div>
     <div class="trail"><button class="icon-btn glass" data-act="settings" aria-label="הגדרות">${ICON.gear}</button></div></div>
@@ -2560,11 +2578,12 @@ function renderFinish() {
     <section class="card fin-sec" aria-labelledby="fRec"><div class="card-h cat-rec"><span class="glyph">${ICON.mic}</span><h2 id="fRec">הקלטה</h2></div>
       <p class="lead">${fin.phase === 'stopping' ? '<span class="spin"></span> עוצר את ההקלטה ומשלים את התמלול…' : `ההקלטה עצורה · ${fmtClock(s.recordedMs || 0)} · ${s.segments.length} שורות בתמלול`}</p>
       ${fin.filling ? '<p class="lead"><span class="spin"></span> ממלא את הטופס ממה שנאמר בסוף…</p>' : ''}
-      ${insighting ? '<p class="lead"><span class="spin"></span> מעדכן את הסיכום החזותי…</p>' : ''}</section>
+      ${insighting ? '<p class="lead"><span class="spin"></span> מעדכן את הסיכום החזותי…</p>' : ''}
+      <div id="finAudio"></div></section>
     ${viz.length ? `<h2 class="sr">סיכום חזותי</h2><div class="grid">${viz.join('')}</div>` : ''}
     ${smart().record ? recordHtml() : ''}
     <section class="card fin-sec" aria-labelledby="fVer"><div class="card-h cat-rec"><span class="glyph">${ICON.check}</span><h2 id="fVer">לאימות <span class="muted num">${ver.length}</span></h2></div>
-      ${ver.length ? '<p class="lead">שדות שה-AI מילא וצריכים את האישור שלך. אפשר לתקן בשורה עצמה לפני האישור.</p><div class="vrows">' + ver.map(verRowHtml).join('') + '</div>' : '<p class="lead">כל השדות שמולאו אומתו.</p>'}</section>
+      ${ver.length ? '<p class="lead">שדות שה-AI מילא וצריכים את האישור שלך. כדי לתקן ערך, "ערוך" מעביר לשדה במסך המפגש.</p><div class="vrows">' + ver.map(verRowHtml).join('') + '</div>' : '<p class="lead">כל השדות שמולאו אומתו.</p>'}</section>
     ${tasks.length ? `<section class="card fin-sec" aria-labelledby="fTask"><div class="card-h cat-note"><span class="glyph">${ICON.note}</span><h2 id="fTask">משימות מהפתקים <span class="muted num">${tasks.length}</span></h2></div>
       ${notesListHtml(tasks)}</section>` : ''}
     ${must.length ? `<section class="card fin-sec" aria-labelledby="fMust"><div class="card-h cat-gap"><span class="glyph">${ICON.alert}</span><h2 id="fMust">שדות חובה שלא נאמרו <span class="muted num">${must.length}</span></h2></div>
@@ -2577,6 +2596,19 @@ function renderFinish() {
       ${s.analysis ? '' : '<button class="btn" data-act="toAnalysis">להפקת ניתוח</button>'}</section>
     <div class="saverow" id="saveRow">${saveRowHtml(ver.length)}</div>
   </div></main></div>`;
+  const slot = $('#finAudio');
+  if (aud && aud.dataset.key === audKey) slot.replaceWith(aud);
+  else { slot.dataset.key = audKey; renderAudioBox(slot); }
+  reanchorPop();
+}
+// a popover open over the finish screen stays on its button when the screen is redrawn
+function reanchorPop() {
+  if (!popEl || !popKey) return;
+  const k = popKey.slice(0, 2), id = CSS.escape(popKey.slice(2));
+  const a = k === 'v:' ? $(`[data-act=verifyPart][data-part="${id}"]`) : k === 'r:' ? $(`[data-act=srcRec][data-sec="${id}"]`) : k === 'f:' ? $(`[data-act=src][data-fid="${id}"]`) : null;
+  if (!a) { closePop(); return; }
+  popAnchor = a; if (k === 'r:') a.classList.add('on');
+  refreshPop(); placePop();
 }
 function render() {
   applyLayout(); closePop();
@@ -2886,7 +2918,7 @@ function srcPopHtml(ids, title) {
     const badge = v.unverified ? '<span class="badge bad">לא נמצא בתמלול</span>' : v.needsCheck ? '<span class="badge chk">לאמת</span>' : v.confirmed ? '<span class="badge ok">אומת</span>' : v.source === 'manual' ? '<span class="badge">נכתב ידנית</span>' : v.source === 'note' ? '<span class="badge">מפתק</span>' : '';
     return `<div style="margin-top:${many ? 12 : 0}px">${many ? `<div class="fl">${esc(shortLabel(f.label))} ${badge}</div>` : ''}<div class="fv">${escN(v.value || '—')}</div>
       ${v.quote ? `<div class="src-q${heard ? '' : ' bad'}"><div class="m">${!heard ? 'המודל ציטט, אבל זה לא נמצא בתמלול' : v.asked ? 'נשען על שאלה של המטפל, לא על דברי המטופל' : 'נשמע בתמלול'}${g ? ' · ' + hhmm(g.t) + (g.speaker != null ? ' · דובר ' + esc(g.speaker) : '') : ''}${canPlay ? `<button class="play" data-act="segPlay" data-i="${i}" aria-label="השמע מההקלטה">${ICON.play}</button>` : g ? ' · <span class="noaud">אין הקלטה לקטע זה</span>' : ''}</div>«${esc(v.quote)}»</div>` : ''}
-      <div class="acts">${v.needsCheck || v.unverified ? `<button class="btn sm primary" data-act="confirm" data-fid="${id}">אשר</button>` : ''}<button class="btn sm" data-act="edit" data-fid="${id}">ערוך</button>${v.source === 'ai' ? `<button class="btn sm" data-act="undo" data-fid="${id}">בטל מילוי</button>` : ''}</div></div>`;
+      <div class="acts">${v.needsCheck || v.unverified ? `<button class="btn sm primary" data-act="confirm" data-fid="${id}">אשר</button>` : ''}<button class="btn sm" data-act="edit" data-fid="${id}">ערוך</button>${v.source === 'ai' && view !== 'finish' ? `<button class="btn sm" data-act="undo" data-fid="${id}">בטל מילוי</button>` : ''}</div></div>`;
   });
   const one = ids.length === 1 && FIELD[ids[0]];
   const v1 = one ? s.fields[ids[0]] || {} : null;
@@ -3226,7 +3258,7 @@ function recordHtml() {
   }).join('');
   const at = ins.at.record ? 'עודכן ' + hhmm(ins.at.record) : '';
   return `<section class="card" aria-labelledby="recH"><div class="card-h cat-rec"><span class="glyph">${ICON.doc}</span><h2 id="recH">רשומה</h2>
-    <span class="end"><span class="meta">${insighting ? '<span class="spin"></span> מתעדכן' : dirty.length && at ? 'יתעדכן במילוי הבא' : at}</span>${aiReady() ? `<button class="icon-btn" data-act="insight" aria-label="רענן את הרשומה והגרפיקה" title="רענן">${ICON.refresh}</button>` : ''}</span></div>
+    <span class="end"><span class="meta">${insighting ? '<span class="spin"></span> מתעדכן' : dirty.length && at ? 'יתעדכן במילוי הבא' : at}</span>${aiReady() && view !== 'finish' ? `<button class="icon-btn" data-act="insight" aria-label="רענן את הרשומה והגרפיקה" title="רענן">${ICON.refresh}</button>` : ''}</span></div>
     ${body ? `<div class="record">${body}</div><p class="fine">לחיצה על משפט מראה מאיפה הוא הגיע ומשמיעה אותו מההקלטה.</p>` : `<p class="empty-note">הרשומה תיכתב כאן תוך כדי המפגש, ממה שנקלט מהשיחה.</p>`}</section>`;
 }
 
@@ -3422,7 +3454,7 @@ document.addEventListener('click', async e => {
     case 'keepRegion': session.regionKeep = t.dataset.r; touch(); refreshLive(); if (tab !== 'live') renderTab(); break;
     case 'tab': tab = t.dataset.tab; closePop(); renderTab(); window.scrollTo(0, 0); break;
     case 'jump': if (view !== 'session') { view = 'session'; render(); } jumpTo(t.dataset.fid); break;
-    case 'edit': jumpTo(t.dataset.fid, true); break;
+    case 'edit': if (view !== 'session') { view = 'session'; render(); } jumpTo(t.dataset.fid, true); break;
     case 'undo': {
       const id = t.dataset.fid, cur = session.fields[id], r = (session.recent || []).find(x => x.id === id);
       session.fields[id] = r?.prev ? { ...r.prev, rejected: cur?.value } : { value: '', locked: false, rejected: cur?.value };
@@ -3435,15 +3467,12 @@ document.addEventListener('click', async e => {
       if (popKey === 'r:' + sec) { closePop(); break; }
       showSource((r.fields || []).filter(id => FIELD[id]), t, 'r:' + sec); t.classList.add('on'); break;
     }
-    case 'confirm': { const f = session.fields[t.dataset.fid]; if (f) { f.needsCheck = false; f.unverified = false; f.confirmed = true; touch(); refreshField(t.dataset.fid); refreshLive(); } break; }
-    case 'vConfirm': {
-      const id = t.dataset.fid, f = session.fields[id], val = ($('#vt-' + id)?.value || '').trim(); if (!f) break;
-      if (!val) { session.fields[id] = { value: '', locked: false, rejected: f.value }; }
-      else if (val !== f.value) session.fields[id] = { ...f, value: val, source: 'manual', locked: true, needsCheck: false, unverified: false, at: Date.now() };
-      else { f.needsCheck = false; f.unverified = false; f.confirmed = true; }
-      markDirty([id]); touch(); renderFinish(); break;
+    case 'confirm': { const f = session.fields[t.dataset.fid]; if (f) { f.needsCheck = false; f.unverified = false; f.confirmed = true; touch(); refreshField(t.dataset.fid); refreshLive(); if (view === 'finish') renderFinish(); } break; }
+    case 'audioDrive': {
+      const s = session; t.disabled = true;
+      try { await audioFromDrive(s); } catch (e) { toast('ההורדה של ההקלטה מ-Drive נכשלה: ' + humanErr(e), true, 5000); t.disabled = false; break; }
+      if (session === s) { renderAudioBox(); renderAudioBox($('#finAudio')); } break;
     }
-    case 'vClear': { const id = t.dataset.fid, f = session.fields[id]; session.fields[id] = { value: '', locked: false, rejected: f?.value }; markDirty([id]); touch(); renderFinish(); break; }
     case 'finish': closePop(); openFinish(); break;
     case 'toAnalysis': view = 'session'; tab = 'analysis'; render(); break;
     case 'saveDrive': {
