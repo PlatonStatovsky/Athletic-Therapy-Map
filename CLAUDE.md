@@ -18,4 +18,5 @@ Hosting: Cloudflare Pages project `ligamentum` — production https://ligamentum
 
 Workflow:
 - `main` is production. Work in a branch; merge or push to `main` only when Platon asks.
+- Every change is logged, newest first, in `CHANGELOG.md` (Hebrew, columns date | what changed | where on the site | commit) and in the same row in the tab "יומן שינויים — Claude" of the Google Doc "SRS - Thalamus 0.1".
 - Hebrew RTL throughout; keep the existing house style of each part.
