@@ -264,8 +264,8 @@ function autosize(t) { t.style.height = 'auto'; t.style.height = (t.scrollHeight
 const fmtDate = iso => { const d = new Date(iso); return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}`; };
 const fmtStamp = iso => { const d = new Date(iso); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`; }; // file names (sort by date)
 const fmtWhen = iso => { const d = new Date(iso); return `${fmtDate(iso)} · ${pad(d.getHours())}:${pad(d.getMinutes())}`; }; // everything a person reads
-// when a session ran: start, and its end once it has one (the end's date too when it ran past midnight)
-const fmtSpan = (start, end) => { if (!end || +new Date(end) - +new Date(start) < 60e3) return fmtWhen(start); const e = new Date(end); return fmtDate(end) === fmtDate(start) ? `${fmtWhen(start)}–${pad(e.getHours())}:${pad(e.getMinutes())}` : `${fmtWhen(start)} – ${fmtWhen(end)}`; };
+// when a session ran: its start, and its end once it has one, each with date and time
+const fmtSpan = (start, end) => `התחלה: ${fmtWhen(start)}` + (end && +new Date(end) - +new Date(start) >= 60e3 ? ` · סיום: ${fmtWhen(end)}` : '');
 const fmtClock = ms => { const s = Math.floor(ms / 1000); return `${pad(Math.floor(s / 60))}:${pad(s % 60)}`; };
 
 /* ---------------- Claude API ---------------- */
@@ -2211,7 +2211,7 @@ const rtl = h => h.replace(/<(p|h[1-6]|li|ul)>/g, '<$1 dir="rtl" style="directio
 function sessionDocHtml(s) {
   const v = id => s.fields[id]?.value;
   let h = `<h1>מפגש — ${esc(s.patientName)}</h1>`;
-  h += `<p>תאריך: ${fmtSpan(s.startedAt, s.endedAt)} · אזור: ${esc(s.region)} · ${esc(s.type)}</p>`;
+  h += `<p>${fmtSpan(s.startedAt, s.endedAt)} · אזור: ${esc(s.region)} · ${esc(s.type)}</p>`;
   h += `<p>הסכמת המטופל להקלטה: ניתנה, ${fmtWhen(s.consentAt || s.startedAt)}</p>`;
   if (s.firstSavedAt) h += `<p>נשמר לראשונה: ${fmtWhen(s.firstSavedAt)} · ${recLocked(s) ? 'נעול לעריכה; אפשר רק להוסיף נספח' : 'אפשר לתקן עד ' + fmtWhen(lockAt(s))}${s.amendments?.length ? ` · תיקונים: ${s.amendments.length}` : ''}${s.addenda?.length ? ` · נספחים: ${s.addenda.length}` : ''}</p>`;
   h += recordDocHtml(s) + vizDocHtml(s) + notesDocHtml(s);
