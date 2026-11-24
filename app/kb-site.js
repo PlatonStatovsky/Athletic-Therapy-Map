@@ -5,7 +5,8 @@
   'use strict';
   const NAMES = ['T', 'GENERAL', 'REGIONS', 'FIVE_D', 'THREE_N', 'TEST_GEN', 'TX', 'TX2', 'TX3', 'FOUND', 'TISSUE'];
   // app region label → site region id
-  const REGION_ID = { 'צוואר וראש': 'neck', 'כתף': 'shoulder', 'מרפק': 'elbow', 'שורש כף יד וכף יד': 'hand' };
+  const REGION_ID = { 'צוואר וראש': 'neck', 'כתף': 'shoulder', 'מרפק': 'elbow', 'שורש כף יד וכף יד': 'hand', 'גב תחתון ואגן': 'lowback', 'ירך ומפשעה': 'hip', 'ברך': 'knee', 'קרסול וכף רגל': 'ankle',
+    'גב תחתון': 'lowback', 'ירך ואגן': 'hip' }; // the last two: names from before 24.11
 
   function extractLiterals(src, names) {
     const out = {};
@@ -26,8 +27,10 @@
     return out;
   }
   function parseSite(html, JSON5) {
-    const lit = extractLiterals(html, NAMES), data = {};
-    for (const n of NAMES) if (lit[n]) data[n] = JSON5.parse(lit[n]);
+    // test cards come in one literal per group of regions (TX, TX2 … TX7); a new one is picked up by its name alone
+    const names = [...new Set([...NAMES, ...[...html.matchAll(/(?:^|\n)\s*const\s+(TX\d*)\s*=\s*[[{]/g)].map(m => m[1])])];
+    const lit = extractLiterals(html, names), data = {};
+    for (const n of names) if (lit[n]) data[n] = JSON5.parse(lit[n]);
     if (!data.GENERAL || !data.REGIONS) throw new Error('מבנה האתר השתנה — לא נמצאו GENERAL / REGIONS');
     return data;
   }
@@ -73,7 +76,7 @@
   const renderFound = d => renderTopics(d, d.FOUND, 'עקרונות');
   const renderTissue = d => renderTopics(d, d.TISSUE, 'רקמות');
   function renderTest(d, id) {
-    const t = d.T?.[id] || d.TEST_GEN?.[id] || {}, x = d.TX?.[id] || d.TX2?.[id] || d.TX3?.[id] || {};
+    const t = d.T?.[id] || d.TEST_GEN?.[id] || {}, x = Object.keys(d).filter(k => /^TX\d*$/.test(k)).map(k => d[k]?.[id]).find(Boolean) || {};
     const out = [`#### ${clean(t.n || id)}`];
     if (x.aim) out.push('מטרה: ' + clean(x.aim));
     if (x.pt) out.push('מטופל: ' + clean(x.pt));
@@ -138,7 +141,7 @@
   function regionText(d, regionLabel) {
     const id = REGION_ID[regionLabel];
     const r = id && d.REGIONS.find(x => x.id === id);
-    const parts = ['# שיקום שמרני — מפת דרך (athletic-therapy-map — בסיס הידע המאומת של המטפל)', renderGeneral(d), renderFound(d), renderTissue(d)];
+    const parts = ['# Ligamentum — מפת הדרך (בסיס הידע המאומת של המטפל)', renderGeneral(d), renderFound(d), renderTissue(d)];
     if (r) parts.push(renderRegion(d, r));
     else parts.push(`(לאזור "${regionLabel}" אין עדיין פרק באתר — רק המסגרת הכללית והעקרונות.)`);
     return parts.filter(Boolean).join('\n\n');

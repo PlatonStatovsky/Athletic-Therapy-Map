@@ -33,18 +33,18 @@ https://docs.google.com/document/d/1w4WaEasDHYIM2dgv5NZfQLvgeyCBrlUV3xN1T0IcuH0/
 https://docs.google.com/document/d/1tFbneN26GslZvhsnilawMrSOmhXCLYj-PnKmsLA2V74/edit | מרפק, שורש כף יד וכף יד
 https://docs.google.com/document/d/1kNxMopGomXkwtlg90lpF09tVIiEvaqpTIT4u0BWxiwo/edit | צוואר וראש, כתף, מרפק, שורש כף יד וכף יד
 # גב, אגן וגפה תחתונה — קורס הקיץ
-https://docs.google.com/document/d/1cHNuHIddG73-fnsHg-wrYPMjRr78MfnbUyMVrsJcH-Y/edit | גב תחתון, ירך ואגן
-https://drive.google.com/file/d/1Qnq6m5gDKvckqx76C1QwntHN6x49Y496/view | גב תחתון, ירך ואגן
-https://drive.google.com/file/d/1daHzXbqlaiBStT5CLSIwlY5nAjaojk0v/view | ירך ואגן
-https://drive.google.com/file/d/1b_fyv28PrL5X-IhDH14XkiJo7i9dsU5y/view | ירך ואגן
+https://docs.google.com/document/d/1cHNuHIddG73-fnsHg-wrYPMjRr78MfnbUyMVrsJcH-Y/edit | גב תחתון ואגן, ירך ומפשעה
+https://drive.google.com/file/d/1Qnq6m5gDKvckqx76C1QwntHN6x49Y496/view | גב תחתון ואגן, ירך ומפשעה
+https://drive.google.com/file/d/1daHzXbqlaiBStT5CLSIwlY5nAjaojk0v/view | ירך ומפשעה
+https://drive.google.com/file/d/1b_fyv28PrL5X-IhDH14XkiJo7i9dsU5y/view | ירך ומפשעה
 https://docs.google.com/document/d/1Wpnv9mjXH4rwsvOhqNcqrXiG5OmiX3zOH7S-Ko0-h9M/edit | ברך
 https://docs.google.com/document/d/1Tk-9SRI2QJpll-XmWNoviEWIIEhONBtETIQwK49mm3g/edit | ברך
 https://docs.google.com/document/d/16ZhbOBQzKvjcRrqB9GmVf5mVWANtNsCAQo-xUwLjMOk/edit | קרסול וכף רגל, ברך
 https://docs.google.com/document/d/1h1fhVIq_TlFwe4x_IcWYUectECUTekzhvOUbGb4Q5Ic/edit | קרסול וכף רגל
 # מאגר המבדקים — כל אזור מקבל רק את החלקים שלו
-https://drive.google.com/file/d/17KujdVmoq22YEX7vTiF1nWE6RvNuFnhX/view | גב תחתון, ירך ואגן, ברך, קרסול וכף רגל, אחר | חלק א, חלק ב
-https://drive.google.com/file/d/17KujdVmoq22YEX7vTiF1nWE6RvNuFnhX/view | גב תחתון, ירך ואגן | חלק ג
-https://drive.google.com/file/d/17KujdVmoq22YEX7vTiF1nWE6RvNuFnhX/view | ירך ואגן | חלק ד
+https://drive.google.com/file/d/17KujdVmoq22YEX7vTiF1nWE6RvNuFnhX/view | גב תחתון ואגן, ירך ומפשעה, ברך, קרסול וכף רגל, אחר | חלק א, חלק ב
+https://drive.google.com/file/d/17KujdVmoq22YEX7vTiF1nWE6RvNuFnhX/view | גב תחתון ואגן | חלק ג
+https://drive.google.com/file/d/17KujdVmoq22YEX7vTiF1nWE6RvNuFnhX/view | ירך ומפשעה | חלק ד
 https://drive.google.com/file/d/17KujdVmoq22YEX7vTiF1nWE6RvNuFnhX/view | ברך | חלק ה
 https://drive.google.com/file/d/17KujdVmoq22YEX7vTiF1nWE6RvNuFnhX/view | קרסול וכף רגל | חלק ו
 # כללי — לכל ניתוח: חשיבה קלינית, עצמות ושברים, שרירים
@@ -53,10 +53,15 @@ https://drive.google.com/file/d/1FF0nX8mUgek0E7EspDHfmqcWOE9tbM8Q/view
 https://drive.google.com/file/d/1eZYbwtAfj7o2ZMRjeb6fJQ5doWqe3oZH/view`;
 const KB_OLD_DEFAULT = 'https://docs.google.com/document/d/1w69Gy6xERTPrLEa3kJpLsPf4nL0DCDsy_zpxN8VGBvE/edit\nhttps://docs.google.com/document/d/1Tk-9SRI2QJpll-XmWNoviEWIIEhONBtETIQwK49mm3g/edit | ברך';
 
+// the map's names are the source; sessions and settings from before 24.11 carry the old ones
+const REGION_ALIAS = { 'גב תחתון': 'גב תחתון ואגן', 'ירך ואגן': 'ירך ומפשעה' };
+const newRegion = r => REGION_ALIAS[r] || r;
+function fixRegion(s) { if (!s) return s; if (s.region) s.region = newRegion(s.region); if (s.prev?.region) s.prev.region = newRegion(s.prev.region); return s; }
+const fixTags = text => String(text || '').split('\n').map(l => { if (l.trim().startsWith('#') || !l.includes('|')) return l; const [a, tags, ...rest] = l.split('|'); return [a, ' ' + tags.split(',').map(t => newRegion(t.trim())).join(', ') + ' ', ...rest].join('|').replace(/ +\|/g, ' |').replace(/\| +$/, ''); }).join('\n');
 const DEFAULT_SETTINGS = {
   extractModel: 'claude-sonnet-5-5', analysisModel: 'claude-opus-5-5',
   clientId: '', rootFolderName: 'מטופלים', rootFolderId: '',
-  kbDocs: KB_DEFAULT, extraKB: '', siteKB: true, kbBudget: 350, kbVer: 2, engine: 'browser', accessCode: '', saveAudio: true,
+  kbDocs: KB_DEFAULT, extraKB: '', siteKB: true, kbBudget: 350, kbVer: 3, engine: 'browser', accessCode: '', saveAudio: true,
   autoFill: true, fillChars: 600, continuous: true, lang: 'he-IL'
 };
 const storedSettings = LS.get(K.settings, null);
@@ -65,9 +70,14 @@ if (storedSettings && (storedSettings.kbVer || 1) < 2) { // version 1 kept the k
   if (String(settings.kbDocs || '').trim() === KB_OLD_DEFAULT || !String(settings.kbDocs || '').trim()) settings.kbDocs = KB_DEFAULT;
   settings.kbVer = 2; LS.set(K.settings, settings);
 }
+if (storedSettings && (storedSettings.kbVer || 1) < 3) { // 24.11: the knowledge-base tags take the map's region names
+  settings.kbDocs = fixTags(settings.kbDocs); settings.kbVer = 3; LS.set(K.settings, settings);
+}
 if ('apiKey' in settings) { delete settings.apiKey; LS.set(K.settings, settings); }
 let patients = LS.get(K.patients, []);
 let session = LS.get(K.session, null);
+if (session && !session.enc) fixRegion(session);
+if (Array.isArray(patients)) patients.forEach(fixRegion);
 // with encryption on, these two hold {enc:1, iv, ct} until the vault is unlocked with Google
 const LOCKED = { session: session?.enc ? session : null, patients: patients?.enc ? patients : null };
 if (LOCKED.session) session = null;
@@ -92,7 +102,7 @@ function persist(k, v) {
 }
 
 /* ---------------- domain: regions & form ---------------- */
-const REGIONS = ['צוואר וראש', 'כתף', 'מרפק', 'שורש כף יד וכף יד', 'גב תחתון', 'ירך ואגן', 'ברך', 'קרסול וכף רגל', 'אחר'];
+const REGIONS = ['צוואר וראש', 'כתף', 'מרפק', 'שורש כף יד וכף יד', 'גב תחתון ואגן', 'ירך ומפשעה', 'ברך', 'קרסול וכף רגל', 'אחר'];
 const TYPES = ['הערכה ראשונית', 'מפגש מעקב'];
 const STAGES = [
   { id: 'anamnesis', label: 'אנמנזה', sections: ['followup', 'details', 'complaint', 'associated', 'function', 'history', 'flags'] },
@@ -1704,7 +1714,7 @@ async function driveVaultRaw() {
 }
 async function importVault(raw) { VAULT.raw = raw; VAULT.key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']); }
 async function openLocked() {
-  if (LOCKED.session) { session = await unseal(LOCKED.session); LOCKED.session = null; }
+  if (LOCKED.session) { session = fixRegion(await unseal(LOCKED.session)); LOCKED.session = null; }
   if (LOCKED.patients) { patients = await unseal(LOCKED.patients); LOCKED.patients = null; }
 }
 /* One Google sign-in opens the encrypted data too: the device key is stored on the device wrapped with a
@@ -1938,7 +1948,7 @@ function parseKbDocs(text = settings.kbDocs) {
     return id ? { id, regions: splitList(tags), parts: splitList(parts) } : { bad: link };
   });
 }
-const regionMatch = (regions, region) => !regions || regions.some(r => region.includes(r) || r.includes(region));
+const regionMatch = (regions, region) => !regions || regions.map(newRegion).some(r => region.includes(r) || r.includes(region));
 const BIDI = /[‎‏‪-‮⁦-⁩]/g;
 function cleanText(t) {
   return String(t || '')
@@ -2443,7 +2453,7 @@ async function openRecord(id) {
     const j = await (await gfetch(`${DAPI}/${encodeURIComponent(id)}?alt=media`)).json();
     if (j?.format !== REC_FORMAT || !j.session?.id || !j.session.patientName) throw new Error('הקובץ לא נראה כמו מפגש של Thalamus');
     stopPlayer?.();
-    session = normalizeRecord(j.session); session.jsonId = id;
+    session = fixRegion(normalizeRecord(j.session)); session.jsonId = id;
     saveSession(true); tab = 'summary'; openStages = new Set([session.stage]); lastStatus = { html: '', err: false, raw: false };
     loadTestNames(); go('session');
   } catch (e) { toast('הפתיחה נכשלה: ' + e.message, true, 6000); }
@@ -2747,7 +2757,7 @@ function sideToLatest() {
 }
 // map deep links: "../#shoulder" opens a region, "../#shoulder&t=hk" also opens a test card
 const MAP_TARGET = 'thalamus-map'; // every map link reuses this one tab
-const MAP_TAB = { 'צוואר וראש': 'neck', 'כתף': 'shoulder', 'מרפק': 'elbow', 'שורש כף יד וכף יד': 'hand' };
+const MAP_TAB = { 'צוואר וראש': 'neck', 'כתף': 'shoulder', 'מרפק': 'elbow', 'שורש כף יד וכף יד': 'hand', 'גב תחתון ואגן': 'lowback', 'ירך ומפשעה': 'hip', 'ברך': 'knee', 'קרסול וכף רגל': 'ankle' };
 function mapLink(region, testId) { return MAP_URL + '#' + (MAP_TAB[region] || 'general') + (testId ? '&t=' + testId : ''); }
 let siteData = null; // the map's data once loaded, for test names and the region a test card lives in
 function testHomeTab(id) {
@@ -3009,16 +3019,16 @@ function syncStage() {
 /* the session's region against what the session is actually about: the body map's pain zones, the words used
    for the location and the complaint, and the region of each special test on the map */
 const ZONE_REGION = { head: 'צוואר וראש', neck: 'צוואר וראש', shoulder: 'כתף', upper_arm: 'כתף', elbow: 'מרפק', forearm: 'מרפק', wrist_hand: 'שורש כף יד וכף יד',
-  low_back: 'גב תחתון', hip: 'ירך ואגן', thigh: 'ירך ואגן', knee: 'ברך', lower_leg: 'קרסול וכף רגל', ankle_foot: 'קרסול וכף רגל' };
+  low_back: 'גב תחתון ואגן', hip: 'ירך ומפשעה', thigh: 'ירך ומפשעה', knee: 'ברך', lower_leg: 'קרסול וכף רגל', ankle_foot: 'קרסול וכף רגל' };
 const REGION_WORDS = {
   'צוואר וראש': /צוואר|עורף|cervical|neck|whiplash|כאבי ראש|סחרחור/i,
   'כתף': /כתף|כתפי|שכמה|rotator|shoulder|\bAC\b|SLAP|labr|סופרספינטוס|supraspinatus|infraspinatus|subacromial/i,
   'מרפק': /מרפק|אפיקונדיל|epicondyl|elbow|tennis|golfer/i,
   'שורש כף יד וכף יד': /שורש כף|פרק כף|כף היד|כף יד|אצבע|אגודל|wrist|carpal|thumb|quervain|קרוויין/i,
-  'גב תחתון': /גב תחתון|מותני|לומב|lumbar|low back|\bLBP\b|סיאטיק|sciatic|sacr|עצה/i,
-  'ירך ואגן': /ירך|אגן|מפשעה|\bhip\b|groin|pelvi|glute|ישבן|טרוכנטר|trochant/i,
-  'ברך': /ברך|פיקה|פטל|knee|\bACL\b|\bPCL\b|\bMCL\b|\bLCL\b|מניסקוס|menisc|patell/i,
-  'קרסול וכף רגל': /קרסול|כף רגל|כף הרגל|עקב|אכילס|ankle|foot|achilles|plantar/i
+  'גב תחתון ואגן': /גב תחתון|מותני|לומב|lumbar|low back|\bLBP\b|סיאטיק|sciatic|sacr|עצה|אגן|\bSI\b|סקרו|PGP|חגורת האגן|סימפיזיס|symphys|pelvi/i,
+  'ירך ומפשעה': /ירך|מפשעה|\bhip\b|groin|glute|ישבן|טרוכנטר|trochant|המסטרינג|hamstring|קוואדריספס|quadricep|\bFAI|לברום|מקרבים|adductor/i,
+  'ברך': /ברך|פיקה|פטל|knee|\bACL\b|\bPCL\b|\bMCL\b|\bLCL\b|מניסק|menisc|patell|ITBS|Osgood|Schatzker|פלטו|plateau|Noble|בייקר|Baker/i,
+  'קרסול וכף רגל': /קרסול|כף רגל|כף הרגל|עקב|אכילס|ankle|foot|achilles|plantar|פלנטר|סינדסמוז|syndesm|ATFL|\bCAI\b|Lisfranc|Jones|מטטרס|metatars|נביקולר|navicul|MTSS|PTTD|Sever|Freiberg/i
 };
 function regionScores(s) {
   const sc = {}, add = (r, n) => { if (r) sc[r] = (sc[r] || 0) + n; };
@@ -3379,7 +3389,7 @@ function drBody(t) {
     </div></div>`;
   if (t === 'kb') return `
     <div class="group"><h3>מקורות</h3><div class="gl">
-      ${sw('siteKB', st.siteKB, 'מפת הדרך', 'מסגרת כללית לכל אזור, ופרק מלא לצוואר, כתף, מרפק ושורש כף יד')}
+      ${sw('siteKB', st.siteKB, 'מפת הדרך', 'מסגרת כללית, עקרונות ורקמות, ופרק מלא לכל 8 האזורים')}
       <div class="gi stack"><label class="lbl" for="sKb">סיכומים ב-Drive: קישור בכל שורה (Google Docs, ‏docx, ‏PDF). <span class="ltr">קישור | אזורים | חלקים</span>. בלי אזורים: לכל ניתוח. שורה שמתחילה ב-# היא הערה.</label>
         <textarea id="sKb" class="inp ltr" style="min-height:150px;font-size:12px" data-set="kbDocs">${esc(st.kbDocs)}</textarea>
         <button class="btn sm" style="margin-top:8px" data-act="kbDefault">החזר לרשימה המוכנה</button></div>
