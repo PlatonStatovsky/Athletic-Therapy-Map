@@ -264,6 +264,8 @@ function autosize(t) { t.style.height = 'auto'; t.style.height = (t.scrollHeight
 const fmtDate = iso => { const d = new Date(iso); return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}`; };
 const fmtStamp = iso => { const d = new Date(iso); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`; }; // file names (sort by date)
 const fmtWhen = iso => { const d = new Date(iso); return `${fmtDate(iso)} · ${pad(d.getHours())}:${pad(d.getMinutes())}`; }; // everything a person reads
+// when a session ran: start, and its end once it has one (the end's date too when it ran past midnight)
+const fmtSpan = (start, end) => { if (!end || +new Date(end) - +new Date(start) < 60e3) return fmtWhen(start); const e = new Date(end); return fmtDate(end) === fmtDate(start) ? `${fmtWhen(start)}–${pad(e.getHours())}:${pad(e.getMinutes())}` : `${fmtWhen(start)} – ${fmtWhen(end)}`; };
 const fmtClock = ms => { const s = Math.floor(ms / 1000); return `${pad(Math.floor(s / 60))}:${pad(s % 60)}`; };
 
 /* ---------------- Claude API ---------------- */
@@ -744,7 +746,7 @@ function applyInsight(s, j, parts, recSecs, cat, sent = new Set()) {
     for (const x of j.notes) {
       const n = (s.notes || []).find(y => y.id === x.id && y.status === 'pending'); if (!n) continue;
       if (x.field && FIELD[x.field] && x.field !== 'name') {
-        const cur = s.fields[x.field] || {}, line = 'פתק: ' + n.text;
+        const cur = s.fields[x.field] || {}, line = 'טקסט חופשי: ' + n.text;
         s.fields[x.field] = cur.value ? { ...cur, value: cur.value + '\n' + line } : { value: line, source: 'note', locked: false, at: now };
         n.field = x.field; markDirty([x.field]);
       }
@@ -782,8 +784,8 @@ function applyInsight(s, j, parts, recSecs, cat, sent = new Set()) {
 }
 function unfileNote(nid) {
   const n = (session?.notes || []).find(x => x.id === nid); if (!n || !n.field) return;
-  const f = session.fields[n.field], line = 'פתק: ' + n.text;
-  if (f?.value) { const v = f.value.split('\n').filter(l => l !== line).join('\n').trim(); session.fields[n.field] = v ? { ...f, value: v } : { value: '', locked: false }; }
+  const f = session.fields[n.field], lines = ['טקסט חופשי: ' + n.text, 'פתק: ' + n.text]; // sessions from before the rename carry 'פתק:'
+  if (f?.value) { const v = f.value.split('\n').filter(l => !lines.includes(l)).join('\n').trim(); session.fields[n.field] = v ? { ...f, value: v } : { value: '', locked: false }; }
   markDirty([n.field]); n.field = ''; n.status = n.task ? 'filed' : 'kept';
   touch(); refreshCounts(); refreshLive();
 }
@@ -1102,7 +1104,7 @@ function hypoCard(inGrid) {
     <div class="hyps">${list.map(h => `<div class="hyp"><h3>${esc(h.name)}</h3><span class="st ${STATUS_HE[h.status] ? h.status : 'possible'}">${lvl}${STATUS_HE[h.status] || STATUS_HE.possible}</span>
       ${h.support?.length || h.against?.length ? `<div class="ev"><div><b>תומך</b>${h.support?.length ? `<ul>${h.support.map(x => `<li>${escN(x)}</li>`).join('')}</ul>` : '<span class="muted">—</span>'}</div><div><b>סותר</b>${h.against?.length ? `<ul>${h.against.map(x => `<li>${escN(x)}</li>`).join('')}</ul>` : '<span class="muted">—</span>'}</div></div>` : ''}
       ${h.tests?.length ? `<div class="ts">מבדקים שיעזרו להבחין: ${h.tests.map(id => testLink(id) ? `<a class="chipl" href="${testLink(id)}" target="${MAP_TARGET}">${esc(testName(id))}</a>` : `<span class="chipl">${esc(testName(id))}</span>`).join('')}</div>` : ''}</div>`).join('')}</div>
-    <p class="fine">השערות עבודה לחשיבה קלינית, לא אבחנה. ${MAP_TAB[s.region] ? 'נשענות על המסלולים במפת הדרך לאזור.' : 'לאזור הזה עוד אין מסלולים במפה.'}</p></section>`;
+    <p class="fine disclaim">השערות עבודה לחשיבה קלינית, לא אבחנה. ${MAP_TAB[s.region] ? 'נשענות על המסלולים במפת הדרך לאזור.' : 'לאזור הזה עוד אין מסלולים במפה.'}</p></section>`;
 }
 
 /* ---------------- speech recognition ---------------- */
@@ -1387,8 +1389,17 @@ async function renderAudioBox(box = $('#audioBox')) {
    Every line keeps the moment it began (t0) and every recording part the moment it started (audioStarts),
    so ▶ next to a line plays the saved recording from just before it — to check a doubtful word or number. */
 const PLAY_LEAD = 1.5; // seconds of audio played before the line itself
-const PL = { audio: null, url: '', sid: '', part: 0, size: 0, start: 0, seg: -1 };
+const PL = { audio: null, url: '', sid: '', part: 0, size: 0, start: 0, seg: -1, stopAt: 0 };
 const lineStart = g => g.t0 || g.t - 5000;
+// a quote's place in the recording. Lines keep a start and an end time, not word times, so the quote's share of
+// its line's characters places it inside the line; a little before and after keeps the first and last words whole.
+function quoteSpan(g, quote) {
+  const from = lineStart(g), to = Math.max(from + 1000, g.t), text = g.text || '';
+  const q = String(quote || '').trim(); let at = q ? text.indexOf(q) : -1, len = q.length;
+  if (at < 0) { at = 0; len = text.length; } // not found word for word: the whole line
+  const frac = x => from + (to - from) * Math.min(1, Math.max(0, x / Math.max(1, text.length)));
+  return { from: frac(at) - 500, to: frac(at + len) + 800 };
+}
 const partStartOf = (s, p) => s.audioStarts?.[p.part] ?? (p.start - 5000);
 // a MediaRecorder file carries no duration, and browsers can't seek in it until they've read it to the end once
 function ensureSeekable(a) {
@@ -1424,7 +1435,7 @@ async function playerFor(s, p) {
   for (const ev of ['play', 'pause', 'ended']) a.addEventListener(ev, renderPlayer);
   return a;
 }
-async function playSeg(i) {
+async function playSeg(i, span = null) { // span: play just this stretch (a quote) and stop
   const s = session, g = s?.segments[i]; if (!g) return;
   if (recording) { toast('ההשמעה זמינה כשההקלטה עצורה — אחרת המיקרופון יקלוט אותה שוב לתמלול', true, 5000); return; }
   let parts = []; try { parts = await audioParts(s.id); } catch { }
@@ -1434,13 +1445,15 @@ async function playSeg(i) {
   if (!p || t0 > p.end + 5000) { toast('אין הקלטה לקטע זה', true); return; }
   const a = await playerFor(s, p);
   await ensureSeekable(a);
-  a.currentTime = Math.max(0, (t0 - PL.start) / 1000 - PLAY_LEAD);
+  a.currentTime = span ? Math.max(0, (span.from - PL.start) / 1000) : Math.max(0, (t0 - PL.start) / 1000 - PLAY_LEAD);
+  PL.stopAt = span ? span.to : 0;
   PL.seg = i; markPlaying(false);
   try { await a.play(); } catch (e) { toast('לא ניתן להשמיע את ההקלטה: ' + (e.message || e), true); }
   renderPlayer();
 }
 function onPlayerTime() {
   const a = PL.audio; if (!a || !session) return;
+  if (PL.stopAt && PL.start + a.currentTime * 1000 >= PL.stopAt) { PL.stopAt = 0; a.pause(); }
   const abs = PL.start + (a.currentTime + PLAY_LEAD) * 1000;
   let cur = -1;
   session.segments.forEach((g, i) => { if (!g.manual && lineStart(g) <= abs && lineStart(g) >= PL.start - 3000) cur = i; });
@@ -1455,7 +1468,7 @@ function markPlaying(scroll) {
 function stopPlayer(hide = true) {
   if (PL.audio) { try { PL.audio.pause(); } catch { } PL.audio.removeAttribute('src'); PL.audio = null; }
   if (PL.url) URL.revokeObjectURL(PL.url);
-  Object.assign(PL, { url: '', sid: '', part: 0, size: 0, seg: -1 });
+  Object.assign(PL, { url: '', sid: '', part: 0, size: 0, seg: -1, stopAt: 0 });
   if (hide) { markPlaying(false); renderPlayer(); }
 }
 function renderPlayer() {
@@ -2198,7 +2211,7 @@ const rtl = h => h.replace(/<(p|h[1-6]|li|ul)>/g, '<$1 dir="rtl" style="directio
 function sessionDocHtml(s) {
   const v = id => s.fields[id]?.value;
   let h = `<h1>מפגש — ${esc(s.patientName)}</h1>`;
-  h += `<p>תאריך: ${fmtWhen(s.startedAt)} · אזור: ${esc(s.region)} · ${esc(s.type)}</p>`;
+  h += `<p>תאריך: ${fmtSpan(s.startedAt, s.endedAt)} · אזור: ${esc(s.region)} · ${esc(s.type)}</p>`;
   h += `<p>הסכמת המטופל להקלטה: ניתנה, ${fmtWhen(s.consentAt || s.startedAt)}</p>`;
   if (s.firstSavedAt) h += `<p>נשמר לראשונה: ${fmtWhen(s.firstSavedAt)} · ${recLocked(s) ? 'נעול לעריכה; אפשר רק להוסיף נספח' : 'אפשר לתקן עד ' + fmtWhen(lockAt(s))}${s.amendments?.length ? ` · תיקונים: ${s.amendments.length}` : ''}${s.addenda?.length ? ` · נספחים: ${s.addenda.length}` : ''}</p>`;
   h += recordDocHtml(s) + vizDocHtml(s) + notesDocHtml(s);
@@ -2253,10 +2266,10 @@ function vizDocHtml(s) {
 }
 function notesDocHtml(s) {
   const n = s.notes || []; if (!n.length) return '';
-  return '<h2>פתקים ומשימות</h2><ul>' + n.map(x => `<li>${esc(x.text)}${x.field && FIELD[x.field] ? ` (נוסף לשדה: ${esc(shortLabel(FIELD[x.field].label))})` : ''}${x.task ? ` · משימה: ${esc(x.task)}${x.done ? ' (בוצע)' : ''}` : ''}</li>`).join('') + '</ul>';
+  return '<h2>טקסט חופשי ומשימות</h2><ul>' + n.map(x => `<li>${esc(x.text)}${x.field && FIELD[x.field] ? ` (נוסף לשדה: ${esc(shortLabel(FIELD[x.field].label))})` : ''}${x.task ? ` · משימה: ${esc(x.task)}${x.done ? ' (בוצע)' : ''}` : ''}</li>`).join('') + '</ul>';
 }
 function transcriptDocHtml(s) {
-  let h = `<h1>תמלול — ${esc(s.patientName)} — ${fmtWhen(s.startedAt)}</h1>`, last = null;
+  let h = `<h1>תמלול — ${esc(s.patientName)} — ${fmtSpan(s.startedAt, s.endedAt)}</h1>`, last = null;
   for (const g of s.segments) {
     if (g.stage !== last) { h += `<h2>${esc(STAGES.find(x => x.id === g.stage)?.label || g.stage)}</h2>`; last = g.stage; }
     const d = new Date(g.t), pos = recPos(s, g);
@@ -2272,7 +2285,7 @@ async function saveToDrive(onProgress = () => { }) {
   const stamp = fmtStamp(s.startedAt), now = Date.now();
   // after the first save, changed fields become a dated amendment in the document (until the record locks)
   const first = !s.firstSavedAt, changes = !first && !recLocked(s) && s.savedSnap ? snapDiff(s) : [];
-  if (first) s.firstSavedAt = now;
+  if (first) { s.firstSavedAt = now; if (!s.endedAt) s.endedAt = new Date(now).toISOString(); }
   if (changes.length) (s.amendments ||= []).push({ at: now, changes });
   try { await saveFiles(s, folder, stamp, onProgress); }
   catch (e) { if (first) s.firstSavedAt = 0; if (changes.length) s.amendments.pop(); throw e; }
@@ -2343,7 +2356,7 @@ function recordData(s) {
   const { insDirty, ...rest } = s; // working state that means nothing in a saved record
   return { format: REC_FORMAT, v: 1, savedAt: new Date().toISOString(), session: rest };
 }
-const recordProps = s => ({ ca: 'session', sid: s.id, started: s.startedAt, region: s.region, type: s.type, doc: s.docId || '', first: String(s.firstSavedAt || '') });
+const recordProps = s => ({ ca: 'session', sid: s.id, started: s.startedAt, ended: s.endedAt || '', region: s.region, type: s.type, doc: s.docId || '', first: String(s.firstSavedAt || '') });
 async function upsertJson(id, name, obj, parent, props) {
   const boundary = 'thj' + Math.random().toString(36).slice(2);
   const meta = id ? { name, appProperties: props } : { name, mimeType: 'application/json', parents: [parent], appProperties: props };
@@ -2379,7 +2392,7 @@ async function loadRecords() {
       const pt = byFolder.get(f.parents?.[0]); if (!pt) continue;
       const a = f.appProperties || {};
       if (a.doc) used.add(a.doc);
-      pt.sessions.push({ id: f.id, started: a.started || f.modifiedTime, region: a.region || '', type: a.type || '', first: +a.first || 0, modified: f.modifiedTime });
+      pt.sessions.push({ id: f.id, started: a.started || f.modifiedTime, ended: a.ended || '', region: a.region || '', type: a.type || '', first: +a.first || 0, modified: f.modifiedTime });
     }
     const docs = await driveList(`mimeType='application/vnd.google-apps.document' and name contains 'מפגש' and trashed=false`, 'id,name,parents,modifiedTime,webViewLink');
     for (const d of docs) { const pt = byFolder.get(d.parents?.[0]); if (pt && !used.has(d.id)) pt.legacy.push({ id: d.id, name: d.name, link: d.webViewLink, modified: d.modifiedTime }); }
@@ -2401,7 +2414,7 @@ function recListHtml() {
   if (!list.length) return `<section class="card compact"><span class="hint">${q ? 'אין מטופל בשם הזה.' : 'עוד אין מפגשים שמורים ב-Drive.'}</span></section>`;
   return list.map(p => `<section class="card"><div class="card-h cat-str"><span class="glyph">${ICON.person}</span><h2>${esc(p.name)}</h2>
       <span class="end"><button class="btn sm" data-act="followUp" data-name="${esc(p.name)}" data-region="${esc(p.sessions[0]?.region || '')}">מפגש מעקב</button></span></div>
-    <ul class="list">${p.sessions.map(r => `<li><div class="grow"><b>${fmtWhen(r.started)}</b><span>${esc(r.region)}${r.type ? ' · ' + esc(r.type) : ''} ${recBadge(r)}</span></div>
+    <ul class="list">${p.sessions.map(r => `<li><div class="grow"><b>${fmtSpan(r.started, r.ended)}</b><span>${esc(r.region)}${r.type ? ' · ' + esc(r.type) : ''} ${recBadge(r)}</span></div>
       <button class="btn sm" data-act="openRec" data-id="${esc(r.id)}">פתח</button></li>`).join('')}
     ${p.legacy.map(d => `<li><div class="grow"><b>${esc(d.name.replace(/\s*—.*$/, ''))}</b><span>נשמר בגרסה קודמת, בלי קובץ נתונים: לקריאה ב-Drive בלבד</span></div>
       ${safeDocLink(d.link) ? `<a class="btn sm" href="${esc(safeDocLink(d.link))}" target="_blank" rel="noopener">פתח ב-Drive</a>` : ''}</li>`).join('')}</ul></section>`).join('');
@@ -2477,7 +2490,7 @@ function renderRecord() {
   <div class="toolbar page"><div class="lead"><button class="icon-btn glass pgback" data-act="home" aria-label="חזרה למסך הבית" title="חזרה">${ICON.back}</button></div><div class="trail"><div class="capsule glass">
     ${s.folderId ? `<a class="icon-btn" href="https://drive.google.com/drive/folders/${encodeURIComponent(s.folderId)}" target="_blank" rel="noopener" aria-label="פתח את התיקייה ב-Drive" title="פתח ב-Drive">${ICON.ext}</a>` : ''}</div></div></div>
   <div class="content">
-    <div class="ptitle"><div><h1>${esc(s.patientName)}</h1><div class="sub">${esc(s.region)} · ${esc(s.type)} · ${fmtWhen(s.startedAt)}</div></div></div>
+    <div class="ptitle"><div><h1>${esc(s.patientName)}</h1><div class="sub">${esc(s.region)} · ${esc(s.type)} · ${fmtSpan(s.startedAt, s.endedAt)}</div></div></div>
     <div class="banner lockd" role="note">${ICON.key}<span>המפגש נשמר לראשונה ב-${fmtWhen(s.firstSavedAt)} וננעל לעריכה ב-${fmtWhen(lockAt(s))}. אפשר להוסיף נספח: הוא נשמר בסוף המסמך עם התאריך.</span></div>
     <section class="card" aria-labelledby="addH"><div class="card-h cat-note"><span class="glyph">${ICON.note}</span><h2 id="addH">נספח חדש</h2></div>
       <textarea id="addText" class="inp" rows="4" placeholder="מה להוסיף לרשומה, למשל תוצאת הדמיה שהגיעה"></textarea>
@@ -2520,6 +2533,7 @@ async function openFinish() {
   if (!session) return;
   const block = finishBlock(session);
   if (block) { toast(`אי אפשר לסיים עדיין: אין תמלול או הקלטה, וחסרים ${block.miss.length} מתוך ${block.req.length} שדות החובה באנמנזה.`, true, 5000); return; }
+  if (!session.firstSavedAt) { session.endedAt = new Date().toISOString(); saveSession(true); } // the session's end: the last time it reached the finish screen before its first save
   const wasRec = recording;
   fin = { phase: wasRec ? 'stopping' : 'review', msg: '', err: '', filling: false };
   if (wasRec) stopRec();
@@ -2540,7 +2554,7 @@ const needsReview = f => { const v = session.fields[f.id]; return v?.value && (v
 function verRowHtml(f) {
   const s = session, v = s.fields[f.id];
   const i = v.quote ? findSeg(v.quote) : -1, g = s.segments[i];
-  const play = g && !g.manual && s.audioParts ? `<button class="vplay" data-act="segPlay" data-i="${i}" aria-label="השמע מההקלטה" title="השמע מההקלטה">${ICON.play}</button>` : '';
+  const play = g && !g.manual && s.audioParts ? `<button class="vplay" data-act="quotePlay" data-fid="${f.id}" aria-label="השמע את הציטוט מההקלטה" title="השמע את הציטוט">${ICON.play}</button>` : '';
   return `<div class="vrow" id="v-${f.id}"><div class="vmain"><div class="vl"><b>${esc(shortLabel(f.label))}</b>${v.unverified ? '<span class="badge bad">לא נמצא בתמלול</span>' : '<span class="badge chk">לאמת</span>'}</div>
     <div class="vval">${escN(v.value)}</div>
     ${v.quote ? `<div class="vq">${v.unverified ? 'המודל ציטט, אבל זה לא נמצא בתמלול' : v.asked ? 'נשען על שאלה של המטפל' : 'נשמע בתמלול'}: «${esc(v.quote)}»${play}</div>` : ''}</div>
@@ -2574,7 +2588,7 @@ function renderFinish() {
   <div class="toolbar page"><div class="lead"><button class="icon-btn glass" data-act="resume" aria-label="חזרה למפגש">${ICON.back}</button></div>
     <div class="trail"><button class="icon-btn glass" data-act="settings" aria-label="הגדרות">${ICON.gear}</button></div></div>
   <div class="content">
-    <div class="ptitle"><div><h1>סיום מפגש</h1><div class="sub">${esc(s.patientName)} · ${esc(s.region)} · ${esc(s.type)} · ${fmtWhen(s.startedAt)}</div></div></div>
+    <div class="ptitle"><div><h1>סיום מפגש</h1><div class="sub">${esc(s.patientName)} · ${esc(s.region)} · ${esc(s.type)} · ${fmtSpan(s.startedAt, s.endedAt)}</div></div></div>
     <section class="card fin-sec" aria-labelledby="fRec"><div class="card-h cat-rec"><span class="glyph">${ICON.mic}</span><h2 id="fRec">הקלטה</h2></div>
       <p class="lead">${fin.phase === 'stopping' ? '<span class="spin"></span> עוצר את ההקלטה ומשלים את התמלול…' : `ההקלטה עצורה · ${fmtClock(s.recordedMs || 0)} · ${s.segments.length} שורות בתמלול`}</p>
       ${fin.filling ? '<p class="lead"><span class="spin"></span> ממלא את הטופס ממה שנאמר בסוף…</p>' : ''}
@@ -2584,7 +2598,7 @@ function renderFinish() {
     ${smart().record ? recordHtml() : ''}
     <section class="card fin-sec" aria-labelledby="fVer"><div class="card-h cat-rec"><span class="glyph">${ICON.check}</span><h2 id="fVer">לאימות <span class="muted num">${ver.length}</span></h2></div>
       ${ver.length ? '<p class="lead">שדות שה-AI מילא וצריכים את האישור שלך. כדי לתקן ערך, "ערוך" מעביר לשדה במסך המפגש.</p><div class="vrows">' + ver.map(verRowHtml).join('') + '</div>' : '<p class="lead">כל השדות שמולאו אומתו.</p>'}</section>
-    ${tasks.length ? `<section class="card fin-sec" aria-labelledby="fTask"><div class="card-h cat-note"><span class="glyph">${ICON.note}</span><h2 id="fTask">משימות מהפתקים <span class="muted num">${tasks.length}</span></h2></div>
+    ${tasks.length ? `<section class="card fin-sec" aria-labelledby="fTask"><div class="card-h cat-note"><span class="glyph">${ICON.note}</span><h2 id="fTask">משימות מהטקסט החופשי <span class="muted num">${tasks.length}</span></h2></div>
       ${notesListHtml(tasks)}</section>` : ''}
     ${must.length ? `<section class="card fin-sec" aria-labelledby="fMust"><div class="card-h cat-gap"><span class="glyph">${ICON.alert}</span><h2 id="fMust">שדות חובה שלא נאמרו <span class="muted num">${must.length}</span></h2></div>
       <p class="lead">אם המטופל עוד כאן, זה הזמן לשאול.</p>
@@ -2636,7 +2650,7 @@ function renderHome() {
     ${envProblem() ? `<div class="banner warn">${esc(envProblem())}</div>` : ''}
     ${missing.length ? `<div class="banner warn">כדי להתחיל חסר ${missing.length > 1 ? missing.slice(0, -1).join(', ') + ' ו' + missing.at(-1) : missing[0]}. <a href="#" data-act="settings" data-tab="api">להגדרות API</a></div>` : ''}
     ${session ? `<section class="card"><div class="card-h cat-rec"><span class="glyph">${ICON.live}</span><h2>מפגש פתוח</h2></div>
-      <p class="muted">${esc(session.patientName)} · ${esc(session.region)} · ${fmtWhen(session.startedAt)}${session.savedAt ? ' · נשמר ב-Drive' : ' · <b>לא נשמר עדיין</b>'}</p>
+      <p class="muted">${esc(session.patientName)} · ${esc(session.region)} · ${fmtSpan(session.startedAt, session.endedAt)}${session.savedAt ? ' · נשמר ב-Drive' : ' · <b>לא נשמר עדיין</b>'}</p>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn primary" data-act="resume">המשך מפגש</button><button class="btn danger" data-act="discard">סגור מפגש</button></div></section>` : ''}
     <div class="home-grid">
     <section class="card" aria-labelledby="newH">
@@ -2782,9 +2796,9 @@ function renderTab() {
   else { body.innerHTML = ptitleHtml() + analysisHtml(); renderTestLinks(); }
   if (tab === 'form' || tab === 'summary') $$('#tabBody textarea').forEach(autosize);
   const nb = $('#noteBar');
-  if (nb) nb.innerHTML = tab === 'live' && smart().notes ? `<form class="notebar glass${noteFold ? ' folded' : ''}" data-act="noteForm"><button type="button" class="gl" data-act="noteOpen" aria-label="פתק חדש" aria-expanded="${!noteFold}">${ICON.note}</button>
-    <input class="ni" id="noteIn" autocomplete="off" placeholder="פתק: מה לבדוק או לזכור" aria-label="פתק חדש: מה לבדוק, מה ראית, מה לזכור">
-    <button class="send" data-act="addNote" aria-label="הוסף פתק">${ICON.send}</button></form>` : '';
+  if (nb) nb.innerHTML = tab === 'live' && smart().notes ? `<form class="notebar glass${noteFold ? ' folded' : ''}" data-act="noteForm"><button type="button" class="gl" data-act="noteOpen" aria-label="שדה טקסט חופשי" aria-expanded="${!noteFold}">${ICON.note}</button>
+    <input class="ni" id="noteIn" autocomplete="off" placeholder="שדה טקסט חופשי" aria-label="שדה טקסט חופשי: מה לבדוק, מה ראית, מה לזכור">
+    <button class="send" data-act="addNote" aria-label="הוסף טקסט חופשי">${ICON.send}</button></form>` : '';
   renderSaveState();
 }
 // the session so far as one page: every graphic, the record, and the closing fields (impression, treatment, plan)
@@ -2793,7 +2807,7 @@ function summaryHtml() {
   const closing = sectionsFor(s).filter(sec => sec.id === 'summary').flatMap(sec => sec.fields);
   const tasks = (s.notes || []).filter(n => n.task);
   return `<section class="card" aria-labelledby="sumH"><div class="card-h cat-rec"><span class="glyph">${ICON.clip}</span><h2 id="sumH">סיכום המפגש</h2><span class="end meta">התרשמות, טיפול והמשך</span></div><div class="fields flat">${closing.map(fieldHtml).join('')}</div></section>` +
-    (tasks.length ? `<section class="card cat-note"><div class="card-h"><span class="glyph">${ICON.note}</span><h2>משימות מהפתקים <span class="muted num">${tasks.length}</span></h2></div>${notesListHtml(tasks)}</section>` : '') +
+    (tasks.length ? `<section class="card cat-note"><div class="card-h"><span class="glyph">${ICON.note}</span><h2>משימות מהטקסט החופשי <span class="muted num">${tasks.length}</span></h2></div>${notesListHtml(tasks)}</section>` : '') +
     `<section class="card" aria-labelledby="docH"><div class="card-h cat-rec"><span class="glyph">${ICON.doc}</span><h2 id="docH">המסמך הסופי</h2><span class="end meta">כך יישמר ב-Drive</span></div><div class="docprev" id="docPrev">${docPrevHtml(s)}</div></section>` +
     vizFoldHtml(viz);
 }
@@ -2915,9 +2929,9 @@ function srcPopHtml(ids, title) {
     const i = v.quote ? findSeg(v.quote) : -1, g = s.segments[i];
     const heard = v.quote && i >= 0 && !v.unverified;
     const canPlay = g && !g.manual && s.audioParts;
-    const badge = v.unverified ? '<span class="badge bad">לא נמצא בתמלול</span>' : v.needsCheck ? '<span class="badge chk">לאמת</span>' : v.confirmed ? '<span class="badge ok">אומת</span>' : v.source === 'manual' ? '<span class="badge">נכתב ידנית</span>' : v.source === 'note' ? '<span class="badge">מפתק</span>' : '';
+    const badge = v.unverified ? '<span class="badge bad">לא נמצא בתמלול</span>' : v.needsCheck ? '<span class="badge chk">לאמת</span>' : v.confirmed ? '<span class="badge ok">אומת</span>' : v.source === 'manual' ? '<span class="badge">נכתב ידנית</span>' : v.source === 'note' ? '<span class="badge">מטקסט חופשי</span>' : '';
     return `<div style="margin-top:${many ? 12 : 0}px">${many ? `<div class="fl">${esc(shortLabel(f.label))} ${badge}</div>` : ''}<div class="fv">${escN(v.value || '—')}</div>
-      ${v.quote ? `<div class="src-q${heard ? '' : ' bad'}"><div class="m">${!heard ? 'המודל ציטט, אבל זה לא נמצא בתמלול' : v.asked ? 'נשען על שאלה של המטפל, לא על דברי המטופל' : 'נשמע בתמלול'}${g ? ' · ' + hhmm(g.t) + (g.speaker != null ? ' · דובר ' + esc(g.speaker) : '') : ''}${canPlay ? `<button class="play" data-act="segPlay" data-i="${i}" aria-label="השמע מההקלטה">${ICON.play}</button>` : g ? ' · <span class="noaud">אין הקלטה לקטע זה</span>' : ''}</div>«${esc(v.quote)}»</div>` : ''}
+      ${v.quote ? `<div class="src-q${heard ? '' : ' bad'}"><div class="m">${!heard ? 'המודל ציטט, אבל זה לא נמצא בתמלול' : v.asked ? 'נשען על שאלה של המטפל, לא על דברי המטופל' : 'נשמע בתמלול'}${g ? ' · ' + hhmm(g.t) + (g.speaker != null ? ' · דובר ' + esc(g.speaker) : '') : ''}${canPlay ? `<button class="play" data-act="quotePlay" data-fid="${id}" aria-label="השמע את הציטוט מההקלטה">${ICON.play}</button>` : g ? ' · <span class="noaud">אין הקלטה לקטע זה</span>' : ''}</div>«${esc(v.quote)}»</div>` : ''}
       <div class="acts">${v.needsCheck || v.unverified ? `<button class="btn sm primary" data-act="confirm" data-fid="${id}">אשר</button>` : ''}<button class="btn sm" data-act="edit" data-fid="${id}">ערוך</button>${v.source === 'ai' && view !== 'finish' ? `<button class="btn sm" data-act="undo" data-fid="${id}">בטל מילוי</button>` : ''}</div></div>`;
   });
   const one = ids.length === 1 && FIELD[ids[0]];
@@ -3265,12 +3279,12 @@ function recordHtml() {
 /* ---------------- notes ---------------- */
 function notesListHtml(list) {
   return `<ul class="notes">${list.map(n => `<li class="${n.done ? 'done' : ''}"><p>${esc(n.text)}</p>
-    <span>${n.task ? `<button class="tick" data-act="taskDone" data-nid="${n.id}" aria-pressed="${!!n.done}" aria-label="בוצע: ${esc(n.task)}">${ICON.check}</button>` : `<button class="icon-btn" data-act="noteDel" data-nid="${n.id}" aria-label="מחק פתק">${ICON.trash}</button>`}</span>
-    <div class="to">${n.status === 'pending' ? '<span class="spin"></span> ממתין לשיוך' : ''}${n.field && FIELD[n.field] ? `נוסף לשדה <b>${esc(shortLabel(FIELD[n.field].label))}</b> <button class="linkbtn" data-act="noteUnfile" data-nid="${n.id}">בטל</button>` : ''}${n.task ? `${n.field ? ' · ' : ''}משימה: <b>${esc(n.task)}</b>` : ''}${n.status === 'kept' ? 'נשמר כפתק' : ''}</div></li>`).join('')}</ul>`;
+    <span>${n.task ? `<button class="tick" data-act="taskDone" data-nid="${n.id}" aria-pressed="${!!n.done}" aria-label="בוצע: ${esc(n.task)}">${ICON.check}</button>` : `<button class="icon-btn" data-act="noteDel" data-nid="${n.id}" aria-label="מחק טקסט חופשי">${ICON.trash}</button>`}</span>
+    <div class="to">${n.status === 'pending' ? '<span class="spin"></span> ממתין לשיוך' : ''}${n.field && FIELD[n.field] ? `נוסף לשדה <b>${esc(shortLabel(FIELD[n.field].label))}</b> <button class="linkbtn" data-act="noteUnfile" data-nid="${n.id}">בטל</button>` : ''}${n.task ? `${n.field ? ' · ' : ''}משימה: <b>${esc(n.task)}</b>` : ''}${n.status === 'kept' ? 'נשמר כטקסט חופשי' : ''}</div></li>`).join('')}</ul>`;
 }
 function notesCardHtml() {
   const list = [...(session.notes || [])].reverse();
-  return `<section class="card cat-note" aria-labelledby="noteH"><div class="card-h"><span class="glyph">${ICON.note}</span><h2 id="noteH">פתקים <span class="muted num">${list.length}</span></h2><span class="end meta">ה-AI משייך כל פתק לשדה או למשימה</span></div>${notesListHtml(list)}</section>`;
+  return `<section class="card cat-note" aria-labelledby="noteH"><div class="card-h"><span class="glyph">${ICON.note}</span><h2 id="noteH">טקסט חופשי <span class="muted num">${list.length}</span></h2><span class="end meta">ה-AI משייך כל רישום לשדה או למשימה</span></div>${notesListHtml(list)}</section>`;
 }
 // phones fold the note bar into its button (the screen is short); wider screens keep it open
 const PHONE_MQ = matchMedia('(max-width: 759px)');
@@ -3287,7 +3301,7 @@ function addNote() {
   session.notes = session.notes || [];
   session.notes.push({ id: Date.now().toString(36), text, at: Date.now(), status: aiReady() ? 'pending' : 'kept' });
   inp.value = ''; touch(); refreshLive();
-  if (aiReady()) runInsight(); else toast('הפתק נשמר. שיוך אוטומטי דורש קוד גישה בהגדרות.', false, 3000);
+  if (aiReady()) runInsight(); else toast('הטקסט נשמר. שיוך אוטומטי דורש קוד גישה בהגדרות.', false, 3000);
 }
 
 /* ---------------- next steps (BETA) ---------------- */
@@ -3319,9 +3333,9 @@ function drBody(t) {
       ${sw('focus', st.focus, 'מצב פוקוס', 'במפגש: בלי סרגל הצד, חלונית התמלול וכלים משניים')}
     </div></div>`;
   if (t === 'smart') return `
-    <div class="group"><h3>רשומה ופתקים</h3><div class="gl">
+    <div class="group"><h3>רשומה וטקסט חופשי</h3><div class="gl">
       ${sw('smart.record', sm.record, 'רשומה חיה', 'ה-AI כותב את הרשומה הקלינית תוך כדי המפגש, כל משפט עם מקור')}
-      ${sw('smart.notes', sm.notes, 'פתקים חכמים', 'פתק שתכתוב משויך לשדה בטופס או הופך למשימה לסוף המפגש')}
+      ${sw('smart.notes', sm.notes, 'טקסט חופשי חכם', 'מה שתכתוב בשדה הטקסט החופשי משויך לשדה בטופס או הופך למשימה לסוף המפגש')}
     </div></div>
     <div class="group"><h3>גרפיקה קלינית</h3><div class="gl">
       ${sw('smart.timeline', sm.timeline, 'מהלך הפציעה', 'ציר זמן מההתחלה ועד היום, ועוצמת הכאב')}
@@ -3514,6 +3528,7 @@ document.addEventListener('click', async e => {
     case 'noteUnfile': unfileNote(t.dataset.nid); break;
     case 'addManual': { const ta = $('#manualText'); if (ta.value.trim()) { addSegment(ta.value, true); ta.value = ''; } break; }
     case 'segPlay': playSeg(+t.dataset.i); break;
+    case 'quotePlay': { const v = session?.fields[t.dataset.fid], i = v?.quote ? findSeg(v.quote) : -1; if (i >= 0) playSeg(i, quoteSpan(session.segments[i], v.quote)); break; }
     case 'missLevel': missOpen[t.dataset.k] = !missOpen[t.dataset.k]; refreshLive(); break;
     case 'plToggle':
       if (!PL.audio) break;
