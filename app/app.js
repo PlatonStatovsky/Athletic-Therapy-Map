@@ -639,7 +639,8 @@ async function mapCatalog(region) {
   const cat = {
     text: (lines.length ? `Pathways on the map for this region (path — catalog test ids):\n${lines.join('\n')}\n\n` : 'This region has no pathways on the map yet; name hypotheses in standard clinical terms and leave "path" empty.\n\n') +
       `Catalog tests (id: name):\n${Object.entries(T).map(([id, t]) => `${id}: ${t.n}`).join('\n')}`,
-    ids: new Set(Object.keys(T)), paths: new Set((r?.s3?.patterns || []).flatMap(p => (p.paths || []).map(x => x.n)))
+    ids: new Set(Object.keys(T)), paths: new Set((r?.s3?.patterns || []).flatMap(p => (p.paths || []).map(x => x.n))),
+    groups: (r?.s3?.patterns || []).map(p => ({ title: p.title, paths: (p.paths || []).map(x => x.n) }))
   };
   catalogCache.set(region, cat); return cat;
 }
@@ -657,7 +658,8 @@ Parts:
 - body: where the symptoms are, from location / chief_complaint / neuro_symptoms: one item per zone and side. kind: pain = the pain itself; radiation = pain that spreads or radiates to another area; paresthesia = numbness, tingling, pins and needles. view: front / back / both, by where on the body it was described (both when not said). side: right / left / both / center (center for the spine, head, chest and abdomen when no side was said). label: 2–5 Hebrew words as said.
 - timeline: the injury story in time order: onset, mechanism, changes, earlier episodes, treatments, imaging. "when" as said, in Hebrew. "days_ago": your numeric estimate before the session date (a week = 7, a month = 30, a year = 365); -1 when no time was given; events said to be on the same day get the same number. "event": up to 6 Hebrew words. "vas": the pain level 0–10 at that time when one was said for it (e.g. "בהתחלה 8"), else -1. "pain_state": what the level was measured in, as said — rest (במנוחה, בישיבה), activity (בתנועה, בריצה, במדרגות, באימון, בהרמה), night (בלילה, בשינה), or unspecified; unspecified when there is no level. When levels were given for more than one state at the same time, one item per state. Today's levels (vas_now, and vas_max only when it was said to be today) are items too: days_ago 0, when "היום", event e.g. "כאב במנוחה", one per state.
 - exam: rom = each range of motion given in degrees, one item per motion and side ("motion" short, e.g. "Flexion" or "סיבוב חיצוני"; "joint" = the joint it was measured at, or "other" when unclear; painful = pain was reported at that range); mmt = each muscle or motion with a 0–5 grade (4+ = 4.5, 4- = 3.75); tests = each special test that was named, with its result. side (all three): right / left only when that side was stated for this item, otherwise "none" (tests may also be "both"); never take the side from the complaint. Test result: positive / negative only when the form says חיובי / שלילי for it (said or confirmed); equivocal when it says unclear (לא ברור, לא חד-משמעי); score when the result is a number or score — "value" = the score as written, e.g. "1/9"; text for any other result — "value" = the words as written, e.g. "ללא כאב"; "value" is "" for positive / negative / equivocal. test_id = the catalog id when the test is in the MAP CATALOG, else "". Nothing that was not measured or named.
-- hypotheses: 2–4 working hypotheses the findings so far point to, for the therapist's own reasoning and never as a diagnosis. Start as soon as the complaint, its location and one more relevant fact (onset, mechanism, aggravating factor, an exam finding) are known; early on most will be "possible". Prefer the pathways in the MAP CATALOG ("path" = its exact name, "" when not from the map). status: supported = several findings fit and none argue against; possible = fits but still untested; weakened = a finding argues against it. support / against: up to 3 short facts each, from the form. tests: catalog test ids that would help tell these hypotheses apart and were not done yet. Return an empty list only when there is no complaint or location yet.
+- hypotheses: 1–5 working hypotheses the findings so far point to, for the therapist's own reasoning and never as a diagnosis. This part is asked for only once the form has the complaint, its location and at least two more relevant facts, so always return at least one; early on most will be "possible". Prefer the pathways in the MAP CATALOG ("path" = its exact name, "" when not from the map). Keep every hypothesis listed under THERAPIST HYPOTHESES (same name and path; judge it like the others) and never return one listed under RULED OUT BY THE THERAPIST. status: supported = several findings fit and none argue against; possible = fits but still untested; weakened = a finding argues against it. support / against: the short facts from the form that support or argue against it, as many as there are. tests: catalog test ids that would help tell these hypotheses apart and were not done yet. Return hypotheses as usual even when there are red flags.
+- red_flags: each red flag the form reports as present, in a few Hebrew words with its fields: a finding that calls for medical referral before conservative treatment (for example night pain unrelated to position, unexplained weight loss, fever, a history of cancer, saddle anaesthesia or bladder / bowel change, progressive neurological deficit, a suspected fracture or dislocation, signs of a vascular cause). Only what the form states as present; a flag that was asked about and denied is not a flag. Empty when there is none.
 - next: up to 3 next steps for the current stage that matter most now: kind "question" (to ask) or "test" (to examine); text = the question in Hebrew as the therapist would ask it, or the test's name; why = up to 10 Hebrew words; test_id = catalog id or "". Prefer key items not yet asked and what tells the hypotheses apart. Never something already in the form.`;
 
 function insightSchema(parts) {
@@ -675,13 +677,22 @@ function insightSchema(parts) {
       mmt: arr(obj({ motion: { type: 'string' }, side: { type: 'string', enum: ['right', 'left', 'none'] }, grade: { type: 'number' }, fields: fieldsArr })),
       tests: arr(obj({ name: { type: 'string' }, test_id: { type: 'string' }, side: { type: 'string', enum: ['right', 'left', 'both', 'none'] }, result: { type: 'string', enum: TEST_RESULTS }, value: { type: 'string' }, fields: fieldsArr }))
     });
+    if (p === 'hypo') P.red_flags = arr(obj({ text: { type: 'string' }, fields: fieldsArr }));
     if (p === 'hypo') P.hypotheses = arr(obj({ name: { type: 'string' }, path: { type: 'string' }, status: { type: 'string', enum: ['supported', 'possible', 'weakened'] }, support: arr({ type: 'string' }), against: arr({ type: 'string' }), tests: arr({ type: 'string' }) }));
     if (p === 'next') P.next = arr(obj({ kind: { type: 'string', enum: ['question', 'test'] }, text: { type: 'string' }, why: { type: 'string' }, test_id: { type: 'string' } }));
   }
   return obj(P);
 }
 let insighting = false, insightAgain = false;
-const HYPO_MIN = 3; // filled fields (besides the name) before hypotheses are worth asking for
+// the hypotheses board opens once there is something to reason from: the complaint, its location and two more
+// relevant facts; from then on it always holds 1–5 hypotheses
+const HYPO_MAX = 5, HYPO_CORE = ['chief_complaint', 'location'];
+const HYPO_MORE = ['onset', 'mechanism', 'aggravating', 'changes', 'lead_sign', 'observation', 'palpation', ...PART_FIELDS.exam];
+const HYPO_MORE_HE = 'התחלה, מנגנון, מחמיר, או ממצא בבדיקה';
+const hasVal = (s, id) => !!String(s.fields[id]?.value || '').trim();
+const hypoReady = s => HYPO_CORE.every(id => hasVal(s, id)) && HYPO_MORE.filter(id => hasVal(s, id)).length >= 2;
+const hkey = h => String(h.path || h.name || '').trim().toLowerCase();
+const fkey = t => String(t || '').trim().toLowerCase();
 // force: every part from scratch; only: just these parts now (the hypotheses button)
 async function runInsight(force = false, only = null) {
   const s = session; if (!s || !aiReady() || !smartAny() || recLocked(s)) return;
@@ -693,14 +704,14 @@ async function runInsight(force = false, only = null) {
   const recSecs = sm.record ? (force ? secsWith : d.secs.filter(x => secsWith.includes(x))) : [];
   const want = p => force || d.parts.includes(p);
   const parts = [];
-  if (only) parts.push(...only.filter(p => p !== 'hypo' || filled.length >= HYPO_MIN));
+  if (only) parts.push(...only.filter(p => p !== 'hypo' || hypoReady(s)));
   else {
   if (recSecs.length) parts.push('record');
   if (sm.notes && pending.length) parts.push('notes');
   if (sm.body && want('body') && hasAnyField(PART_FIELDS.body)) parts.push('body');
   if (sm.timeline && want('timeline') && hasAnyField(PART_FIELDS.timeline)) parts.push('timeline');
   if (sm.exam && want('exam') && hasAnyField(PART_FIELDS.exam)) parts.push('exam');
-  if (sm.hypo && want('reason') && filled.length >= HYPO_MIN) parts.push('hypo');
+  if (sm.hypo && want('reason') && hypoReady(s)) parts.push('hypo');
   if (sm.next && want('reason') && filled.length >= 1) parts.push('next');
   }
   if (!parts.length) { if (force) { s.insDirty = { secs: [], parts: [] }; refreshLive(); } return; }
@@ -717,7 +728,7 @@ ${sectionsFor(s).map(sec => `${sec.id} — ${sec.title}: ${sec.fields.map(f => `
 
 FORM VALUES (JSON):
 ${JSON.stringify(form, null, 1)}
-${parts.includes('record') ? `\nRECORD_SECTIONS: ${recSecs.join(', ')}` : ''}${parts.includes('notes') ? `\nPENDING NOTES (JSON): ${JSON.stringify(pending.map(n => ({ id: n.id, text: n.text })))}` : ''}${parts.includes('next') ? `\nSTILL EMPTY in the current stage, most important first: ${empties.join(', ') || '—'}` : ''}${cat ? `\n\nMAP CATALOG\n${cat.text}` : ''}`;
+${parts.includes('hypo') ? `\nTHERAPIST HYPOTHESES (keep each): ${JSON.stringify((s.hypoMine || []).map(h => ({ name: h.name, path: h.path })))}\nRULED OUT BY THE THERAPIST (never return): ${JSON.stringify((s.hypoOff || []).map(h => h.name))}` : ''}${parts.includes('record') ? `\nRECORD_SECTIONS: ${recSecs.join(', ')}` : ''}${parts.includes('notes') ? `\nPENDING NOTES (JSON): ${JSON.stringify(pending.map(n => ({ id: n.id, text: n.text })))}` : ''}${parts.includes('next') ? `\nSTILL EMPTY in the current stage, most important first: ${empties.join(', ') || '—'}` : ''}${cat ? `\n\nMAP CATALOG\n${cat.text}` : ''}`;
   const ll = fillParams(settings.extractModel);
   const body = {
     model: settings.extractModel, max_tokens: 16000,
@@ -786,13 +797,32 @@ function applyInsight(s, j, parts, recSecs, cat, sent = new Set()) {
     ins.at.exam = now;
   }
   if (parts.includes('hypo') && Array.isArray(j.hypotheses)) {
-    ins.hypo = j.hypotheses.filter(h => h?.name).slice(0, 4).map(h => ({ name: str(h.name, 120), path: cat?.paths.has(h.path) ? h.path : '', status: pick(h.status, Object.keys(STATUS_HE), 'possible'),
-      support: (Array.isArray(h.support) ? h.support : []).slice(0, 3).map(x => str(x, 140)), against: (Array.isArray(h.against) ? h.against : []).slice(0, 3).map(x => str(x, 140)),
-      tests: (Array.isArray(h.tests) ? h.tests : []).filter(t => TEST_ID.test(t) && (!cat || cat.ids.has(t))).slice(0, 4) }));
+    ins.hypo = mergeHypo(s, ins.hypo || [], j.hypotheses.filter(h => h?.name).map(h => ({ name: str(h.name, 120), path: cat?.paths.has(h.path) ? h.path : '', status: pick(h.status, Object.keys(STATUS_HE), 'possible'),
+      support: (Array.isArray(h.support) ? h.support : []).slice(0, 12).map(x => str(x, 160)), against: (Array.isArray(h.against) ? h.against : []).slice(0, 12).map(x => str(x, 160)),
+      tests: (Array.isArray(h.tests) ? h.tests : []).filter(t => TEST_ID.test(t) && (!cat || cat.ids.has(t))).slice(0, 4) })));
+    ins.flags = (Array.isArray(j.red_flags) ? j.red_flags : []).filter(f => f?.text).slice(0, 8).map(f => ({ text: str(f.text, 160), fields: okF(f.fields) }));
     ins.at.hypo = now;
   }
   if (parts.includes('next') && Array.isArray(j.next)) { ins.next = j.next.filter(x => x?.text).slice(0, 3).map(x => ({ kind: pick(x.kind, ['question', 'test'], 'question'), text: str(x.text, 160), why: str(x.why, 100), test_id: cat?.ids.has(x.test_id) && TEST_ID.test(x.test_id) ? x.test_id : '' })); ins.at.next = now; }
 }
+// iron rules for the board, whatever the model returned: what the therapist ruled out stays out, what the therapist
+// added stays in, at most five, never empty once it has had hypotheses, the previous order kept, and each change marked
+const HYPO_RANK = { weakened: 0, possible: 1, supported: 2 };
+function mergeHypo(s, prev, got) {
+  const off = new Set((s.hypoOff || []).map(x => x.key)), mine = s.hypoMine || [];
+  let list = [];
+  for (const h of got) if (!off.has(hkey(h)) && !list.some(x => hkey(x) === hkey(h))) list.push(h);
+  for (const m of mine) if (!list.some(h => hkey(h) === hkey(m))) list.push(prev.find(h => hkey(h) === hkey(m)) || { name: m.name, path: m.path, status: 'possible', support: [], against: [], tests: [] });
+  list.forEach(h => { h.mine = mine.some(m => hkey(m) === hkey(h)); });
+  list = [...list.filter(h => h.mine), ...list.filter(h => !h.mine)].slice(0, HYPO_MAX);
+  if (!list.length) return prev.filter(h => !off.has(hkey(h))).map(h => ({ ...h, chg: '' }));
+  const pk = prev.map(hkey), at = h => { const i = pk.indexOf(hkey(h)); return i < 0 ? 1e3 : i; };
+  list.forEach(h => { const i = pk.indexOf(hkey(h)); h.chg = !prev.length ? '' : i < 0 ? 'new' : HYPO_RANK[h.status] > HYPO_RANK[prev[i].status] ? 'up' : HYPO_RANK[h.status] < HYPO_RANK[prev[i].status] ? 'down' : ''; });
+  list.sort((a, b) => at(a) - at(b));
+  insState(s).hypoGone = prev.filter(h => !off.has(hkey(h)) && !list.some(x => hkey(x) === hkey(h))).map(h => h.name);
+  return list;
+}
+const activeFlags = s => (insState(s).flags || []).filter(f => !(s.flagOff || []).includes(fkey(f.text)));
 function unfileNote(nid) {
   const n = (session?.notes || []).find(x => x.id === nid); if (!n || !n.field) return;
   const f = session.fields[n.field], lines = ['טקסט חופשי: ' + n.text, 'פתק: ' + n.text]; // sessions from before the rename carry 'פתק:'
@@ -825,11 +855,11 @@ function vizVerHtml(k) {
 function vizCards(stage, summary, ver = false) {
   const sm = smart(), s = session, ins = insState(s), out = [];
   const has = { course: vasOf(s.fields.vas_max?.value) != null || vasOf(s.fields.vas_now?.value) != null || ins.timeline.length,
-    body: ins.body.length, exam: ins.exam.rom.length + ins.exam.mmt.length + ins.exam.tests.length, hypo: ins.hypo.length };
+    body: ins.body.length, exam: ins.exam.rom.length + ins.exam.mmt.length + ins.exam.tests.length, hypo: ins.hypo.length || activeFlags(s).length };
   const order = stage === 'exam' ? ['exam', 'hypo', 'body', 'course'] : stage === 'summary' ? ['hypo', 'exam', 'course', 'body'] : stage === 'all' ? ['course', 'body', 'exam', 'hypo'] : ['course', 'body', 'hypo'];
   const on = { course: sm.timeline, body: sm.body, exam: sm.exam, hypo: sm.hypo };
   // the empty hypotheses card (with its button) shows once there is enough to reason from
-  const emptyOk = k => k !== 'hypo' || stage !== 'anamnesis' || filledCount(s) >= HYPO_MIN;
+  const emptyOk = k => k !== 'hypo' || stage !== 'anamnesis' || hypoReady(s);
   for (const k of order) {
     if (!on[k]) continue;
     if (!has[k]) { if (!summary && emptyOk(k) && (stage === 'anamnesis' ? ['course', 'body', 'hypo'] : stage === 'exam' ? ['exam', 'hypo'] : ['hypo']).includes(k)) out.push(emptyCard(k)); continue; }
@@ -855,11 +885,12 @@ const filledCount = s => fieldsFor(s).filter(f => f.id !== 'name' && s.fields[f.
 function hypoHint() {
   const s = session, n = filledCount(s), at = insState(s).at.hypo;
   if (!aiReady()) return 'נדרש קוד גישה בהגדרות, בלשונית API.';
-  if (n < HYPO_MIN) return `מתעדכן לבד אחרי ${HYPO_MIN} שדות מלאים בטופס (עכשיו ${n}). לא תלוי ב"הפק ניתוח".`;
+  if (!hypoReady(s)) { const core = HYPO_CORE.filter(id => !hasVal(s, id)).map(id => shortLabel(FIELD[id].label)), more = Math.max(0, 2 - HYPO_MORE.filter(id => hasVal(s, id)).length);
+    return `הלוח נפתח כשיש ${HYPO_CORE.map(id => shortLabel(FIELD[id].label)).join(', ')} ועוד 2 מתוך: ${HYPO_MORE_HE}. חסר: ${[...core, more ? `עוד ${more === 1 ? 'פרט אחד' : '2 פרטים'} מהרשימה` : ''].filter(Boolean).join(', ')}. לא תלוי ב"הפק ניתוח".`; }
   if (at) return `בעדכון האחרון (${hhmm(at)}) עוד לא היו מספיק ממצאים להשערות. מתעדכן לבד כשנוסף מידע לטופס.`;
   return 'מתעדכן לבד אחרי כל מילוי של הטופס. אפשר גם לחשב עכשיו.';
 }
-const hypoBtn = (label = 'חשב השערות') => aiReady() && filledCount(session) >= HYPO_MIN ? `<button class="btn sm" data-act="hypoNow"${insighting ? ' disabled' : ''}>${label}</button>` : '';
+const hypoBtn = (label = 'חשב השערות') => aiReady() && hypoReady(session) ? `<button class="btn sm" data-act="hypoNow"${insighting ? ' disabled' : ''}>${label}</button>` : '';
 // a card's corner: when it was drawn, and "לאמת" while any field it draws from still waits for the therapist
 const CARD_SRC = { timeline: s => [...PART_FIELDS.timeline, 'vas_max', 'vas_now'], body: () => PART_FIELDS.body, exam: () => PART_FIELDS.exam, hypo: () => [] };
 const atMeta = k => {
@@ -1127,14 +1158,35 @@ function examCard() {
   }
   return `<section class="card span2">${cardHead('exam', atMeta('exam'))}<div class="exam">${rom}${mmt}${tests}</div></section>`;
 }
+const HYPO_CHG = { new: ['חדשה', 'new'], up: ['עלתה ↑', 'up'], down: ['ירדה ↓', 'down'] }; // change since the previous update (not the status itself)
 function hypoCard(inGrid) {
-  const s = session, list = insState(s).hypo, lvl = '<span class="lv" aria-hidden="true"><i></i><i></i><i></i></span>';
-  return `<section class="card${inGrid ? ' span2' : ''}">${cardHead('hypo', atMeta('hypo') + (view === 'finish' ? '' : hypoBtn('עדכן')))}
-    <div class="hyps">${list.map(h => `<div class="hyp"><h3>${esc(h.name)}</h3><span class="st ${STATUS_HE[h.status] ? h.status : 'possible'}">${lvl}${STATUS_HE[h.status] || STATUS_HE.possible}</span>
+  const s = session, ins = insState(s), list = ins.hypo, lvl = '<span class="lv" aria-hidden="true"><i></i><i></i><i></i></span>';
+  const edit = view !== 'finish' && !recLocked(s), flags = activeFlags(s), off = s.hypoOff || [];
+  const head = cardHead('hypo', atMeta('hypo') + (view === 'finish' ? '' : hypoBtn('עדכן')));
+  const foot = `<p class="fine disclaim">השערות עבודה לחשיבה קלינית, לא אבחנה. ${MAP_TAB[s.region] ? 'נשענות על המסלולים במפת הדרך לאזור.' : 'לאזור הזה עוד אין מסלולים במפה.'}</p>`;
+  // a red flag in the form comes first: no hypotheses until the therapist has ruled it out
+  if (flags.length) return `<section class="card${inGrid ? ' span2' : ''}">${head}
+    <div class="flagbox" role="alert"><b>דגל אדום בטופס</b><ul>${flags.map(f => `<li>${escN(f.text)}</li>`).join('')}</ul>
+      <p>לפי מפת הדרך (סינון דגלים אדומים): קודם הפניה רפואית בהתאם לממצא. ההשערות מוסתרות עד שהדגל נשלל.</p>
+      ${edit ? '<button class="btn sm" data-act="flagOff">הדגל נשלל: הצג השערות</button>' : ''}</div>${foot}</section>`;
+  const tag = h => [h.mine ? '<span class="hb mine">הוסיף המטפל</span>' : '', HYPO_CHG[h.chg] ? `<span class="hb ${HYPO_CHG[h.chg][1]}">${HYPO_CHG[h.chg][0]}</span>` : ''].join('');
+  return `<section class="card${inGrid ? ' span2' : ''}">${head}
+    <div class="hyps">${list.map(h => `<div class="hyp"><h3>${esc(h.name)}${tag(h)}</h3><span class="st ${STATUS_HE[h.status] ? h.status : 'possible'}">${lvl}${STATUS_HE[h.status] || STATUS_HE.possible}${edit ? `<button class="hx" data-act="hypoOff" data-key="${esc(hkey(h))}" aria-label="שלול את ההשערה ${esc(h.name)}" title="שלול">${ICON.x || '×'}</button>` : ''}</span>
       ${h.support?.length || h.against?.length ? `<div class="ev"><div><b>תומך</b>${h.support?.length ? `<ul>${h.support.map(x => `<li>${escN(x)}</li>`).join('')}</ul>` : '<span class="muted">—</span>'}</div><div><b>סותר</b>${h.against?.length ? `<ul>${h.against.map(x => `<li>${escN(x)}</li>`).join('')}</ul>` : '<span class="muted">—</span>'}</div></div>` : ''}
       ${h.tests?.length ? `<div class="ts">מבדקים שיעזרו להבחין: ${h.tests.map(id => testLink(id) ? `<a class="chipl" href="${testLink(id)}" target="${MAP_TARGET}">${esc(testName(id))}</a>` : `<span class="chipl">${esc(testName(id))}</span>`).join('')}</div>` : ''}</div>`).join('')}</div>
-    <p class="fine disclaim">השערות עבודה לחשיבה קלינית, לא אבחנה. ${MAP_TAB[s.region] ? 'נשענות על המסלולים במפת הדרך לאזור.' : 'לאזור הזה עוד אין מסלולים במפה.'}</p></section>`;
+    ${ins.hypoGone?.length ? `<p class="fine">ירדו מהלוח בעדכון האחרון: ${ins.hypoGone.map(esc).join(' · ')}</p>` : ''}
+    ${off.length ? `<p class="fine hoff">שללת: ${off.map(h => `${esc(h.name)}${edit ? ` <button class="linkbtn small" data-act="hypoOn" data-key="${esc(h.key)}">החזר</button>` : ''}`).join(' · ')}</p>` : ''}
+    ${edit && MAP_TAB[s.region] ? `<div class="hadd"><button class="btn sm" data-act="hypoPick"${list.length >= HYPO_MAX ? ' disabled' : ''}>הוסף השערה מהמפה</button>${list.length >= HYPO_MAX ? `<span class="fine">בלוח יש כבר ${HYPO_MAX} השערות. כדי להוסיף, שלול אחת.</span>` : ''}</div>` : ''}
+    ${foot}</section>`;
 }
+// the map's pathways for the session's region, to add one as the therapist's own hypothesis
+async function hypoPickHtml() {
+  const s = session; let cat = null; try { cat = await mapCatalog(s.region); } catch { }
+  if (!cat?.groups?.length) return '<p class="muted">לאזור הזה עוד אין מסלולים במפה.</p>';
+  const on = new Set(insState(s).hypo.map(hkey)), off = new Set((s.hypoOff || []).map(h => h.key));
+  return `<div class="hpick"><b>הוסף השערה מהמפה · ${esc(s.region)}</b>${cat.groups.map(g => `<div class="hg"><span>${esc(g.title)}</span>${g.paths.map(n => { const k = hkey({ path: n }); return `<button class="hp" data-act="hypoAdd" data-path="${esc(n)}"${on.has(k) ? ' disabled' : ''}>${esc(n)}${on.has(k) ? ' · בלוח' : off.has(k) ? ' · נשללה' : ''}</button>`; }).join('')}</div>`).join('')}</div>`;
+}
+function hypoChanged() { saveSession(true); refreshLive(); if (view === 'finish') renderFinish(); }
 
 /* ---------------- speech recognition ---------------- */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -2290,7 +2342,8 @@ function vizDocHtml(s) {
     h += '<h3>כוח (MMT)</h3>' + docTable(['שריר / תנועה', 'ימין', 'שמאל', 'צד לא צוין'], m.map(k => { const rs = ex.mmt.filter(r => r.motion.trim() === k), g = sd => { const r = rs.find(x => x.side === sd); return r ? gr(r.grade) + '/5' + unv(r.fields) : '—'; }; return [esc(k), g('right'), g('left'), g('none')]; }));
   }
   if (ex.tests?.length) h += '<h3>מבדקים מיוחדים</h3>' + docTable(['מבדק', 'צד', 'תוצאה'], ex.tests.map(t => [esc(t.name), SIDE_HE[t.side] || '—', esc(resultText(t)) + unv(t.fields)]));
-  if (ins.hypo?.length) h += '<h3>השערות עבודה (טיוטה לחשיבה קלינית, לא אבחנה)</h3>' + docTable(['השערה', 'מצב', 'תומך', 'סותר', 'מבדקים שיעזרו להבחין'], ins.hypo.map(x => [esc(x.name), STATUS_HE[x.status] || '', esc((x.support || []).join(' · ')), esc((x.against || []).join(' · ')), esc((x.tests || []).map(testName).join(', '))]));
+  if (ins.flags?.length) h += '<h3>דגלים אדומים בטופס</h3><ul>' + ins.flags.map(f => `<li>${esc(f.text)}${(s.flagOff || []).includes(fkey(f.text)) ? ' (המטפל סימן שנשלל)' : ''}</li>`).join('') + '</ul>';
+  if (ins.hypo?.length) h += '<h3>השערות עבודה (טיוטה לחשיבה קלינית, לא אבחנה)</h3>' + docTable(['השערה', 'מצב', 'תומך', 'סותר', 'מבדקים שיעזרו להבחין'], ins.hypo.map(x => [esc(x.name) + (x.mine ? ' (הוסיף המטפל)' : ''), STATUS_HE[x.status] || '', esc((x.support || []).join(' · ')), esc((x.against || []).join(' · ')), esc((x.tests || []).map(testName).join(', '))]));
   return h ? '<h2>סיכום חזותי</h2>' + h : '';
 }
 function notesDocHtml(s) {
@@ -3259,7 +3312,7 @@ function analysisHtml() {
     <div class="muted small" id="analysisStatus" style="margin-top:8px">${s.analysisAt ? 'נוצר ' + hhmm(s.analysisAt) : ''}</div>
     <div class="hl-legend" style="margin-top:12px">${Object.keys(HL_LABEL).map(k => `<mark class="hl hl-${k}">${HL_LABEL[k]}</mark>`).join('')}</div>
     <div class="analysis" id="analysisOut" style="margin-top:8px">${s.analysis ? md(s.analysis) : ''}</div></section>
-  ${smart().hypo && insState().hypo.length ? hypoCard(false) : ''}
+  ${smart().hypo && (insState().hypo.length || activeFlags(session).length) ? hypoCard(false) : ''}
   <div id="testLinks"></div>
   <button class="btn block" data-act="download">הורד עותק של המפגש (HTML)</button>`;
 }
@@ -3568,6 +3621,27 @@ document.addEventListener('click', async e => {
     case 'loadPrev': if (session?.prevPending) { const f = session.prevPending; delete session.prevPending; attachPrev(session, f, true).then(() => refreshLive()); } break;
     case 'followUp': go('home'); requestAnimationFrame(() => { const n = $('#pName'); if (!n) return; n.value = t.dataset.name; if (t.dataset.region) $('#pRegion').value = t.dataset.region; setPType('מפגש מעקב'); n.scrollIntoView({ block: 'center' }); }); break;
     case 'hypoNow': { const before = insState().at.hypo; runInsight(false, ['hypo']).then(() => { const ins = session && insState(); if (ins && ins.at.hypo !== before && !ins.hypo.length) toast('עדיין אין מספיק ממצאים להשערות', false, 2600); }); break; }
+    case 'hypoOff': {
+      const ins = insState(), h = ins.hypo.find(x => hkey(x) === t.dataset.key); if (!h) break;
+      session.hypoOff = [...(session.hypoOff || []).filter(x => x.key !== hkey(h)), { key: hkey(h), name: h.name, at: Date.now() }];
+      session.hypoMine = (session.hypoMine || []).filter(x => hkey(x) !== hkey(h));
+      ins.hypo = ins.hypo.filter(x => x !== h); hypoChanged();
+      if (!ins.hypo.length && aiReady()) runInsight(false, ['hypo']);
+      break;
+    }
+    case 'hypoOn': { session.hypoOff = (session.hypoOff || []).filter(x => x.key !== t.dataset.key); hypoChanged(); if (aiReady()) runInsight(false, ['hypo']); break; }
+    case 'hypoPick': { const html = await hypoPickHtml(); openPop(t, html, 'hpick'); break; }
+    case 'hypoAdd': {
+      const ins = insState(), n = t.dataset.path, k = hkey({ path: n });
+      if (ins.hypo.length >= HYPO_MAX) { toast(`בלוח יש כבר ${HYPO_MAX} השערות. כדי להוסיף, שלול אחת.`, true); break; }
+      if (ins.hypo.some(h => hkey(h) === k)) break;
+      session.hypoOff = (session.hypoOff || []).filter(x => x.key !== k);
+      session.hypoMine = [...(session.hypoMine || []), { name: n, path: n, at: Date.now() }];
+      ins.hypo = [...ins.hypo, { name: n, path: n, status: 'possible', support: [], against: [], tests: [], mine: true, chg: 'new' }];
+      closePop(); hypoChanged(); if (aiReady() && hypoReady(session)) runInsight(false, ['hypo']);
+      break;
+    }
+    case 'flagOff': { session.flagOff = [...new Set([...(session.flagOff || []), ...activeFlags(session).map(f => fkey(f.text))])]; hypoChanged(); break; }
     case 'verifyPart': { const s = session, ids = CARD_SRC[t.dataset.part](s).filter(id => s.fields[id]?.value && (s.fields[id].needsCheck || s.fields[id].unverified)); if (ids.length) showSource(ids, t, 'v:' + t.dataset.part); break; }
     case 'noteDel': session.notes = (session.notes || []).filter(n => n.id !== t.dataset.nid); touch(); refreshLive(); if (view === 'finish') renderFinish(); break;
     case 'noteUnfile': unfileNote(t.dataset.nid); break;

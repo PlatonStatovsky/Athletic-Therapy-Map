@@ -419,6 +419,25 @@ html[data-focus] .rail{display:none}
 .hyp .ev{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:var(--fs-foot)}
 .hyp .ev b{display:block;font-size:var(--fs-cap);color:var(--label-2);font-weight:700;margin-bottom:2px}
 .hyp .ev ul{margin:0;padding-inline-start:16px}
+.hyp h3 .hb{display:inline-block;margin-inline-start:8px;padding:0 8px;border-radius:999px;font-size:var(--fs-cap);font-weight:600;line-height:1.7;vertical-align:2px;background:var(--fill);color:var(--label-2)}
+.hyp h3 .hb.new{background:var(--tint-soft);color:var(--tint-ink)}
+.hyp h3 .hb.up{background:var(--green-soft);color:var(--green-ink)}
+.hyp h3 .hb.down{background:var(--red-soft);color:var(--red-ink)}
+.hyp h3 .hb.mine{background:var(--fill);color:var(--label)}
+.hyp .hx{display:inline-grid;place-items:center;width:26px;height:26px;margin-inline-start:4px;border:0;border-radius:50%;background:var(--fill);color:var(--label-2);font-size:15px;line-height:1;cursor:pointer}
+.hyp .hx:hover{color:var(--red-ink)}
+.hoff .linkbtn{font-size:inherit}
+.hadd{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:10px}
+.flagbox{padding:12px 14px;border-radius:14px;background:var(--red-soft);color:var(--red-ink)}
+.flagbox b{display:block;margin-bottom:4px}
+.flagbox ul{margin:0 0 8px;padding-inline-start:18px;color:var(--label)}
+.flagbox p{margin:0 0 10px;color:var(--label)}
+.hpick{display:grid;gap:10px;max-width:min(420px,86vw);max-height:60vh;overflow:auto}
+.hpick .hg{display:grid;gap:4px}
+.hpick .hg>span{font-size:var(--fs-cap);color:var(--label-2);font-weight:600}
+.hpick .hp{text-align:start;border:0;border-radius:10px;padding:8px 10px;background:var(--fill);color:var(--label);font:inherit;font-size:var(--fs-foot);cursor:pointer}
+.hpick .hp:hover:not(:disabled){background:var(--tint-soft);color:var(--tint-ink)}
+.hpick .hp:disabled{opacity:.55;cursor:default}
 .hyp .ts{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:var(--fs-cap);color:var(--label-2)}
 .chipl{display:inline-flex;align-items:center;min-height:28px;padding:2px 11px;border-radius:999px;background:var(--card);color:var(--tint-ink);font-size:var(--fs-foot);font-weight:600;text-decoration:none;border:.5px solid var(--sep)}
 .fine{font-size:var(--fs-cap);color:var(--label-2);margin-top:10px}
