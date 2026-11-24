@@ -1,4 +1,5 @@
-# Build the site: src/*.js + template.html -> src/upper-quadrant-map.html (build.js) -> ../index.html (this script).
+# Build the site: src/*.js + template.html -> src/upper-quadrant-map.html (build.js) -> ../map/index.html (this script).
+# The site's root index.html is the home page (hand-written, not built); the map lives in /map/.
 # Run from the repo root:  node src/build.js && python3 src/build-site.py
 import pathlib
 here = pathlib.Path(__file__).resolve().parent
@@ -13,5 +14,6 @@ out = ('<!doctype html>\n<html lang="he" dir="rtl">\n<head>\n<meta charset="utf-
        '<meta property="og:description" content="אתר מידע למטפלים בשיקום שמרני">\n'
        '<meta property="og:locale" content="he_IL">\n'
        '<title>Ligamentum</title>\n' + head + '\n</head>\n<body>' + body.rstrip() + '\n</body>\n</html>\n')
-(here.parent / "index.html").write_text(out, encoding="utf-8")
+(here.parent / "map").mkdir(exist_ok=True)
+(here.parent / "map" / "index.html").write_text(out, encoding="utf-8")
 print("ok", len(out))

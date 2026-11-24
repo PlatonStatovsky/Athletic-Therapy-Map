@@ -2,12 +2,13 @@
 
 | נתיב | מה זה |
 |---|---|
-| `index.html` | מפת הדרך — דף הבית של האתר, פתוח לכולם |
+| `index.html` | דף הבית: שתי כניסות, למפת הדרך (פתוחה לכולם) ול-Thalamus (משתמשים מורשים, כניסה עם Google). קישור ישן כמו `/#knee` מועבר ל-`/map/#knee` |
+| `map/index.html` | מפת הדרך, פתוחה לכולם. נבנית מ-`src/` |
 | `app/` | העוזר הקליני — הקלטת מפגש, מילוי טופס אוטומטי, ניתוח קליני, שמירה ל-Google Drive |
 | `functions/api/soniox-key.js` | פונקציית שרת קטנה ב-Cloudflare שנותנת לעוזר מפתח זמני לתמלול ב-Soniox |
 
-- כתובת: https://ligamentum.pages.dev (Cloudflare Pages, פרויקט `ligamentum`). העוזר: https://ligamentum.pages.dev/app/
+- כתובת: https://ligamentum.pages.dev (Cloudflare Pages, פרויקט `ligamentum`). המפה: https://ligamentum.pages.dev/map/ · העוזר: https://ligamentum.pages.dev/app/
 - אין שלב בנייה: הקבצים מוגשים כמו שהם.
 - האתר מתפרסם מהענף `main`. כל ענף אחר מקבל כתובת תצוגה מקדימה משלו.
-- העוזר קורא את מפת הדרך מאותו אתר (`../index.html`) ומשתמש בה כבסיס ידע לניתוח.
-- מצב התצוגה (בהיר / נוח לעין / כהה) משותף לשני החלקים.
+- העוזר קורא את מפת הדרך מאותו אתר (`../map/index.html`) ומשתמש בה כבסיס ידע לניתוח.
+- מצב התצוגה (בהיר / נוח לעין / כהה) משותף לדף הבית, למפה ולעוזר.

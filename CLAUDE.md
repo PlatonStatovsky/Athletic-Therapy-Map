@@ -1,7 +1,8 @@
 # Repository notes for Claude
 
-Two parts, one static site, no build step:
-- `index.html` (root) — the decision map ("שיקום שמרני מפת דרך"). Platon develops its content in other conversations. It is built from `src/` (`node src/build.js && python3 src/build-site.py`, see `src/README.md`): never edit `index.html` by hand, a rebuild overwrites it.
+Two parts and a home page, one static site, no build step:
+- `index.html` (root) — the home page (hand-written): two entries, the map (open to all) and Thalamus (authorized Google sign-in). Its inline script sends old map links (`/#knee`, `/#shoulder&t=hk`) to `/map/` with the same hash, and applies the shared theme.
+- `map/index.html` — the decision map ("שיקום שמרני מפת דרך"). Platon develops its content in other conversations. It is built from `src/` (`node src/build.js && python3 src/build-site.py`, see `src/README.md`): never edit `map/index.html` by hand, a rebuild overwrites it.
 - `app/` — the clinic assistant (Thalamus, עוזר קליני), a PWA: `index.html` (markup + CSS), `app.js` (all logic), `boot.js` (theme before first paint), `norms.js` (editable normal ROM ranges), `sw.js`. Do not edit it from map-content work.
 - `functions/api/soniox-key.js` — Cloudflare Pages Function that mints short-lived Soniox keys for the assistant's cloud transcription. Needs the secret `SONIOX_API_KEY` (set for both Production and Preview); callers are checked by `_middleware.js`.
 - `functions/api/claude/[[path]].js` — proxy for the assistant's Claude calls (`/api/claude/messages`, `/api/claude/messages/count_tokens`). Needs the secret `ANTHROPIC_API_KEY` (callers are checked by `_middleware.js`); optional KV binding `RATE_KV` adds a per-IP daily cap. GET on the same path reports whether the secrets are set.
@@ -10,8 +11,8 @@ Two parts, one static site, no build step:
 - `_headers` — CSP and security headers for `/app/*` (no inline scripts: keep all script in files) and no-store for `/api/*`.
 
 Contracts between the two parts — keep them or update both sides together:
-- `app/kb-site.js` reads these data literals from `index.html` by name: `T, GENERAL, REGIONS, FIVE_D, THREE_N, TEST_GEN, TX, TX2, TX3, FOUND, TISSUE` (the map also has `TX4`–`TX7` for the lower-body regions, not read yet). Each must stay declared at line start as `const NAME = {` or `const NAME = [` and parse as JSON5. If you rename a literal or change the shape of a region (`anam, s1, s2, q, s3.patterns[].paths[], prog, rts, tx, phases, principles, surgery, re`) or a test card, update `app/kb-site.js` too.
-- Deep links into the map: `#<tab>` opens a region, `#<tab>&t=<testId>` also opens that test's card (handled at the end of `index.html`). The app links to tests this way.
+- `app/kb-site.js` reads these data literals from `map/index.html` (fetched as `SITE_SRC` in `app/app.js`) by name: `T, GENERAL, REGIONS, FIVE_D, THREE_N, TEST_GEN, FOUND, TISSUE` and every test-card literal `TX`, `TX2`, … (collected by the pattern `TX\d*`; today `TX`–`TX7`, all 8 regions). Each must stay declared at line start as `const NAME = {` or `const NAME = [` and parse as JSON5. If you rename a literal or change the shape of a region (`anam, s1, s2, q, s3.patterns[].paths[], prog, rts, tx, phases, principles, surgery, re`) or a test card, update `app/kb-site.js` too.
+- Deep links into the map: `#<tab>` opens a region, `#<tab>&t=<testId>` also opens that test's card (handled at the end of `map/index.html`). The app links to tests this way (`MAP_URL` = `../map/`); the map links back to the app as `../app/`.
 - Theme is shared through `localStorage['uqmap-theme']` (`light` | `comfort` | `dark`; absent = comfort, or dark when the device is dark).
 
 Hosting: Cloudflare Pages project `ligamentum` — production https://ligamentum.pages.dev from `main`; every other branch gets a preview at https://<branch>.ligamentum.pages.dev. No build step, output directory = repo root.

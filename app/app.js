@@ -1888,10 +1888,10 @@ async function signOut() {
 }
 
 const KB_CACHE = 'ca-kb-v1', KB_PARSER = 2;
-// the decision map is the home page of the same site (this app lives in /app/)
+// the decision map lives on the same site, in /map/ (this app lives in /app/, the site's home page is /)
 const HAS_MAP = /\/app\/(index\.html)?$/.test(location.pathname);
-const SITE_SRC = HAS_MAP ? new URL('../index.html', location.href).href : 'https://raw.githubusercontent.com/PlatonStatovsky/athletic-therapy-map/main/index.html';
-const MAP_URL = HAS_MAP ? new URL('../', location.href).href : '';
+const SITE_SRC = HAS_MAP ? new URL('../map/index.html', location.href).href : 'https://raw.githubusercontent.com/PlatonStatovsky/athletic-therapy-map/main/map/index.html';
+const MAP_URL = HAS_MAP ? new URL('../map/', location.href).href : '';
 const MT = { gdoc: 'application/vnd.google-apps.document', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', pdf: 'application/pdf' };
 const kbMem = new Map();
 const kbKeyUrl = k => new URL('./__kb/' + encodeURIComponent(k), location.href).href;
