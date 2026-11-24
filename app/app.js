@@ -3113,7 +3113,7 @@ function fieldHtml(f) {
     ${v.value && (v.quote || v.needsCheck || v.locked) ? `<div class="fmeta">
       ${v.quote ? `<button data-act="src" data-fid="${f.id}">מקור</button>` : ''}
       ${v.needsCheck ? `<button data-act="confirm" data-fid="${f.id}">סמן כמאומת</button>` : ''}
-      ${v.locked ? `<button data-act="unlock" data-fid="${f.id}">אפשר מילוי אוטומטי</button>` : ''}
+      ${v.locked ? `<button data-act="fieldUnlock" data-fid="${f.id}">אפשר מילוי אוטומטי</button>` : ''}
     </div>` : ''}
   </div>`;
 }
@@ -3496,7 +3496,7 @@ document.addEventListener('click', async e => {
       catch (e) { fin.phase = 'review'; fin.err = humanErr(e); }
       if (view === 'finish') renderFinish(); break;
     }
-    case 'unlock': { const f = session.fields[t.dataset.fid]; if (f) { f.locked = false; saveSession(); refreshField(t.dataset.fid); } break; }
+    case 'fieldUnlock': { const f = session.fields[t.dataset.fid]; if (f) { f.locked = false; saveSession(); refreshField(t.dataset.fid); } break; }
     case 'fillNow':
       if (!aiReady()) { toast('חסר קוד גישה. אפשר להוסיף אותו בהגדרות, בלשונית API.', true); return; }
       if (filling) { toast('מילוי כבר רץ'); return; }
@@ -3640,7 +3640,8 @@ async function startSession() {
   const name = $('#pName').value.trim();
   if (!name) { toast('הכנס שם מטופל', true); $('#pName').focus(); return; }
   if (!$('#pConsent').checked) { toast('יש לאשר שהמטופל הסכים להקלטה', true); return; }
-  if (session && !session.savedAt && !await confirmDlg('להחליף את המפגש הפתוח?', 'יש מפגש פתוח שלא נשמר ב-Drive. מפגש חדש יחליף אותו.', 'התחל מפגש חדש', true)) return;
+  // an open session with anything not yet in Drive (never saved, or changed since the last save) is replaced only on purpose
+  if (session && (!session.savedAt || (session.changedAt || 0) > new Date(session.savedAt).getTime()) && !await confirmDlg('להחליף את המפגש הפתוח?', session.savedAt ? 'במפגש הפתוח יש שינויים מאז השמירה האחרונה ב-Drive. מפגש חדש יחליף אותו במכשיר, והשינויים יאבדו. כדי לשמור אותם, בטל וחזור למסך הסיום של המפגש.' : 'יש מפגש פתוח שלא נשמר ב-Drive. מפגש חדש יחליף אותו.', 'התחל מפגש חדש', true)) return;
   const p = patients.find(x => x.name === name);
   const type = $('#pType [aria-pressed="true"]')?.dataset.v || TYPES[0];
   session = {

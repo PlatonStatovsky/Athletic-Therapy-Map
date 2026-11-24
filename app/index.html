@@ -599,6 +599,8 @@ html:has(body.sess){scroll-padding:84px 0 96px}
 .home-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:var(--gap);align-items:start}
 .home .main{padding-top:8px}
 .home .shell,.fin .shell{grid-template-columns:minmax(0,1fr)}
+/* the session screen's side pane setting must not leave a column behind on screens that have no rail or pane */
+html[data-side-on] .home .shell,html[data-side-on] .fin .shell{grid-template-columns:minmax(0,1fr)}
 .home .content,.fin .content{max-width:880px}
 .hero-title{padding:22px 4px 6px}
 .hero-title h1{font-size:34px;letter-spacing:-.01em;display:flex;align-items:center;gap:12px}
