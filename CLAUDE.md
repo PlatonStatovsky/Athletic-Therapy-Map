@@ -18,5 +18,5 @@ Hosting: Cloudflare Pages project `ligamentum` — production https://ligamentum
 
 Workflow:
 - `main` is production. Work in a branch; merge or push to `main` only when Platon asks.
-- Every change is logged, newest first, in `CHANGELOG.md` (Hebrew, columns date | what changed | where on the site | commit) and in the same row in the tab "יומן שינויים — Claude" of the Google Doc "SRS - Thalamus 0.1". A visual change also gets before/after screenshots in that tab (uploaded to the Drive folder "Thalamus יומן — צילומי מסך", then Insert › Image › Drive).
+- Every change is logged, newest first, in `CHANGELOG.md` (Hebrew, columns date | what changed | where on the site | commit) and in the tab "יומן שינויים — Claude" of the Google Doc "SRS - Thalamus 0.1". In that tab: no tables (from 24.11). Write it like the spec: a dated heading per round, then a numbered item per change with the sub-points date + commit, what was, what was asked, what changed, where to see it; a visual change gets a before/after image (or the new state when there was no before). Way that works: build the entry as HTML with the images embedded, upload it to Drive as a Google Doc (folder "Thalamus יומן — צילומי מסך"), copy it all in Chrome and paste it under the tab's intro.
 - Hebrew RTL throughout; keep the existing house style of each part.
