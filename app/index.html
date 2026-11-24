@@ -621,6 +621,12 @@ html[data-side-on] .home .shell,html[data-side-on] .fin .shell{grid-template-col
 .vplay{display:inline-grid;place-items:center;width:28px;height:28px;margin-inline-start:6px;vertical-align:middle;border:0;border-radius:50%;background:var(--tint-btn);color:#fff}
 .vplay svg{width:14px;height:14px}
 .fin .grid{align-items:stretch}
+.fin .grid>.card{display:flex;flex-direction:column}
+.vizok{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:auto;padding-top:12px;border-top:1px solid var(--sep);font-size:var(--fs-foot)}
+.fin .grid>.card>.vizok{margin-top:auto}
+.card>.vizok{margin-top:12px}
+.vizok.done span{display:inline-flex;align-items:center;gap:6px;color:var(--green-ink);font-weight:600}
+.vizok.done svg{width:16px;height:16px}
 .fin #finAudio .audio-box{margin-top:10px}
 .vrow .vb{display:flex;gap:6px}
 @media (max-width:759px){ .vrow{grid-template-columns:1fr} }

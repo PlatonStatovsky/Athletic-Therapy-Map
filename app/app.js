@@ -805,7 +805,24 @@ function unfileNote(nid) {
 const unvOf = (s, ids) => (ids || []).some(id => s.fields[id]?.unverified); // the model quoted words that are not in the transcript
 const chkOf = (s, ids) => (ids || []).some(id => s.fields[id]?.needsCheck || s.fields[id]?.unverified);
 const UNV = ' <span class="badge bad">לא נמצא בתמלול</span>';
-function vizCards(stage, summary) {
+// the finish screen asks the therapist to confirm the body map and the injury course as drawn. A confirmation
+// holds only for the picture it was given on: when the card is redrawn with different content it is asked again.
+const VIZ_VER = { body: 'מפת הגוף', course: 'מהלך הפציעה' }, VIZ_DONE = { body: 'מפת הגוף אומתה', course: 'מהלך הפציעה אומת' };
+function vizSig(s, k) {
+  const ins = insState(s);
+  return k === 'body' ? JSON.stringify(ins.body) : JSON.stringify([ins.timeline, s.fields.vas_max?.value || '', s.fields.vas_now?.value || '']);
+}
+const vizShown = (s, k) => { const ins = insState(s), sm = smart();
+  return k === 'body' ? !!(sm.body && ins.body.length) : !!(sm.timeline && (vasOf(s.fields.vas_max?.value) != null || vasOf(s.fields.vas_now?.value) != null || ins.timeline.length)); };
+const vizOk = (s, k) => !!s.vizOk?.[k] && s.vizOk[k].sig === vizSig(s, k);
+// what still waits for a confirmation before the session can be saved (an empty or hidden card needs none)
+const vizMissing = s => recLocked(s) ? [] : Object.keys(VIZ_VER).filter(k => vizShown(s, k) && !vizOk(s, k));
+function vizVerHtml(k) {
+  const s = session;
+  return vizOk(s, k) ? `<div class="vizok done" role="status"><span>${ICON.check} ${VIZ_DONE[k]} · ${hhmm(s.vizOk[k].at)}</span></div>`
+    : `<div class="vizok"><span class="muted">${s.vizOk?.[k] ? 'הכרטיס השתנה מאז האימות. צריך לאמת שוב.' : 'בדוק שהתמונה נכונה ואמת לפני השמירה.'}</span><button class="btn sm primary" data-act="vizVerify" data-k="${k}">אמת</button></div>`;
+}
+function vizCards(stage, summary, ver = false) {
   const sm = smart(), s = session, ins = insState(s), out = [];
   const has = { course: vasOf(s.fields.vas_max?.value) != null || vasOf(s.fields.vas_now?.value) != null || ins.timeline.length,
     body: ins.body.length, exam: ins.exam.rom.length + ins.exam.mmt.length + ins.exam.tests.length, hypo: ins.hypo.length };
@@ -816,7 +833,8 @@ function vizCards(stage, summary) {
   for (const k of order) {
     if (!on[k]) continue;
     if (!has[k]) { if (!summary && emptyOk(k) && (stage === 'anamnesis' ? ['course', 'body', 'hypo'] : stage === 'exam' ? ['exam', 'hypo'] : ['hypo']).includes(k)) out.push(emptyCard(k)); continue; }
-    out.push(k === 'course' ? courseCard() : k === 'body' ? bodyCard() : k === 'exam' ? examCard() : hypoCard(true));
+    const h = k === 'course' ? courseCard() : k === 'body' ? bodyCard() : k === 'exam' ? examCard() : hypoCard(true);
+    out.push(ver && VIZ_VER[k] ? h.replace(/<\/section>\s*$/, vizVerHtml(k) + '</section>') : h);
   }
   return out;
 }
@@ -2583,11 +2601,12 @@ function saveRowHtml(nv) {
     <button class="btn block" data-act="resume">חזרה למפגש</button>`;
   const err = fin.err ? `<div class="err" role="alert">השמירה נכשלה: ${esc(fin.err)}</div>` : '';
   if (!clientId()) return err + `<div class="err">כדי לשמור ל-Drive צריך Google Client ID בהגדרות, בלשונית API.</div><button class="btn block" data-act="settings" data-tab="api">להגדרות API</button>`;
-  const changed = s.firstSavedAt && s.savedSnap ? snapDiff(s).length : 0;
+  const changed = s.firstSavedAt && s.savedSnap ? snapDiff(s).length : 0, vizMiss = vizMissing(s);
   const legal = !s.firstSavedAt ? `<div class="banner amend" role="note"><b>אחרי השמירה זו רשומה קלינית.</b> במשך 24 שעות אפשר לתקן אותה, וכל תיקון נרשם במסמך עם התאריך ומה השתנה. אחר כך המפגש ננעל, ואפשר רק להוסיף נספח. Drive שומר גם כל גרסה של הקבצים.</div>`
     : `<p class="muted small">${changed ? (changed === 1 ? 'שדה אחד השתנה' : changed + ' שדות השתנו') + ' מאז השמירה: השינויים יירשמו במסמך כתיקון.' : 'אין שינויים בטופס מאז השמירה.'} אפשר לתקן עד ${fmtWhen(lockAt(s))}.</p>`;
   return err + legal + (nv ? `<p class="muted small">${nv === 1 ? 'שדה אחד שלא אומת יסומן' : nv + ' שדות שלא אומתו יסומנו'} במסמך כ"לא אומת".</p>` : '') +
-    `<button class="btn primary block" data-act="saveDrive" ${fin.phase !== 'review' || fin.filling ? 'disabled' : ''}>${fin.err ? 'נסה שוב' : s.savedAt ? 'עדכן ב-Drive' : 'שמור ל-Drive'}</button>
+    (vizMiss.length ? `<p class="err" role="note">לפני השמירה צריך לאמת: ${vizMiss.map(k => VIZ_VER[k]).join(' ו')} (כפתור "אמת" בכרטיס).</p>` : '') +
+    `<button class="btn primary block" data-act="saveDrive" ${fin.phase !== 'review' || fin.filling || vizMiss.length ? 'disabled' : ''}>${fin.err ? 'נסה שוב' : s.savedAt ? 'עדכן ב-Drive' : 'שמור ל-Drive'}</button>
     <button class="btn block" data-act="resume">חזרה למפגש</button>`;
 }
 function renderFinish() {
@@ -2596,7 +2615,7 @@ function renderFinish() {
   document.body.className = 'fin'; document.body.classList.toggle('has-player', !!PL.audio);
   const all = fieldsFor(s), ver = all.filter(needsReview), must = all.filter(f => !s.fields[f.id]?.value && impOf(f) === 1);
   const tasks = (s.notes || []).filter(n => n.task);
-  const viz = vizCards('all', true);
+  const viz = vizCards('all', true, true);
   // the recording player survives a redraw of the screen (confirming a row must not stop the playback)
   const aud = $('#finAudio'), audKey = [s.id, s.audioParts || 0, JSON.stringify(s.audioEnds || {}), JSON.stringify(s.audioIds || {}), fin.phase === 'stopping'].join('|');
   $('#app').innerHTML = `<div class="shell"><main class="main">
@@ -3514,12 +3533,14 @@ document.addEventListener('click', async e => {
     case 'finish': closePop(); openFinish(); break;
     case 'toAnalysis': view = 'session'; tab = 'analysis'; render(); break;
     case 'saveDrive': {
+      { const miss = vizMissing(session); if (miss.length) { toast(`לפני השמירה צריך לאמת: ${miss.map(k => VIZ_VER[k]).join(' ו')}.`, true, 5000); return; } }
       fin.phase = 'saving'; fin.err = ''; fin.msg = ''; const row = () => $('#saveRow');
       if (row()) row().innerHTML = saveRowHtml(0);
       try { await saveToDrive(m => { fin.msg = m; if (row()) row().innerHTML = saveRowHtml(0); }); fin.phase = 'saved'; }
       catch (e) { fin.phase = 'review'; fin.err = humanErr(e); }
       if (view === 'finish') renderFinish(); break;
     }
+    case 'vizVerify': { const k = t.dataset.k; if (!VIZ_VER[k]) break; session.vizOk = { ...(session.vizOk || {}), [k]: { at: Date.now(), sig: vizSig(session, k) } }; saveSession(true); if (view === 'finish') renderFinish(); break; }
     case 'fieldUnlock': { const f = session.fields[t.dataset.fid]; if (f) { f.locked = false; saveSession(); refreshField(t.dataset.fid); } break; }
     case 'fillNow':
       if (!aiReady()) { toast('חסר קוד גישה. אפשר להוסיף אותו בהגדרות, בלשונית API.', true); return; }
