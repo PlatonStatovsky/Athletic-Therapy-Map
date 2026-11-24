@@ -236,6 +236,8 @@ html[data-focus] .rail{display:none}
 .isl-rec:hover{background:var(--fill-strong,rgba(120,120,128,.2))}
 .isl-rec svg{width:20px;height:20px}
 .isl-rec.on{background:var(--red);color:#fff;box-shadow:0 2px 10px rgba(255,59,48,.4)}
+.isl-rec.off,.isl-rec.off:hover{background:var(--fill);color:var(--label-2)}
+.island.norec .isl-top b{color:var(--label)}
 .island:not(.rec) .isl-top b{color:var(--label-2)}
 .isl-main{flex:1;min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:0;padding:2px 0;border:0;background:transparent;text-align:start;border-radius:12px}
 .isl-top{display:flex;align-items:baseline;gap:8px;font-size:var(--fs-foot);color:var(--label-2);white-space:nowrap;overflow:hidden}
@@ -247,6 +249,7 @@ html[data-focus] .rail{display:none}
 .isl-cap .k{display:none;color:var(--label-2);font-weight:500}
 .isl-cap.withk .k{display:inline}
 .isl-cap.idle{color:var(--label-2);font-weight:400}
+.isl-badge[hidden]{display:none}
 .isl-badge.err{background:var(--red-soft);color:var(--red-ink)}
 .isl-badge{flex:none;display:inline-flex;align-items:center;gap:4px;min-height:26px;padding:0 10px;border:0;border-radius:999px;background:var(--tint-soft);color:var(--tint-ink);font-size:var(--fs-cap);font-weight:700;white-space:nowrap}
 .island.new{animation:islPulse .9s cubic-bezier(.16,1,.3,1)}
@@ -706,6 +709,10 @@ html[data-side-on] .home .shell,html[data-side-on] .fin .shell{grid-template-col
   .notebar.folded .gl svg{width:22px;height:22px}
   .isl-badge .bl{display:none}
   .isl-badge{min-width:26px;justify-content:center;padding:0 8px}
+  .island.norec .isl-cap{display:none}
+  .island.norec .isl-top{white-space:normal}
+  .island.norec .isl-top b{line-height:1.2}
+  .island.norec .isl-rec{width:36px;height:36px}
   .dr-tab{min-width:54px;font-size:11px}
   #toastHost{bottom:calc(150px + env(safe-area-inset-bottom))}
   .player{bottom:calc(146px + env(safe-area-inset-bottom))}

@@ -198,6 +198,7 @@ const ICON = (() => {
     back: S('<path d="M9 18l6-6-6-6"/>', 2.2),
     chev: S('<path d="M15 6l-6 6 6 6"/>', 2),
     mic: S('<rect x="9" y="2.5" width="6" height="11.5" rx="3"/><path d="M5.5 10.5a6.5 6.5 0 0 0 13 0M12 17v4.5"/>', 2),
+    micOff: S('<rect x="9" y="2.5" width="6" height="11.5" rx="3"/><path d="M5.5 10.5a6.5 6.5 0 0 0 13 0M12 17v4.5M3.5 3.5l17 17"/>', 2),
     stop: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="3"/></svg>',
     play: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.2v13.6a.8.8 0 0 0 1.2.7l10.6-6.8a.8.8 0 0 0 0-1.4L9.2 4.5A.8.8 0 0 0 8 5.2z"/></svg>',
     pause: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg>',
@@ -1161,7 +1162,7 @@ function envProblem() {
 const useSoniox = () => settings.engine === 'soniox';
 async function startRec() {
   if (IS_LOCAL_FILE) { toast(envProblem(), true, 9000); return; }
-  if (!session.consent) { toast('חסר אישור הסכמת המטופל להקלטה', true); return; }
+  if (!session.consent) { toast(noRec(session) ? 'זה מפגש ללא הקלטה: המטופל לא הסכים להקלטה' : 'חסר אישור הסכמת המטופל להקלטה', true); return; }
   if (PL.audio) PL.audio.pause(); // a playing line would be picked up by the microphone
   if (useSoniox()) {
     if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { toast('הדפדפן הזה לא תומך בהקלטה', true); return; }
@@ -2222,7 +2223,7 @@ function sessionDocHtml(s) {
   const v = id => s.fields[id]?.value;
   let h = `<h1>מפגש — ${esc(s.patientName)}</h1>`;
   h += `<p>${fmtSpan(s.startedAt, s.endedAt)} · אזור: ${esc(s.region)} · ${esc(s.type)}</p>`;
-  h += `<p>הסכמת המטופל להקלטה: ניתנה, ${fmtWhen(s.consentAt || s.startedAt)}</p>`;
+  h += noRec(s) ? '<p>הסכמת המטופל להקלטה: לא ניתנה. מפגש ללא הקלטה, מבוסס טקסט.</p>' : `<p>הסכמת המטופל להקלטה: ניתנה, ${fmtWhen(s.consentAt || s.startedAt)}</p>`;
   if (s.firstSavedAt) h += `<p>נשמר לראשונה: ${fmtWhen(s.firstSavedAt)} · ${recLocked(s) ? 'נעול לעריכה; אפשר רק להוסיף נספח' : 'אפשר לתקן עד ' + fmtWhen(lockAt(s))}${s.amendments?.length ? ` · תיקונים: ${s.amendments.length}` : ''}${s.addenda?.length ? ` · נספחים: ${s.addenda.length}` : ''}</p>`;
   h += recordDocHtml(s) + vizDocHtml(s) + notesDocHtml(s);
   h += `<h2>הטופס</h2>`;
@@ -2279,7 +2280,7 @@ function notesDocHtml(s) {
   return '<h2>טקסט חופשי ומשימות</h2><ul>' + n.map(x => `<li>${esc(x.text)}${x.field && FIELD[x.field] ? ` (נוסף לשדה: ${esc(shortLabel(FIELD[x.field].label))})` : ''}${x.task ? ` · משימה: ${esc(x.task)}${x.done ? ' (בוצע)' : ''}` : ''}</li>`).join('') + '</ul>';
 }
 function transcriptDocHtml(s) {
-  let h = `<h1>תמלול — ${esc(s.patientName)} — ${fmtSpan(s.startedAt, s.endedAt)}</h1>`, last = null;
+  let h = `<h1>${noRec(s) ? 'טקסט מוקלד (מפגש ללא הקלטה)' : 'תמלול'} — ${esc(s.patientName)} — ${fmtSpan(s.startedAt, s.endedAt)}</h1>`, last = null;
   for (const g of s.segments) {
     if (g.stage !== last) { h += `<h2>${esc(STAGES.find(x => x.id === g.stage)?.label || g.stage)}</h2>`; last = g.stage; }
     const d = new Date(g.t), pos = recPos(s, g);
@@ -2312,7 +2313,8 @@ async function saveToDrive(onProgress = () => { }) {
 async function saveFiles(s, folder, stamp, onProgress) {
   onProgress('שומר את מסמך המפגש…');
   s.docId = await upsertDoc(s.docId, `מפגש ${stamp} — ${s.patientName}`, sessionDocHtml(s), folder);
-  if (s.segments.length) { onProgress('שומר את התמלול…'); s.transcriptDocId = await upsertDoc(s.transcriptDocId, `תמלול ${stamp} — ${s.patientName}`, transcriptDocHtml(s), folder); }
+  if (s.segments.length) { onProgress(noRec(s) ? 'שומר את הטקסט שהוקלד…' : 'שומר את התמלול…'); s.transcriptDocId = await upsertDoc(s.transcriptDocId, `${noRec(s) ? 'טקסט מוקלד' : 'תמלול'} ${stamp} — ${s.patientName}`, transcriptDocHtml(s), folder); }
+  if (noRec(s)) return; // no recording: no audio files
   let parts = []; try { parts = await audioParts(s.id); } catch { }
   s.audioIds = s.audioIds || {};
   for (const p of parts) {
@@ -2532,17 +2534,20 @@ const stageFields = (s, id) => { const st = STAGES.find(x => x.id === id) || STA
 /* ---------------- finishing a session: stop, verify what the AI filled, see the picture, save ---------------- */
 let fin = { phase: 'review', msg: '', err: '', filling: false };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+// a session the patient did not agree to record: no microphone, filled from the free-text field and the form
+const noRec = s => !!s && s.consent === false;
 // the finish screen opens once something was recorded or transcribed, or every required anamnesis field is filled;
 // a session already saved to Drive always opens it (that is where a correction is saved)
 function finishBlock(s) {
-  if (s.firstSavedAt || recording || s.segments.length || (s.recordedMs || 0) > 0) return null;
+  if (s.firstSavedAt) return null;
+  if (!noRec(s) && (recording || s.segments.length || (s.recordedMs || 0) > 0)) return null;
   const req = stageFields(s, 'anamnesis').filter(f => impOf(f) === 1), miss = req.filter(f => !s.fields[f.id]?.value);
   return miss.length ? { req, miss } : null;
 }
 async function openFinish() {
   if (!session) return;
   const block = finishBlock(session);
-  if (block) { toast(`אי אפשר לסיים עדיין: אין תמלול או הקלטה, וחסרים ${block.miss.length} מתוך ${block.req.length} שדות החובה באנמנזה.`, true, 5000); return; }
+  if (block) { toast(noRec(session) ? `אי אפשר לסיים עדיין: במפגש ללא הקלטה צריך למלא את כל שדות החובה באנמנזה. חסרים ${block.miss.length} מתוך ${block.req.length}.` : `אי אפשר לסיים עדיין: אין תמלול או הקלטה, וחסרים ${block.miss.length} מתוך ${block.req.length} שדות החובה באנמנזה.`, true, 5000); return; }
   if (!session.firstSavedAt) { session.endedAt = new Date().toISOString(); saveSession(true); } // the session's end: the last time it reached the finish screen before its first save
   const wasRec = recording;
   fin = { phase: wasRec ? 'stopping' : 'review', msg: '', err: '', filling: false };
@@ -2599,11 +2604,11 @@ function renderFinish() {
     <div class="trail"><button class="icon-btn glass" data-act="settings" aria-label="הגדרות">${ICON.gear}</button></div></div>
   <div class="content">
     <div class="ptitle"><div><h1>סיום מפגש</h1><div class="sub">${esc(s.patientName)} · ${esc(s.region)} · ${esc(s.type)} · ${fmtSpan(s.startedAt, s.endedAt)}</div></div></div>
-    <section class="card fin-sec" aria-labelledby="fRec"><div class="card-h cat-rec"><span class="glyph">${ICON.mic}</span><h2 id="fRec">הקלטה</h2></div>
+    ${noRec(s) ? `${fin.filling ? '<p class="lead"><span class="spin"></span> ממלא את הטופס…</p>' : ''}${insighting ? '<p class="lead"><span class="spin"></span> מעדכן את הסיכום החזותי…</p>' : ''}` : `<section class="card fin-sec" aria-labelledby="fRec"><div class="card-h cat-rec"><span class="glyph">${ICON.mic}</span><h2 id="fRec">הקלטה</h2></div>
       <p class="lead">${fin.phase === 'stopping' ? '<span class="spin"></span> עוצר את ההקלטה ומשלים את התמלול…' : `ההקלטה עצורה · ${fmtClock(s.recordedMs || 0)} · ${s.segments.length} שורות בתמלול`}</p>
       ${fin.filling ? '<p class="lead"><span class="spin"></span> ממלא את הטופס ממה שנאמר בסוף…</p>' : ''}
       ${insighting ? '<p class="lead"><span class="spin"></span> מעדכן את הסיכום החזותי…</p>' : ''}
-      <div id="finAudio"></div></section>
+      <div id="finAudio"></div></section>`}
     ${viz.length ? `<h2 class="sr">סיכום חזותי</h2><div class="grid">${viz.join('')}</div>` : ''}
     ${smart().record ? recordHtml() : ''}
     <section class="card fin-sec" aria-labelledby="fVer"><div class="card-h cat-rec"><span class="glyph">${ICON.check}</span><h2 id="fVer">לאימות <span class="muted num">${ver.length}</span></h2></div>
@@ -2614,13 +2619,14 @@ function renderFinish() {
       <p class="lead">אם המטופל עוד כאן, זה הזמן לשאול.</p>
       <div class="mlist">${must.map(f => missRow({ f, imp: 1 })).join('')}</div></section>` : ''}
     <section class="card fin-sec" aria-labelledby="fCon"><div class="card-h cat-str"><span class="glyph">${ICON.check}</span><h2 id="fCon">הסכמה</h2></div>
-      <p class="lead">המטופל הסכים להקלטה · סומן ב-${hhmm(new Date(s.consentAt || s.startedAt).getTime())}. ההסכמה נרשמת במסמך המפגש.</p></section>
+      <p class="lead">${noRec(s) ? 'המטופל לא הסכים להקלטה. המפגש מולא בטקסט חופשי ובטופס, בלי הקלטה. זה נרשם במסמך המפגש.' : `המטופל הסכים להקלטה · סומן ב-${hhmm(new Date(s.consentAt || s.startedAt).getTime())}. ההסכמה נרשמת במסמך המפגש.`}</p></section>
     <section class="card fin-sec" aria-labelledby="fAn"><div class="card-h cat-hyp"><span class="glyph">${ICON.analysis}</span><h2 id="fAn">ניתוח</h2></div>
       <p class="lead">${s.analysis ? 'הניתוח הופק ב-' + hhmm(s.analysisAt) + ' ויישמר עם המפגש.' : 'עוד לא הופק ניתוח. אפשר לשמור בלעדיו ולהפיק אחר כך.'}</p>
       ${s.analysis ? '' : '<button class="btn" data-act="toAnalysis">להפקת ניתוח</button>'}</section>
     <div class="saverow" id="saveRow">${saveRowHtml(ver.length)}</div>
   </div></main></div>`;
   const slot = $('#finAudio');
+  if (!slot) { reanchorPop(); return; } // a session without recording has no player
   if (aud && aud.dataset.key === audKey) slot.replaceWith(aud);
   else { slot.dataset.key = audKey; renderAudioBox(slot); }
   reanchorPop();
@@ -2842,6 +2848,14 @@ function refreshTabLabels() {
 
 /* ---------------- the recording island: timer, stage, and the newest captured fact ---------------- */
 function islandHtml() {
+  if (noRec(session)) return `<div class="island glass norec" id="island">
+    <span class="isl-rec off" aria-hidden="true">${ICON.micOff}</span>
+    <button class="isl-main" data-act="island" aria-haspopup="dialog" aria-label="מפגש ללא הקלטה: מה נקלט עד עכשיו">
+      <span class="isl-top"><b>מפגש ללא הקלטה</b></span>
+      <span class="isl-cap idle" id="islCap"></span>
+    </button>
+    <span class="isl-badge" id="islBadge" hidden></span>
+  </div>`;
   return `<div class="island glass${recording ? ' rec' : ''}" id="island">
     <button class="isl-rec${recording ? ' on' : ''}" id="recBtn" data-act="rec" aria-label="${recording ? 'עצור הקלטה' : 'התחל הקלטה'}">${recording ? ICON.stop : ICON.mic}</button>
     <button class="isl-main" data-act="island" aria-haspopup="dialog" aria-label="נקלט עכשיו">
@@ -2864,7 +2878,7 @@ function updateIsland(fresh = false) {
   const cap = $('#islCap'), badge = $('#islBadge'), isl = $('#island'); if (!cap || !session) return;
   const r = aiRecent(session)[0];
   if (r) { const v = session.fields[r.id], k = shortLabel(FIELD[r.id].label); cap.className = 'isl-cap'; cap.title = k; cap.innerHTML = `<span class="k">${esc(k)}: </span>${escN(v.value)}`; }
-  else { cap.className = 'isl-cap idle'; cap.textContent = recording ? 'מקשיב… מה שייאמר יופיע כאן' : 'כשהמידע ייקלט מהשיחה, הוא יופיע כאן'; }
+  else { cap.className = 'isl-cap idle'; cap.textContent = noRec(session) ? 'מה שתכתוב בשדה הטקסט החופשי יופיע כאן' : recording ? 'מקשיב… מה שייאמר יופיע כאן' : 'כשהמידע ייקלט מהשיחה, הוא יופיע כאן'; }
   const n = fieldsFor(session).filter(needsReview).length;
   badge.classList.toggle('err', !!lastStatus.err);
   badge.hidden = !n && !lastStatus.err; badge.innerHTML = lastStatus.err ? '!<span class="bl">המילוי נכשל</span>' : n ? `${n}<span class="bl">לאימות</span>` : '';
@@ -3195,7 +3209,7 @@ function segHtml(g, i, prevStage) {
 function transcriptHtml(inSide) {
   const s = session; let prev = null;
   const segs = s.segments.map((g, i) => { const h = segHtml(g, i, prev); prev = g.stage; return h; }).join('');
-  return `<div id="segList">${segs || '<p class="empty-note" id="noSegs">עוד אין תמלול. לחץ על המיקרופון כדי להתחיל, או הקלד והדבק טקסט למטה.</p>'}</div>
+  return `<div id="segList">${segs || `<p class="empty-note" id="noSegs">${noRec(s) ? 'מפגש ללא הקלטה: אין מיקרופון ואין תמלול. אפשר להקליד טקסט למטה, או לכתוב בשדה הטקסט החופשי.' : 'עוד אין תמלול. לחץ על המיקרופון כדי להתחיל, או הקלד והדבק טקסט למטה.'}</p>`}</div>
     <div class="interim" id="interim"></div>
     <div class="tr-tools">
       <div><label class="lbl" for="manualText">הוספה ידנית: הקלדה, הכתבה במקלדת, או הדבקת תמלול</label>
@@ -3649,14 +3663,16 @@ function setPType(v) { $$('#pType [data-act="ptype"]').forEach(b => b.setAttribu
 async function startSession() {
   const name = $('#pName').value.trim();
   if (!name) { toast('הכנס שם מטופל', true); $('#pName').focus(); return; }
-  if (!$('#pConsent').checked) { toast('יש לאשר שהמטופל הסכים להקלטה', true); return; }
+  const consent = $('#pConsent').checked;
+  // no consent is a choice, not a slip: the therapist confirms a session without recording
+  if (!consent && await ask({ title: 'מפגש ללא הקלטה', text: 'לא סומן שהמטופל הסכים להקלטה. אפשר לקיים את המפגש בלי הקלטה: בלי מיקרופון ובלי תמלול. ממלאים אותו בשדה הטקסט החופשי ובטופס. אי אפשר להפעיל הקלטה בהמשך המפגש הזה.', buttons: [{ label: 'המשך למפגש ללא הקלטה', value: true, primary: true }, { label: 'בטל מפגש', value: false }] }) !== true) return;
   // an open session with anything not yet in Drive (never saved, or changed since the last save) is replaced only on purpose
   if (session && (!session.savedAt || (session.changedAt || 0) > new Date(session.savedAt).getTime()) && !await confirmDlg('להחליף את המפגש הפתוח?', session.savedAt ? 'במפגש הפתוח יש שינויים מאז השמירה האחרונה ב-Drive. מפגש חדש יחליף אותו במכשיר, והשינויים יאבדו. כדי לשמור אותם, בטל וחזור למסך הסיום של המפגש.' : 'יש מפגש פתוח שלא נשמר ב-Drive. מפגש חדש יחליף אותו.', 'התחל מפגש חדש', true)) return;
   const p = patients.find(x => x.name === name);
   const type = $('#pType [aria-pressed="true"]')?.dataset.v || TYPES[0];
   session = {
     id: Date.now().toString(36), patientName: name, region: $('#pRegion').value, type,
-    consent: true, consentAt: new Date().toISOString(), startedAt: new Date().toISOString(), stage: 'anamnesis', segments: [], processed: 0,
+    consent, consentAt: consent ? new Date().toISOString() : null, startedAt: new Date().toISOString(), stage: 'anamnesis', segments: [], processed: 0,
     fields: { name: { value: name, source: 'manual', locked: true } }, analysis: '', cost: 0, notes: [],
     folderId: p?.folderId || null
   };
