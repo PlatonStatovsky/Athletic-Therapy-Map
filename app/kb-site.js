@@ -3,7 +3,7 @@
    are cut out of the page source and parsed with JSON5. */
 (function (root) {
   'use strict';
-  const NAMES = ['T', 'GENERAL', 'REGIONS', 'FIVE_D', 'THREE_N', 'TEST_GEN', 'TX', 'TX2', 'TX3', 'FOUND'];
+  const NAMES = ['T', 'GENERAL', 'REGIONS', 'FIVE_D', 'THREE_N', 'TEST_GEN', 'TX', 'TX2', 'TX3', 'FOUND', 'TISSUE'];
   // app region label → site region id
   const REGION_ID = { 'צוואר וראש': 'neck', 'כתף': 'shoulder', 'מרפק': 'elbow', 'שורש כף יד וכף יד': 'hand' };
 
@@ -60,15 +60,18 @@
     });
     return out.join('\n\n');
   }
-  function renderFound(d) {
-    if (!d.FOUND) return '';
-    const out = ['## עקרונות'];
-    for (const t of d.FOUND.topics) {
+  // "עקרונות" (FOUND) and "רקמות" (TISSUE) share one shape: topics → blocks
+  function renderTopics(d, src, title) {
+    if (!src?.topics) return '';
+    const out = ['## ' + title];
+    for (const t of src.topics) {
       out.push(`### ${clean(t.t)}${t.sub ? ' — ' + clean(t.sub) : ''}`);
       (t.blocks || []).forEach(b => out.push(block(d, b)));
     }
     return out.join('\n\n');
   }
+  const renderFound = d => renderTopics(d, d.FOUND, 'עקרונות');
+  const renderTissue = d => renderTopics(d, d.TISSUE, 'רקמות');
   function renderTest(d, id) {
     const t = d.T?.[id] || d.TEST_GEN?.[id] || {}, x = d.TX?.[id] || d.TX2?.[id] || d.TX3?.[id] || {};
     const out = [`#### ${clean(t.n || id)}`];
@@ -135,7 +138,7 @@
   function regionText(d, regionLabel) {
     const id = REGION_ID[regionLabel];
     const r = id && d.REGIONS.find(x => x.id === id);
-    const parts = ['# שיקום שמרני — מפת דרך (athletic-therapy-map — בסיס הידע המאומת של המטפל)', renderGeneral(d), renderFound(d)];
+    const parts = ['# שיקום שמרני — מפת דרך (athletic-therapy-map — בסיס הידע המאומת של המטפל)', renderGeneral(d), renderFound(d), renderTissue(d)];
     if (r) parts.push(renderRegion(d, r));
     else parts.push(`(לאזור "${regionLabel}" אין עדיין פרק באתר — רק המסגרת הכללית והעקרונות.)`);
     return parts.filter(Boolean).join('\n\n');
