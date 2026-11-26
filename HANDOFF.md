@@ -64,4 +64,5 @@ Platon moved the work on Ligamentum / Thalamus to a new chat because the old one
 - AI calls: `runInsight` builds the request and the JSON schema per part; `applyInsight` applies the answer; `mergeHypo` holds the board's rules; `hypoReady` is the threshold; `activeFlags` the red flags; `vizMissing` / `vizOk` the finish-screen confirmations.
 - Map knowledge: `app/kb-site.js` parses the map's data literals; `mapCatalog(region)` gives the region's pathways, test ids and pattern groups.
 - Regions and old names: `REGIONS`, `REGION_ALIAS`, `fixRegion`, `fixTags`.
+- Patient details (27.11): fields with `intake: 1` in `FORM` (age, sex, address, occupation, marital). `sectionsFor` / `fieldsFor` = the form without them (form, fill, "still not said"); `allSectionsFor` / `allFieldsFor` = with them (Drive doc, record, AI context). Start screen `intakeInputs('p')`, popup on the patient name `intakePopHtml` / `saveIntakePop`, prefill `prefillIntake` (from `patients[].intake`), follow-up fallback in `attachPrev`.
 - Styling: all CSS in `app/index.html`; colour tokens in three blocks (light, `comfort`, dark), documented in the SRS tab "תצוגה וצבעים" and in `DESIGN.md`.
