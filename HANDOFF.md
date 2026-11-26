@@ -53,7 +53,7 @@ Platon moved the work on Ligamentum / Thalamus to a new chat because the old one
 3. Closed 27.11: support / against are 0–5 per side, as the SRS says; the board stays hidden before the threshold (confirmed); the threshold hint now names every counted field.
 4. "תצוגה וצבעים" covers the app and the home page only; the map has its own palette (offered to add).
 5. The home page is functional only; its texts and design are for a later round.
-6. Closed 27.11: in a session without recording the transcript tab's label is "הקלדת טקסט חופשי (מפגש ללא הקלטה)", no dictation or pasting. Typed lines are saved to Drive as "טקסט מוקלד" (agreed). Not raised yet: the same panel still shows "מנוע: הדפדפן" and "העתק לוג זיהוי דיבור" there.
+6. Closed 27.11: a session without recording has no transcript at all (no open button, no side panel, no overlay: `trAllowed()` in `app/app.js`); text goes only into the free-text field. Older no-recording sessions keep any typed lines in the data and in Drive as "טקסט מוקלד", not shown on screen. The interim label change (40a43ce) was dropped and is marked "לא רלוונטי" in the SRS log.
 7. Remote branch `merge-main` is an old review branch; deleting it failed twice (network). Platon can delete it on GitHub.
 8. Next stage Platon named: accessibility statement, terms of use and privacy that every user accepts; later, username / password login for beta testers and a paid subscription.
 
