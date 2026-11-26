@@ -26,6 +26,7 @@ The scripts build on each other with `exec(open(...).read().split(...)[0])`, so 
 | `norec.py` | Session without recording consent: popup, island, 11 required fields, no recording section |
 | `hypo.py` | Hypotheses board: threshold, 1–5, stable order and marks, rule out / add from the map, red flags |
 | `ev5.py` | Hypotheses board: 0–5 supporting / contradicting facts (model returns 8, board shows 5), empty column label; `ev5_compose.py` makes the before/after image |
+| `hint_norec.py` | Threshold hint names every counted field (first visit and follow-up); transcript-tab label in a session without recording; `hint_compose.py` makes the before/after images |
 | `home.py` | Home page, old `/#knee` links sent to `/map/`, app links and the knowledge base read from `/map/` |
 | `play_check.py` | Real MediaRecorder audio: ▶ on a quote plays only that quote |
 | `rec_lock.py` | Record locked 24 h after the first save, on a wide screen |

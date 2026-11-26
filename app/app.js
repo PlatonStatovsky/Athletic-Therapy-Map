@@ -688,7 +688,8 @@ let insighting = false, insightAgain = false;
 // relevant facts; from then on it always holds 1–5 hypotheses, each with 0–5 supporting and 0–5 contradicting facts
 const HYPO_MAX = 5, HYPO_EV_MAX = 5, HYPO_CORE = ['chief_complaint', 'location'];
 const HYPO_MORE = ['onset', 'mechanism', 'aggravating', 'changes', 'lead_sign', 'observation', 'palpation', ...PART_FIELDS.exam];
-const HYPO_MORE_HE = 'התחלה, מנגנון, מחמיר, או ממצא בבדיקה';
+// the hint names every field HYPO_MORE counts; the follow-up fields only in a follow-up session, where they exist
+const hypoMoreHe = s => ['התחלה', 'מנגנון', 'מחמיר', ...(sectionsFor(s).some(sec => sec.id === 'followup') ? ['מה השתנה מאז המפגש הקודם', 'שינוי בסימן המוביל'] : []), 'תצפית', 'מישוש'].join(', ') + ' או ממצא בבדיקה';
 const hasVal = (s, id) => !!String(s.fields[id]?.value || '').trim();
 const hypoReady = s => HYPO_CORE.every(id => hasVal(s, id)) && HYPO_MORE.filter(id => hasVal(s, id)).length >= 2;
 const hkey = h => String(h.path || h.name || '').trim().toLowerCase();
@@ -886,7 +887,7 @@ function hypoHint() {
   const s = session, n = filledCount(s), at = insState(s).at.hypo;
   if (!aiReady()) return 'נדרש קוד גישה בהגדרות, בלשונית API.';
   if (!hypoReady(s)) { const core = HYPO_CORE.filter(id => !hasVal(s, id)).map(id => shortLabel(FIELD[id].label)), more = Math.max(0, 2 - HYPO_MORE.filter(id => hasVal(s, id)).length);
-    return `הלוח נפתח כשיש ${HYPO_CORE.map(id => shortLabel(FIELD[id].label)).join(', ')} ועוד 2 מתוך: ${HYPO_MORE_HE}. חסר: ${[...core, more ? `עוד ${more === 1 ? 'פרט אחד' : '2 פרטים'} מהרשימה` : ''].filter(Boolean).join(', ')}. לא תלוי ב"הפק ניתוח".`; }
+    return `הלוח נפתח כשיש ${HYPO_CORE.map(id => shortLabel(FIELD[id].label)).join(', ')} ועוד 2 מתוך: ${hypoMoreHe(s)}. חסר: ${[...core, more ? `עוד ${more === 1 ? 'פרט אחד' : '2 פרטים'} מהרשימה` : ''].filter(Boolean).join(', ')}. לא תלוי ב"הפק ניתוח".`; }
   if (at) return `בעדכון האחרון (${hhmm(at)}) עוד לא היו מספיק ממצאים להשערות. מתעדכן לבד כשנוסף מידע לטופס.`;
   return 'מתעדכן לבד אחרי כל מילוי של הטופס. אפשר גם לחשב עכשיו.';
 }
@@ -3284,7 +3285,7 @@ function transcriptHtml(inSide) {
   return `<div id="segList">${segs || `<p class="empty-note" id="noSegs">${noRec(s) ? 'מפגש ללא הקלטה: אין מיקרופון ואין תמלול. אפשר להקליד טקסט למטה, או לכתוב בשדה הטקסט החופשי.' : 'עוד אין תמלול. לחץ על המיקרופון כדי להתחיל, או הקלד והדבק טקסט למטה.'}</p>`}</div>
     <div class="interim" id="interim"></div>
     <div class="tr-tools">
-      <div><label class="lbl" for="manualText">הוספה ידנית: הקלדה, הכתבה במקלדת, או הדבקת תמלול</label>
+      <div><label class="lbl" for="manualText">${noRec(s) ? 'הקלדת טקסט חופשי (מפגש ללא הקלטה)' : 'הוספה ידנית: הקלדה, הכתבה במקלדת, או הדבקת תמלול'}</label>
       <textarea id="manualText" class="inp" placeholder="למשל: Lachman ימין חיובי, end feel רך"></textarea>
       <button class="btn block" style="margin-top:8px" data-act="addManual">הוסף לתמלול</button></div>
       <div id="audioBox"></div>
