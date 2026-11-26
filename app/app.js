@@ -2786,7 +2786,7 @@ function renderSession() {
       ${islandHtml()}
       <div class="trail"><div class="capsule glass tools">
         <button class="icon-btn opt" data-act="focus" aria-pressed="${!!settings.focus}" aria-label="מצב פוקוס" title="מצב פוקוס">${ICON.focus}</button>
-        ${!sideShown() && !settings.focus ? `<button class="icon-btn ph-tr" data-act="trOpen" aria-label="פתח את התמלול" title="תמלול">${ICON.chat}<span class="cnt" id="trCountPh">${s.segments.length || ''}</span></button>` : ''}
+        ${trAllowed() && !sideShown() && !settings.focus ? `<button class="icon-btn ph-tr" data-act="trOpen" aria-label="פתח את התמלול" title="תמלול">${ICON.chat}<span class="cnt" id="trCountPh">${s.segments.length || ''}</span></button>` : ''}
         <button class="icon-btn" data-act="more" aria-haspopup="dialog" aria-label="עוד: תצוגה, מפה, הגדרות" title="עוד">${ICON.more}</button>
         <button class="btn sm primary" data-act="finish">סיום</button>
       </div></div>
@@ -2797,7 +2797,7 @@ function renderSession() {
   ${sideShown() ? `<aside class="insp" id="sidePane" aria-label="תמלול"></aside>` : ''}
   </div>
   ${trOverlay() ? `<aside class="insp overlay" id="sidePane" aria-label="תמלול"></aside>` : ''}
-  ${!sideShown() && !trOverlay() && !settings.focus ? `<button class="trtab glass" data-act="trOpen" aria-label="פתח את התמלול" title="תמלול">${ICON.chat}<span id="trCount">${s.segments.length || ''}</span></button>` : ''}
+  ${trAllowed() && !sideShown() && !trOverlay() && !settings.focus ? `<button class="trtab glass" data-act="trOpen" aria-label="פתח את התמלול" title="תמלול">${ICON.chat}<span id="trCount">${s.segments.length || ''}</span></button>` : ''}
   <nav class="tabbar glass" aria-label="תצוגות המפגש">${navHtml()}</nav>`;
   renderTab(); renderRecState(); renderSide(); refreshTabLabels(); tickTimer(); updateIsland();
   setFillStatus(lastStatus.html, lastStatus.err, lastStatus.raw);
@@ -2808,9 +2808,11 @@ let wide = WIDE_MQ.matches;
 WIDE_MQ.addEventListener?.('change', e => { wide = e.matches; applyLayout(); if (view === 'session' && session) renderSession(); });
 // the therapist's own layout: transcript pane width, focus mode, density
 const SIDE_LABEL = { hidden: 'מוסתרת', narrow: 'צרה', medium: 'בינונית', wide: 'רחבה' };
-const sideShown = () => wide && (settings.sideW || 'medium') !== 'hidden' && !settings.focus;
+// a session without recording consent has no transcript: no panel, no button to open it (text goes in the free-text field)
+const trAllowed = () => !noRec(session);
+const sideShown = () => trAllowed() && wide && (settings.sideW || 'medium') !== 'hidden' && !settings.focus;
 let trOpenNarrow = false; // below 1000px the transcript opens as a panel over the session
-const trOverlay = () => !wide && trOpenNarrow && !settings.focus;
+const trOverlay = () => trAllowed() && !wide && trOpenNarrow && !settings.focus;
 const TR_SIZE = { narrow: SIDE_LABEL.narrow, medium: SIDE_LABEL.medium, wide: SIDE_LABEL.wide };
 function applyLayout() {
   const r = document.documentElement;
@@ -3285,7 +3287,7 @@ function transcriptHtml(inSide) {
   return `<div id="segList">${segs || `<p class="empty-note" id="noSegs">${noRec(s) ? 'מפגש ללא הקלטה: אין מיקרופון ואין תמלול. אפשר להקליד טקסט למטה, או לכתוב בשדה הטקסט החופשי.' : 'עוד אין תמלול. לחץ על המיקרופון כדי להתחיל, או הקלד והדבק טקסט למטה.'}</p>`}</div>
     <div class="interim" id="interim"></div>
     <div class="tr-tools">
-      <div><label class="lbl" for="manualText">${noRec(s) ? 'הקלדת טקסט חופשי (מפגש ללא הקלטה)' : 'הוספה ידנית: הקלדה, הכתבה במקלדת, או הדבקת תמלול'}</label>
+      <div><label class="lbl" for="manualText">הוספה ידנית: הקלדה, הכתבה במקלדת, או הדבקת תמלול</label>
       <textarea id="manualText" class="inp" placeholder="למשל: Lachman ימין חיובי, end feel רך"></textarea>
       <button class="btn block" style="margin-top:8px" data-act="addManual">הוסף לתמלול</button></div>
       <div id="audioBox"></div>
@@ -3685,6 +3687,7 @@ document.addEventListener('click', async e => {
     case 'refreshKb': refreshKb(t); break;
     case 'theme': setTheme(t.dataset.theme); $$('[data-act="theme"]').forEach(b => b.setAttribute('aria-pressed', b === t)); break;
     case 'trOpen':
+      if (!trAllowed()) break;
       if (wide) { settings.sideW = settings.sideLast || 'medium'; saveSettings(); applyLayout(); } else trOpenNarrow = true;
       renderSession(); break;
     case 'trHide':
