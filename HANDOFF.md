@@ -50,10 +50,10 @@ Platon moved the work on Ligamentum / Thalamus to a new chat because the old one
 
 1. Merge `app` into `main` — waiting for Platon.
 2. Red-flag detection is the one non-deterministic part of the hypotheses board (the AI decides whether the free-text field reports a flag). Offered: turn the red-flags field into a checklist (yes / no per flag) so the code decides. Not decided.
-3. Support / against: fixed on 27.11 to 0–5 per side, as the SRS says (was a cap of 12). Still open: the board is not shown at all before the threshold (reported, not yet confirmed), and the threshold hint lists only onset / mechanism / aggravating / exam while observation, palpation and the two follow-up fields also count.
+3. Closed 27.11: support / against are 0–5 per side, as the SRS says; the board stays hidden before the threshold (confirmed); the threshold hint now names every counted field.
 4. "תצוגה וצבעים" covers the app and the home page only; the map has its own palette (offered to add).
 5. The home page is functional only; its texts and design are for a later round.
-6. In a session without recording, lines typed in the transcript tab are saved to Drive as "טקסט מוקלד" (agreed); the transcript tab still mentions keyboard dictation.
+6. Closed 27.11: in a session without recording the transcript tab's label is "הקלדת טקסט חופשי (מפגש ללא הקלטה)", no dictation or pasting. Typed lines are saved to Drive as "טקסט מוקלד" (agreed). Not raised yet: the same panel still shows "מנוע: הדפדפן" and "העתק לוג זיהוי דיבור" there.
 7. Remote branch `merge-main` is an old review branch; deleting it failed twice (network). Platon can delete it on GitHub.
 8. Next stage Platon named: accessibility statement, terms of use and privacy that every user accepts; later, username / password login for beta testers and a paid subscription.
 
