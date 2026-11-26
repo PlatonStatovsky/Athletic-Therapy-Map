@@ -120,13 +120,13 @@ const FORM = [
   ]},
   { id: 'details', title: 'פרטים אישיים', fields: [
     { id: 'name', label: 'שם פרטי ומשפחה' },
-    { id: 'age', label: 'גיל', key: 1 },
-    { id: 'sex', label: 'מין' },
-    { id: 'address', label: 'כתובת' },
-    { id: 'occupation', label: 'מקצוע', key: 1 },
-    { id: 'marital', label: 'מצב משפחתי' },
-    { id: 'dominant_hand', label: 'יד / רגל דומיננטית' },
-    { id: 'referral', label: 'גורם מפנה ואבחנה מפנה' }
+    // intake: known before the session (booking, messages), entered on the start screen or via the patient name in the session;
+    // not in the form, not filled by the model, not in "still not said"; kept in the record, the Drive document and the AI context
+    { id: 'age', label: 'גיל', intake: 1 },
+    { id: 'sex', label: 'מין', intake: 1 },
+    { id: 'address', label: 'כתובת', intake: 1 },
+    { id: 'occupation', label: 'מקצוע', intake: 1 },
+    { id: 'marital', label: 'מצב משפחתי', intake: 1 }
   ]},
   { id: 'complaint', title: 'תלונה עיקרית', fields: [
     { id: 'chief_complaint', label: 'תלונה עיקרית', key: 1 },
@@ -143,7 +143,9 @@ const FORM = [
     { id: 'quality', label: 'אופי הכאב (חד, שורף, לוחץ, עמום)' },
     { id: 'easing', label: 'מקל', key: 1 },
     { id: 'aggravating', label: 'מחמיר', key: 1 },
-    { id: 'concordant', label: 'הסימן התואם (Concordant Sign)' }
+    { id: 'concordant', label: 'הסימן התואם (Concordant Sign)' },
+    { id: 'dominant_hand', label: 'יד / רגל דומיננטית' },
+    { id: 'referral', label: 'גורם מפנה ואבחנה מפנה' }
   ]},
   { id: 'associated', title: 'סימפטומים נלווים', fields: [
     { id: 'swelling', label: 'נפיחות' },
@@ -187,8 +189,13 @@ const FORM = [
 ];
 const FIELD = {};
 FORM.forEach(sec => sec.fields.forEach(f => { FIELD[f.id] = { ...f, section: sec.id }; }));
-const sectionsFor = s => FORM.filter(sec => !sec.only || sec.only === s.type);
+const allSectionsFor = s => FORM.filter(sec => !sec.only || sec.only === s.type);
+const allFieldsFor = s => allSectionsFor(s).flatMap(sec => sec.fields);
+// the form as shown and filled: without the intake fields (those come from the start screen)
+const sectionsFor = s => allSectionsFor(s).map(sec => sec.fields.some(f => f.intake) ? { ...sec, fields: sec.fields.filter(f => !f.intake) } : sec);
 const fieldsFor = s => sectionsFor(s).flatMap(sec => sec.fields);
+const INTAKE = FORM.flatMap(sec => sec.fields).filter(f => f.intake).map(f => f.id);
+const SEXES = ['זכר', 'נקבה', 'אחר / לא צוין'];
 
 /* ---------------- UI helpers ---------------- */
 const ICON = (() => {
@@ -465,9 +472,9 @@ function buildTranscript(segs) {
 }
 function currentValues(s) {
   const o = {};
-  for (const f of fieldsFor(s)) {
+  for (const f of allFieldsFor(s)) {
     const v = s.fields[f.id];
-    if (v && v.value) o[f.id] = (v.locked ? '[LOCKED] ' : '') + v.value;
+    if (v && v.value) o[f.id] = (v.locked || f.intake ? '[LOCKED] ' : '') + v.value;
   }
   return o;
 }
@@ -622,7 +629,7 @@ function markDirty(ids) {
     if (!d.parts.includes('reason')) d.parts.push('reason');
   }
 }
-function markDirtyAll() { if (session) markDirty(fieldsFor(session).filter(f => session.fields[f.id]?.value).map(f => f.id)); }
+function markDirtyAll() { if (session) markDirty(allFieldsFor(session).filter(f => session.fields[f.id]?.value).map(f => f.id)); }
 const hasAnyField = ids => ids.some(id => session.fields[id]?.value);
 
 // the therapist's decision map for this region: its pathways, each with the tests that tell it apart
@@ -663,12 +670,12 @@ Parts:
 - next: up to 3 next steps for the current stage that matter most now: kind "question" (to ask) or "test" (to examine); text = the question in Hebrew as the therapist would ask it, or the test's name; why = up to 10 Hebrew words; test_id = catalog id or "". Prefer key items not yet asked and what tells the hypotheses apart. Never something already in the form.`;
 
 function insightSchema(parts) {
-  const ids = fieldsFor(session).map(f => f.id), fieldsArr = { type: 'array', items: { type: 'string', enum: ids } };
+  const ids = allFieldsFor(session).map(f => f.id), fieldsArr = { type: 'array', items: { type: 'string', enum: ids } };
   const obj = (props, req = Object.keys(props)) => ({ type: 'object', additionalProperties: false, required: req, properties: props });
   const arr = item => ({ type: 'array', items: item });
   const P = {};
   for (const p of parts) {
-    if (p === 'record') P.record = arr(obj({ section: { type: 'string', enum: sectionsFor(session).map(x => x.id) }, text: { type: 'string' }, fields: fieldsArr }));
+    if (p === 'record') P.record = arr(obj({ section: { type: 'string', enum: allSectionsFor(session).map(x => x.id) }, text: { type: 'string' }, fields: fieldsArr }));
     if (p === 'notes') P.notes = arr(obj({ id: { type: 'string' }, field: { type: 'string', enum: ['', ...ids] }, task: { type: 'string' } }));
     if (p === 'body') P.body = arr(obj({ zone: { type: 'string', enum: BODY_ZONES }, side: { type: 'string', enum: ['right', 'left', 'both', 'center'] }, view: { type: 'string', enum: ['front', 'back', 'both'] }, kind: { type: 'string', enum: ['pain', 'radiation', 'paresthesia'] }, label: { type: 'string' }, fields: fieldsArr }));
     if (p === 'timeline') P.timeline = arr(obj({ when: { type: 'string' }, days_ago: { type: 'number' }, event: { type: 'string' }, vas: { type: 'number' }, pain_state: { type: 'string', enum: PAIN_STATES }, fields: fieldsArr }));
@@ -700,8 +707,8 @@ async function runInsight(force = false, only = null) {
   if (insighting) { if (only) toast('העדכון הקודם עוד רץ. נסה שוב בעוד רגע.', false, 2200); else insightAgain = true; return; }
   const sm = smart(), d = JSON.parse(JSON.stringify(s.insDirty || { secs: [], parts: [] }));
   const pending = (s.notes || []).filter(n => n.status === 'pending'), sent = new Set(pending.map(n => n.id));
-  const filled = fieldsFor(s).filter(f => f.id !== 'name' && s.fields[f.id]?.value);
-  const secsWith = sectionsFor(s).filter(sec => sec.fields.some(f => f.id !== 'name' && s.fields[f.id]?.value)).map(sec => sec.id);
+  const filled = allFieldsFor(s).filter(f => f.id !== 'name' && s.fields[f.id]?.value);
+  const secsWith = allSectionsFor(s).filter(sec => sec.fields.some(f => f.id !== 'name' && s.fields[f.id]?.value)).map(sec => sec.id);
   const recSecs = sm.record ? (force ? secsWith : d.secs.filter(x => secsWith.includes(x))) : [];
   const want = p => force || d.parts.includes(p);
   const parts = [];
@@ -725,7 +732,7 @@ async function runInsight(force = false, only = null) {
   const user = `אזור: ${s.region} | סוג מפגש: ${s.type} | שלב נוכחי: ${stageLabel(s.stage)} | תאריך המפגש: ${fmtDate(s.startedAt)}
 
 FORM SECTIONS (section id — title: field id — label):
-${sectionsFor(s).map(sec => `${sec.id} — ${sec.title}: ${sec.fields.map(f => `${f.id} — ${shortLabel(f.label)}`).join('; ')}`).join('\n')}
+${allSectionsFor(s).map(sec => `${sec.id} — ${sec.title}: ${sec.fields.map(f => `${f.id} — ${shortLabel(f.label)}`).join('; ')}`).join('\n')}
 
 FORM VALUES (JSON):
 ${JSON.stringify(form, null, 1)}
@@ -2220,7 +2227,7 @@ Baseline measures for follow-up, short / medium / long-term goals, treatment pri
 ## מתי להפנות
 Case-specific referral criteria.`;
 function formAsText(s) {
-  return sectionsFor(s).map(sec => `### ${sec.title}\n` + sec.fields.map(f => {
+  return allSectionsFor(s).map(sec => `### ${sec.title}\n` + sec.fields.map(f => {
     const v = s.fields[f.id];
     return `- ${f.label}: ${v?.value ? v.value + (v.needsCheck ? ' [לא אומת]' : '') : '—'}`;
   }).join('\n')).join('\n\n');
@@ -2298,7 +2305,7 @@ function sessionDocHtml(s) {
   if (s.firstSavedAt) h += `<p>נשמר לראשונה: ${fmtWhen(s.firstSavedAt)} · ${recLocked(s) ? 'נעול לעריכה; אפשר רק להוסיף נספח' : 'אפשר לתקן עד ' + fmtWhen(lockAt(s))}${s.amendments?.length ? ` · תיקונים: ${s.amendments.length}` : ''}${s.addenda?.length ? ` · נספחים: ${s.addenda.length}` : ''}</p>`;
   h += recordDocHtml(s) + vizDocHtml(s) + notesDocHtml(s);
   h += `<h2>הטופס</h2>`;
-  for (const sec of sectionsFor(s)) {
+  for (const sec of allSectionsFor(s)) {
     h += `<h2>${esc(sec.title)}</h2>`;
     for (const f of sec.fields) {
       const val = v(f.id);
@@ -2319,7 +2326,7 @@ function sessionDocHtml(s) {
 // the live record, the visual summary and the notes, as text and tables a Google Doc keeps
 const docTable = (head, rows) => `<table dir="rtl" border="1" cellpadding="5" style="border-collapse:collapse;direction:rtl"><tr>${head.map(x => `<th style="text-align:right">${x}</th>`).join('')}</tr>${rows.map(r => `<tr>${r.map(c => `<td style="text-align:right">${c}</td>`).join('')}</tr>`).join('')}</table>`;
 function recordDocHtml(s) {
-  const rec = s.ins?.record || {}, secs = sectionsFor(s).filter(sec => rec[sec.id]?.text);
+  const rec = s.ins?.record || {}, secs = allSectionsFor(s).filter(sec => rec[sec.id]?.text);
   return secs.length ? `<h2>רשומה קלינית</h2>` + secs.map(sec => `<p><b>${esc(sec.title)}:</b> ${esc(rec[sec.id].text)}</p>`).join('') : '';
 }
 function vizDocHtml(s) {
@@ -2553,6 +2560,9 @@ async function attachPrev(s, folderId, interactive = false) {
     const j = await (await gfetch(`${DAPI}/${encodeURIComponent(latest.id)}?alt=media`)).json();
     const ps = j?.session; if (!ps?.fields) return;
     s.prev = { at: ps.startedAt, region: ps.region, type: ps.type, fields: fieldSnap(ps), exam: ps.ins?.exam || null, id: latest.id };
+    // details not entered on the start screen are taken from the previous session (changeable via the patient name)
+    const fromPrev = INTAKE.filter(id => !s.fields[id]?.value && ps.fields[id]?.value);
+    if (fromPrev.length) { for (const id of fromPrev) s.fields[id] = { value: String(ps.fields[id].value), source: 'manual' }; if (session === s) upsertPatient({ name: s.patientName, intake: intakeOf(s) }); }
     if (session === s) { saveSession(true); if (view === 'session' && tab === 'live') refreshLive(); }
   } catch { s.prevPending = folderId; }
 }
@@ -2751,6 +2761,7 @@ function renderHome() {
       <select id="pRegion" class="inp">${REGIONS.map(r => `<option>${r}</option>`).join('')}</select>
       <span class="lbl" id="pTypeL">סוג</span>
       <div class="seg" role="group" aria-labelledby="pTypeL" id="pType" style="width:100%">${TYPES.map((r, i) => `<button type="button" data-act="ptype" data-v="${r}" aria-pressed="${i === 0}">${r}</button>`).join('')}</div>
+      <details class="intake" id="pIntake"><summary>פרטי מטופל (לא חובה)${ICON.chev}</summary>${intakeInputs('p', {})}</details>
       <label class="check"><span>המטופל/ת הסכים/ה להקלטת המפגש ולתמלולו לצורך תיעוד</span><input type="checkbox" role="switch" class="switch" id="pConsent"></label>
       <button class="btn primary block" style="margin-top:16px" data-act="start">התחל מפגש</button>
     </section>
@@ -2874,7 +2885,7 @@ async function renderTestLinks() {
 }
 function ptitleHtml() {
   const s = session;
-  return `<div class="ptitle"><div><h1>${esc(s.patientName)}</h1><div class="sub"><button class="rgbtn" data-act="region" aria-haspopup="dialog" aria-label="אזור המפגש: ${esc(s.region)}. לחץ כדי לשנות">${esc(s.region)}${ICON.chev}</button> · ${esc(s.type)} · <span class="savestate" id="saveState" role="status"></span></div></div></div>${regionBanner()}${s.firstSavedAt && !recLocked(s) ? `<div class="banner amend" role="note">המפגש נשמר ב-Drive. אפשר לתקן עד ${fmtWhen(lockAt(s))}: כל שינוי יירשם במסמך כתיקון עם התאריך. אחר כך המפגש ננעל ואפשר רק להוסיף נספח.</div>` : ''}`;
+  return `<div class="ptitle"><div><h1><button class="ptname" data-act="intake" aria-haspopup="dialog" aria-label="${esc(s.patientName)}: פרטי מטופל">${esc(s.patientName)}</button></h1><div class="sub"><button class="rgbtn" data-act="region" aria-haspopup="dialog" aria-label="אזור המפגש: ${esc(s.region)}. לחץ כדי לשנות">${esc(s.region)}${ICON.chev}</button> · ${esc(s.type)} · <span class="savestate" id="saveState" role="status"></span></div></div></div>${regionBanner()}${s.firstSavedAt && !recLocked(s) ? `<div class="banner amend" role="note">המפגש נשמר ב-Drive. אפשר לתקן עד ${fmtWhen(lockAt(s))}: כל שינוי יירשם במסמך כתיקון עם התאריך. אחר כך המפגש ננעל ואפשר רק להוסיף נספח.</div>` : ''}`;
 }
 function renderTab() {
   if (!NAV.some(n => n[0] === tab)) tab = 'live';
@@ -2991,7 +3002,7 @@ function closePop() {
   $$('.rec-s.on').forEach(e => e.classList.remove('on')); $$('.seg.sourced').forEach(e => e.classList.remove('sourced'));
   document.removeEventListener('pointerdown', popOutside, true);
 }
-function popOutside(e) { if (popEl && !popEl.contains(e.target) && !e.target.closest('[data-act="island"],[data-act="srcRec"],[data-act="src"],[data-act="verifyPart"],[data-act="more"],[data-act="region"]')) closePop(); }
+function popOutside(e) { if (popEl && !popEl.contains(e.target) && !e.target.closest('[data-act="island"],[data-act="srcRec"],[data-act="src"],[data-act="verifyPart"],[data-act="more"],[data-act="region"],[data-act="intake"]')) closePop(); }
 function placePop() {
   if (!popEl || !popAnchor) return;
   const r = popAnchor.getBoundingClientRect(), w = popEl.offsetWidth, h = popEl.offsetHeight;
@@ -3359,7 +3370,7 @@ setInterval(() => { if (!recording && view === 'session') maybeFill(); }, 10000)
 /* ---------------- live record (Notes-like) ---------------- */
 function recordHtml() {
   const s = session, ins = insState(), dirty = s.insDirty?.secs || [];
-  const secs = sectionsFor(s).filter(sec => sec.fields.some(f => f.id !== 'name' && s.fields[f.id]?.value));
+  const secs = allSectionsFor(s).filter(sec => sec.fields.some(f => f.id !== 'name' && s.fields[f.id]?.value));
   const flag = ids => ids.some(id => s.fields[id]?.unverified) ? '<span class="badge bad">לא נמצא בתמלול</span>' : ids.some(id => s.fields[id]?.needsCheck) ? '<span class="badge chk">לאמת</span>' : '';
   const body = secs.map(sec => {
     const r = ins.record[sec.id], filled = sec.fields.filter(f => f.id !== 'name' && s.fields[f.id]?.value);
@@ -3546,7 +3557,10 @@ document.addEventListener('click', async e => {
       stopPlayer();
       if (session) audioDelete(session.id);
       session = null; saveSession(true); render(); break;
-    case 'pick': $('#pName').value = t.dataset.name; if (t.dataset.region) $('#pRegion').value = t.dataset.region; setPType('מפגש מעקב'); $('#pName').scrollIntoView({ block: 'center' }); break;
+    case 'pick': $('#pName').value = t.dataset.name; if (t.dataset.region) $('#pRegion').value = t.dataset.region; setPType('מפגש מעקב'); prefillIntake(); $('#pName').scrollIntoView({ block: 'center' }); break;
+    case 'isex': $$(`#${t.dataset.px}_sex [data-act="isex"]`).forEach(b => b.setAttribute('aria-pressed', b === t && b.getAttribute('aria-pressed') !== 'true')); break;
+    case 'intake': if (popKey === 'intake') closePop(); else openPop(t, intakePopHtml(), 'intake'); break;
+    case 'intakeSave': saveIntakePop(); break;
     case 'ptype': setPType(t.dataset.v); break;
     case 'start': startSession(); break;
     case 'rec': recording ? stopRec() : startRec(); break;
@@ -3742,6 +3756,7 @@ let editInsightTimer = null; // a typed field updates the record and graphics to
 document.addEventListener('input', e => {
   const t = e.target;
   if (t.id === 'recQ') { REC.q = t.value; const l = $('#recList'); if (l) l.innerHTML = recListHtml(); return; }
+  if (t.id === 'pName') { prefillIntake(); return; }
   if (t.matches('#tabBody textarea[data-fid]')) {
     autosize(t);
     const id = t.dataset.fid, val = t.value;
@@ -3758,6 +3773,57 @@ document.addEventListener('focusout', e => {
   // an empty note bar folds away again on a phone once the focus leaves it
   if (t.id === 'noteIn' && PHONE_MQ.matches) setTimeout(() => { if (!$('#noteBar')?.contains(document.activeElement) && !t.value.trim()) setNoteFold(true); }, 150);
 });
+/* intake fields (age, sex, address, occupation, marital): start screen ('p') and the popup on the patient name ('i') */
+function intakeInputs(px, v) {
+  const t = (id, label, extra = '') => `<label class="lbl" for="${px}_${id}">${label}</label><input id="${px}_${id}" class="inp" autocomplete="off" value="${esc(v[id] || '')}"${extra}>`;
+  return `${t('age', 'גיל', ' inputmode="numeric" maxlength="3"')}
+    <span class="lbl" id="${px}_sexL">מין</span><div class="seg" role="group" aria-labelledby="${px}_sexL" id="${px}_sex" style="width:100%">${SEXES.map(x => `<button type="button" data-act="isex" data-px="${px}" data-v="${x}" aria-pressed="${v.sex === x}">${x}</button>`).join('')}</div>
+    ${t('address', 'כתובת')}${t('occupation', 'מקצוע')}${t('marital', 'מצב משפחתי')}`;
+}
+function readIntake(px) {
+  const o = {};
+  for (const id of INTAKE) o[id] = id === 'sex' ? ($(`#${px}_sex [aria-pressed="true"]`)?.dataset.v || '') : ($(`#${px}_${id}`)?.value || '').trim();
+  return o;
+}
+function fillIntake(px, v) {
+  for (const id of INTAKE) { if (id === 'sex') $$(`#${px}_sex [data-act="isex"]`).forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v.sex)); else { const el = $(`#${px}_${id}`); if (el) el.value = v[id] || ''; } }
+}
+const intakeOf = s => Object.fromEntries(INTAKE.map(id => [id, s?.fields?.[id]?.value || '']));
+// a known patient's details from the last session, so a follow-up starts with them filled (and can be changed)
+function prefillIntake() {
+  const p = patients.find(x => x.name === $('#pName')?.value.trim());
+  if (!p?.intake) return;
+  fillIntake('p', p.intake);
+  if (Object.values(p.intake).some(Boolean)) $('#pIntake')?.setAttribute('open', '');
+}
+function setIntake(s, v) {
+  const changed = [];
+  for (const id of INTAKE) {
+    const val = String(v[id] || '').trim(), cur = s.fields[id]?.value || '';
+    if (val === cur) continue;
+    if (val) s.fields[id] = { value: val, source: 'manual' }; else delete s.fields[id];
+    changed.push(id);
+  }
+  return changed;
+}
+function intakePopHtml() {
+  const s = session, locked = recLocked(s);
+  return `<h3>פרטי מטופל <button class="icon-btn x" data-act="popClose" aria-label="סגור">${ICON.close}</button></h3>
+    <p class="muted small" style="margin-bottom:6px">${locked ? 'הרשומה נעולה: אפשר רק לקרוא.' : 'לא חובה. נשמרים במפגש ובמסמך ב-Drive.'}</p>
+    <div class="intake-pop"${locked ? ' inert' : ''}>${intakeInputs('i', intakeOf(s))}</div>
+    ${locked ? '' : '<button class="btn primary block" style="margin-top:12px" data-act="intakeSave">שמור</button>'}`;
+}
+function saveIntakePop() {
+  const s = session; if (!s || recLocked(s)) return;
+  const changed = setIntake(s, readIntake('i'));
+  closePop();
+  if (!changed.length) return;
+  upsertPatient({ name: s.patientName, intake: intakeOf(s) });
+  markDirty(changed); touch();
+  if (aiReady() && smartAny()) runInsight();
+  if (view === 'finish') renderFinish(); else renderSession();
+  toast('פרטי המטופל נשמרו', false, 1800);
+}
 function setPType(v) { $$('#pType [data-act="ptype"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v)); }
 async function startSession() {
   const name = $('#pName').value.trim();
@@ -3775,7 +3841,8 @@ async function startSession() {
     fields: { name: { value: name, source: 'manual', locked: true } }, analysis: '', cost: 0, notes: [],
     folderId: p?.folderId || null
   };
-  upsertPatient({ name, region: session.region, last: session.startedAt });
+  setIntake(session, readIntake('p'));
+  upsertPatient({ name, region: session.region, last: session.startedAt, ...(INTAKE.some(id => session.fields[id]) ? { intake: intakeOf(session) } : {}) });
   saveSession(true); tab = 'live'; openStages = new Set([session.stage]); lastStatus = { html: '', err: false, raw: false };
   loadTestNames();
   go('session');

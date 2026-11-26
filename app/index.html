@@ -755,6 +755,16 @@ html[data-side-on] .home .shell,html[data-side-on] .fin .shell{grid-template-col
 .ph-only{display:none !important}
 .rgbtn{display:inline-flex;align-items:center;gap:2px;padding:0 2px;border:0;background:none;color:var(--tint-ink);font:inherit;font-weight:600}
 .rgbtn svg{width:14px;height:14px;transform:rotate(-90deg)}
+/* patient details (intake): collapsible block on the start screen, the patient name in the session opens them */
+.intake{margin-top:14px;border-top:1px solid var(--sep);padding-top:4px}
+.intake > summary{display:flex;align-items:center;gap:6px;min-height:44px;cursor:pointer;list-style:none;font-size:var(--fs-foot);font-weight:600;color:var(--tint-ink)}
+.intake > summary::-webkit-details-marker{display:none}
+.intake > summary svg{width:16px;height:16px;transition:transform .25s}
+.intake[open] > summary svg{transform:rotate(-90deg)}
+.intake .lbl:first-of-type{margin-top:4px}
+.ptname{border:0;background:none;padding:0;font:inherit;color:inherit;letter-spacing:inherit;text-align:start;cursor:pointer;border-radius:8px}
+.ptname:hover{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:6px;text-decoration-color:var(--label-3)}
+.intake-pop .lbl:first-child{margin-top:0}
 .rgw{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
 .rgw > span:first-child{flex:1 1 280px}
 .rgw-a{display:flex;gap:6px;flex-wrap:wrap}
