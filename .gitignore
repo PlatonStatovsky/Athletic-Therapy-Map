@@ -1,3 +1,7 @@
 src/node_modules/
 src/upper-quadrant-map.html
 .taste-skill/
+
+# browser-check outputs
+tests/e2e/*/
+tests/e2e/*.png

@@ -1,5 +1,7 @@
 # Repository notes for Claude
 
+Starting a new chat on this repo: read `HANDOFF.md` (state, standing rules, open items) and the top of `CHANGELOG.md` first. Browser checks for the assistant are in `tests/e2e/` (run `spec_regress.py` before and after changes to `app/`).
+
 Two parts and a home page, one static site, no build step:
 - `index.html` (root) — the home page (hand-written): two entries, the map (open to all) and Thalamus (authorized Google sign-in). Its inline script sends old map links (`/#knee`, `/#shoulder&t=hk`) to `/map/` with the same hash, and applies the shared theme.
 - `map/index.html` — the decision map ("שיקום שמרני מפת דרך"). Platon develops its content in other conversations. It is built from `src/` (`node src/build.js && python3 src/build-site.py`, see `src/README.md`): never edit `map/index.html` by hand, a rebuild overwrites it.
