@@ -58,14 +58,18 @@ const REGION_ALIAS = { 'גב תחתון': 'גב תחתון ואגן', 'ירך ו
 const newRegion = r => REGION_ALIAS[r] || r;
 function fixRegion(s) { if (!s) return s; if (s.region) s.region = newRegion(s.region); if (s.prev?.region) s.prev.region = newRegion(s.prev.region); return s; }
 const fixTags = text => String(text || '').split('\n').map(l => { if (l.trim().startsWith('#') || !l.includes('|')) return l; const [a, tags, ...rest] = l.split('|'); return [a, ' ' + tags.split(',').map(t => newRegion(t.trim())).join(', ') + ' ', ...rest].join('|').replace(/ +\|/g, ' |').replace(/\| +$/, ''); }).join('\n');
+// Claude is fixed (Platon, 27.11): Sonnet 5.5 at high effort for every call; there is no model choice in the settings
+const CLAUDE_MODEL = 'claude-sonnet-5-5', CLAUDE_EFFORT = 'high';
 const DEFAULT_SETTINGS = {
-  extractModel: 'claude-sonnet-5-5', analysisModel: 'claude-opus-5-5',
+  extractModel: CLAUDE_MODEL, analysisModel: CLAUDE_MODEL,
   clientId: '', rootFolderName: 'מטופלים', rootFolderId: '',
   kbDocs: KB_DEFAULT, extraKB: '', siteKB: true, kbBudget: 350, kbVer: 3, engine: 'browser', accessCode: '', saveAudio: true,
   autoFill: true, fillChars: 600, continuous: true, lang: 'he-IL'
 };
 const storedSettings = LS.get(K.settings, null);
 let settings = { ...DEFAULT_SETTINGS, ...(storedSettings || {}) };
+// an older device may have kept another model in its settings: the fixed one replaces it
+if (settings.extractModel !== CLAUDE_MODEL || settings.analysisModel !== CLAUDE_MODEL) { settings.extractModel = settings.analysisModel = CLAUDE_MODEL; if (storedSettings) LS.set(K.settings, settings); }
 if (storedSettings && (storedSettings.kbVer || 1) < 2) { // version 1 kept the knowledge base as two Google Docs; the site now covers the decision map
   if (String(settings.kbDocs || '').trim() === KB_OLD_DEFAULT || !String(settings.kbDocs || '').trim()) settings.kbDocs = KB_DEFAULT;
   settings.kbVer = 2; LS.set(K.settings, settings);
@@ -359,10 +363,7 @@ async function countTokens(body) {
   return (await r.json()).input_tokens;
 }
 // form filling runs in the background, so accuracy matters more than speed
-function fillParams(model) {
-  if (model.startsWith('claude-haiku')) return { thinking: { type: 'disabled' }, effort: 'medium' };
-  return { effort: 'medium' };
-}
+function fillParams() { return { effort: CLAUDE_EFFORT }; }
 // one retry without optional parameters if the API rejects them
 async function callWithFallback(body, opts) {
   try { return await callClaude(body, opts); }
@@ -512,9 +513,9 @@ ${buildTranscript(context) || '(אין)'}
 
 NEW TRANSCRIPT (process this):
 ${buildTranscript(fresh)}`;
-  const ll = fillParams(settings.extractModel);
+  const ll = fillParams();
   const body = {
-    model: settings.extractModel, max_tokens: 6000,
+    model: CLAUDE_MODEL, max_tokens: 6000,
     system: [{ type: 'text', text: extractSystem(s), cache_control: { type: 'ephemeral' } }],
     messages: [{ role: 'user', content: user }],
     output_config: { effort: ll.effort, format: { type: 'json_schema', schema: fillSchema(s) } }
@@ -737,12 +738,12 @@ ${allSectionsFor(s).map(sec => `${sec.id} — ${sec.title}: ${sec.fields.map(f =
 FORM VALUES (JSON):
 ${JSON.stringify(form, null, 1)}
 ${parts.includes('hypo') ? `\nTHERAPIST HYPOTHESES (keep each): ${JSON.stringify((s.hypoMine || []).map(h => ({ name: h.name, path: h.path })))}\nRULED OUT BY THE THERAPIST (never return): ${JSON.stringify((s.hypoOff || []).map(h => h.name))}` : ''}${parts.includes('record') ? `\nRECORD_SECTIONS: ${recSecs.join(', ')}` : ''}${parts.includes('notes') ? `\nPENDING NOTES (JSON): ${JSON.stringify(pending.map(n => ({ id: n.id, text: n.text })))}` : ''}${parts.includes('next') ? `\nSTILL EMPTY in the current stage, most important first: ${empties.join(', ') || '—'}` : ''}${cat ? `\n\nMAP CATALOG\n${cat.text}` : ''}`;
-  const ll = fillParams(settings.extractModel);
+  const ll = fillParams();
   const body = {
-    model: settings.extractModel, max_tokens: 16000,
+    model: CLAUDE_MODEL, max_tokens: 16000,
     system: [{ type: 'text', text: INSIGHT_SYSTEM, cache_control: { type: 'ephemeral' } }],
     messages: [{ role: 'user', content: user }],
-    output_config: { effort: ll.effort === 'medium' ? 'low' : ll.effort, format: { type: 'json_schema', schema: insightSchema(parts) } }
+    output_config: { effort: ll.effort, format: { type: 'json_schema', schema: insightSchema(parts) } }
   };
   if (ll.thinking) body.thinking = ll.thinking;
   try {
@@ -1571,18 +1572,45 @@ function renderPlayer() {
   }
   el.hidden = false;
   const paused = PL.audio.paused;
-  el.innerHTML = `<button class="main" data-act="plToggle" aria-label="${paused ? 'המשך השמעה' : 'השהה'}">${paused ? ICON.play : ICON.pause}</button>
+  el.innerHTML = `<button class="pl-main" data-act="plToggle" aria-label="${paused ? 'המשך השמעה' : 'השהה'}">${paused ? ICON.play : ICON.pause}</button>
     <button data-act="plSeek" data-d="-5" aria-label="5 שניות אחורה"><span dir="ltr">−5</span></button>
     <button data-act="plSeek" data-d="5" aria-label="5 שניות קדימה"><span dir="ltr">+5</span></button>
     <span class="pl-t" id="plTime"></span>
     <button data-act="plClose" aria-label="סגור את הנגן">${ICON.close}</button>`;
-  renderPlayerTime();
+  renderPlayerTime(); placePlayer();
+  clearInterval(plPlaceT); plPlaceT = setInterval(placePlayer, 300);
 }
+/* the player sits where it covers nothing: on a phone beside the folded yellow free-text button (same row),
+   otherwise centred just above the free-text bar; with neither (finish screen), above the bottom edge */
+let plPlaceT = null;
+function placePlayer() {
+  const el = $('#player'); if (!el || el.hidden || !PL.audio) { clearInterval(plPlaceT); return; }
+  const W = innerWidth, H = innerHeight, h = el.offsetHeight || 48;
+  const nb = $('#noteBar .notebar'), r = nb && nb.offsetParent ? nb.getBoundingClientRect() : null;
+  const bar = PHONE_MQ.matches ? $('.tabbar') : null, br = bar && bar.offsetParent ? bar.getBoundingClientRect() : null;
+  let left, top, width = 0;
+  if (r && r.width && r.bottom <= H && PHONE_MQ.matches && nb.classList.contains('folded')) {
+    const freeL = r.left > W / 2 ? [12, r.left - 8] : [r.right + 8, W - 12];
+    left = freeL[0]; width = freeL[1] - freeL[0]; top = r.top + (r.height - h) / 2;
+  } else if (r && r.width && r.bottom <= H + 1) {
+    const w = el.offsetWidth; left = r.left + r.width / 2 - w / 2; top = r.top - h - 10;
+  } else {
+    const col = ($('#tabBody') || $('.main') || document.body).getBoundingClientRect(), w = el.offsetWidth;
+    left = col.left + col.width / 2 - w / 2; top = (br ? br.top : H - 8) - h - 12;
+  }
+  el.style.width = width ? width + 'px' : '';
+  const w = width || el.offsetWidth;
+  el.style.left = Math.round(Math.max(8, Math.min(left, W - w - 8))) + 'px';
+  el.style.top = Math.round(Math.max(76, top)) + 'px';
+  el.style.bottom = 'auto'; el.style.transform = 'none';
+}
+addEventListener('resize', () => placePlayer(), { passive: true });
+addEventListener('scroll', () => placePlayer(), { passive: true });
 function renderPlayerTime() {
   const t = $('#plTime'); if (!t || !PL.audio) return;
   const a = PL.audio, dur = isFinite(a.duration) ? ' / ' + fmtClock(a.duration * 1000) : '';
   const g = session?.segments[PL.seg];
-  t.innerHTML = `<span dir="ltr">${fmtClock(a.currentTime * 1000)}${dur}</span>${g?.speaker != null ? ` · דובר ${esc(g.speaker)}` : ''}${(session?.audioParts || 0) > 1 ? ` · חלק ${PL.part}` : ''}`;
+  t.innerHTML = `<span dir="ltr">${fmtClock(a.currentTime * 1000)}${dur}</span><span class="pl-x">${g?.speaker != null ? ` · דובר ${esc(g.speaker)}` : ''}${(session?.audioParts || 0) > 1 ? ` · חלק ${PL.part}` : ''}</span>`;
 }
 
 /* ---------------- Soniox: continuous cloud transcription ----------------
@@ -2253,7 +2281,7 @@ async function runAnalysis() {
   analysisAbort = new AbortController();
   try {
     const res = await callClaude({
-      model: settings.analysisModel, max_tokens: 16000,
+      model: CLAUDE_MODEL, max_tokens: 16000, output_config: { effort: CLAUDE_EFFORT },
       system: ANALYSIS_SYSTEM, messages: [{ role: 'user', content }]
     }, { signal: analysisAbort.signal, onText: t => { out.innerHTML = md(t); } });
     if (session !== s) return;
@@ -3271,7 +3299,32 @@ function refreshLive() {
   if (view === 'finish') return;
   if (tab === 'summary') { refreshDocPrev(); refreshVizFold(); return; }
   if (tab !== 'live' || !$('#tabBody')) return;
-  const y = window.scrollY; $('#tabBody').innerHTML = liveHtml(); renderSaveState(); window.scrollTo(0, y);
+  const body = $('#tabBody'), before = flipCapture(body);
+  const y = window.scrollY; body.innerHTML = liveHtml(); renderSaveState(); window.scrollTo(0, y);
+  flipPlay(body, before);
+}
+/* FLIP for the cards of a screen: a card that moved or changed height glides there, a new card fades in */
+const REDUCED_MOTION = matchMedia('(prefers-reduced-motion: reduce)');
+const FLIP_SEL = ':scope > section.card, :scope > details.card, :scope > .grid > section.card';
+const cardKey = c => (c.querySelector('h2')?.textContent || '').trim();
+function flipCapture(root) {
+  const m = new Map(); if (!root || REDUCED_MOTION.matches) return m;
+  root.querySelectorAll(FLIP_SEL).forEach(c => { const k = cardKey(c); if (k && !m.has(k)) m.set(k, c.getBoundingClientRect()); });
+  return m;
+}
+function flipPlay(root, before) {
+  if (!root || !before.size || REDUCED_MOTION.matches) return;
+  const ease = 'cubic-bezier(.16,1,.3,1)', seen = new Set();
+  root.querySelectorAll(FLIP_SEL).forEach(c => {
+    const k = cardKey(c); if (!k || seen.has(k)) return; seen.add(k);
+    const a = before.get(k), b = c.getBoundingClientRect();
+    if (!a) { c.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 360, easing: ease }); return; }
+    const dx = a.left - b.left, dy = a.top - b.top, dh = a.height - b.height, dw = Math.abs(a.width - b.width);
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1 && Math.abs(dh) < 1 && dw < 1) return;
+    const from = { transform: `translate(${dx}px,${dy}px)`, height: a.height + 'px', overflow: 'hidden' }, to = { transform: 'none', height: b.height + 'px', overflow: 'hidden' };
+    if (dw >= 1) { from.opacity = .55; to.opacity = 1; }
+    c.animate([from, to], { duration: 420, easing: ease });
+  });
 }
 function refreshCounts() {
   refreshTabLabels();
@@ -3292,19 +3345,14 @@ function segHtml(g, i, prevStage) {
   const sp = g.speaker != null ? (+g.speaker - 1) % 2 + 1 : 0;
   return `${mark}<div class="seg s${sp}${g.manual ? ' manual' : ''}${PL.seg === i && PL.audio ? ' playing' : ''}" data-i="${i}">${esc(g.text)}<div class="sm">${g.speaker != null ? `<span class="spk">דובר ${esc(g.speaker)}</span>·` : ''}<span>${hhmm(g.t)}</span>${g.manual ? '<span>· הוקלד</span>' : ''}${play}</div></div>`;
 }
+// the transcript panel shows only the transcript (and the recorded audio); typing goes in the free-text field,
+// the status line and the speech log are in Settings › API (27.11)
 function transcriptHtml(inSide) {
   const s = session; let prev = null;
   const segs = s.segments.map((g, i) => { const h = segHtml(g, i, prev); prev = g.stage; return h; }).join('');
-  return `<div id="segList">${segs || `<p class="empty-note" id="noSegs">${noRec(s) ? 'מפגש ללא הקלטה: אין מיקרופון ואין תמלול. אפשר להקליד טקסט למטה, או לכתוב בשדה הטקסט החופשי.' : 'עוד אין תמלול. לחץ על המיקרופון כדי להתחיל, או הקלד והדבק טקסט למטה.'}</p>`}</div>
+  return `<div id="segList">${segs || `<p class="empty-note" id="noSegs">עוד אין תמלול. לחץ על המיקרופון כדי להתחיל.</p>`}</div>
     <div class="interim" id="interim"></div>
-    <div class="tr-tools">
-      <div><label class="lbl" for="manualText">הוספה ידנית: הקלדה, הכתבה במקלדת, או הדבקת תמלול</label>
-      <textarea id="manualText" class="inp" placeholder="למשל: Lachman ימין חיובי, end feel רך"></textarea>
-      <button class="btn block" style="margin-top:8px" data-act="addManual">הוסף לתמלול</button></div>
-      <div id="audioBox"></div>
-      <p class="muted small">ממתין למילוי: <span id="pend">${pendingChars()}</span> תווים · עלות המפגש (הערכה): $${(s.cost || 0).toFixed(3)} · מנוע: ${useSoniox() ? 'Soniox' : 'הדפדפן'}</p>
-      <button class="linkbtn small" style="justify-self:start" data-act="copyLog">העתק לוג זיהוי דיבור (לאבחון תקלות)</button>
-    </div>`;
+    <div class="tr-tools"><div id="audioBox"></div></div>`;
 }
 function appendSegmentUI(g, i) {
   const list = $('#segList'); if (!list) return;
@@ -3433,7 +3481,6 @@ const DR_TABS = [
 const sw = (key, on, label, sub = '') => `<label class="gi"><span class="t">${label}${sub ? `<small>${sub}</small>` : ''}</span><input type="checkbox" class="switch" role="switch" data-set="${key}" ${on ? 'checked' : ''}></label>`;
 function drBody(t) {
   const st = settings, sm = smart();
-  const modelOpts = cur => ['claude-haiku-5-5', 'claude-sonnet-5-5', 'claude-opus-5-5', 'claude-fable-5-1'].map(m => `<option ${m === cur ? 'selected' : ''}>${m}</option>`).join('');
   if (t === 'display') return `
     <div class="group"><h3>צבעים</h3><div class="gl"><div class="gi stack"><div class="seg" role="group" aria-label="מצב תצוגה">${THEMES.map(([id, label]) => `<button data-act="theme" data-theme="${id}" aria-pressed="${getTheme() === id}">${label}</button>`).join('')}</div></div></div>
       <p class="gf">"אוטומטי": נוח לעין, וכהה כשהמכשיר במצב כהה. הבחירה חלה גם על המפה. "נוח לעין": גוון חם וסינוור נמוך, לעבודה ארוכה.</p></div>
@@ -3475,12 +3522,15 @@ function drBody(t) {
       <div class="gi stack"><label class="lbl" for="sAccess">קוד גישה (גיבוי, במקום כניסה עם Google)</label><input id="sAccess" class="inp ltr" type="password" autocomplete="off" data-set="accessCode" data-norm="trim" value="${esc(st.accessCode)}"></div>
     </div><p class="gf">הכניסה עם Google פותחת את ה-AI ואת Soniox. מפתחות החשבון נשמרים רק בשרת, לא במכשיר.</p></div>
     <div class="group"><h3>Claude</h3><div class="gl">
-      <div class="gi stack"><label class="lbl" for="sExt">מודל למילוי ולכלים החכמים</label><select id="sExt" class="inp ltr" data-set="extractModel">${modelOpts(st.extractModel)}</select>
-        <label class="lbl" for="sAna">מודל לניתוח</label><select id="sAna" class="inp ltr" data-set="analysisModel">${modelOpts(st.analysisModel)}</select></div>
       <div class="gi"><span class="t">בדיקת חיבור<small>הכניסה, השרת והמפתח שבו</small></span><button class="btn sm" data-act="testKey">בדוק חיבור ל-Claude</button></div>
     </div></div>
     <div class="group"><h3>Soniox</h3><div class="gl">
       <div class="gi"><span class="t">בדיקת חיבור<small>המכשיר מקבל מפתח זמני לכל חיבור</small></span><button class="btn sm" data-act="testSoniox">בדוק חיבור ל-Soniox</button></div>
+    </div></div>
+    <div class="group"><h3>אבחון הקלטה</h3><div class="gl">
+      <div class="gi"><span class="t">מנוע זיהוי דיבור<small>${useSoniox() ? 'Soniox' : 'הדפדפן'}</small></span></div>
+      ${session ? `<div class="gi"><span class="t">המפגש הפתוח<small>ממתין למילוי: ${pendingChars()} תווים · עלות המפגש (הערכה): $${(session.cost || 0).toFixed(3)}</small></span></div>` : ''}
+      <div class="gi"><span class="t">לוג זיהוי דיבור<small>לאבחון תקלות בהקלטה</small></span><button class="btn sm" data-act="copyLog">העתק לוג</button></div>
     </div></div>
     <div class="group"><h3>Google Drive</h3><div class="gl">
       <div class="gi stack"><label class="lbl" for="sCid">OAuth Client ID (ריק = זה של Thalamus)</label><input id="sCid" class="inp ltr" autocomplete="off" placeholder="${esc(DEFAULT_CLIENT_ID)}" data-set="clientId" data-norm="trim" value="${esc(st.clientId)}">
@@ -3662,7 +3712,6 @@ document.addEventListener('click', async e => {
     case 'verifyPart': { const s = session, ids = CARD_SRC[t.dataset.part](s).filter(id => s.fields[id]?.value && (s.fields[id].needsCheck || s.fields[id].unverified)); if (ids.length) showSource(ids, t, 'v:' + t.dataset.part); break; }
     case 'noteDel': session.notes = (session.notes || []).filter(n => n.id !== t.dataset.nid); touch(); refreshLive(); if (view === 'finish') renderFinish(); break;
     case 'noteUnfile': unfileNote(t.dataset.nid); break;
-    case 'addManual': { const ta = $('#manualText'); if (ta.value.trim()) { addSegment(ta.value, true); ta.value = ''; } break; }
     case 'segPlay': playSeg(+t.dataset.i); break;
     case 'quotePlay': { const v = session?.fields[t.dataset.fid], i = v?.quote ? findSeg(v.quote) : -1; if (i >= 0) playSeg(i, quoteSpan(session.segments[i], v.quote)); break; }
     case 'missLevel': missOpen[t.dataset.k] = !missOpen[t.dataset.k]; refreshLive(); break;
@@ -3852,7 +3901,7 @@ async function testKey(btn) {
   const f = $('#sAccess'); if (f) { settings.accessCode = f.value.trim(); saveSettings(); }
   btn.disabled = true; btn.innerHTML = '<span class="spin"></span> בודק…';
   try {
-    const r = await callWithFallback({ model: 'claude-haiku-5-5', max_tokens: 20, messages: [{ role: 'user', content: 'ענה במילה אחת: תקין' }], thinking: { type: 'disabled' } });
+    const r = await callWithFallback({ model: CLAUDE_MODEL, max_tokens: 20, messages: [{ role: 'user', content: 'ענה במילה אחת: תקין' }], thinking: { type: 'disabled' } });
     toast('החיבור ל-Claude תקין. ' + ((r.content || []).find(b => b.type === 'text')?.text || ''));
   } catch (e) { toast(humanErr(e), true, 6000); }
   finally { btn.disabled = false; btn.textContent = 'בדוק חיבור ל-Claude'; }
@@ -3928,19 +3977,19 @@ async function refreshKb(btn) {
       }
     }
     // per-region totals (from the cache just filled)
-    const p = PRICE[settings.analysisModel] || [4, 20];
+    const p = PRICE[CLAUDE_MODEL] || [2, 10];
     const rows = [];
     for (const region of REGIONS) {
       show('מחשב היקף לכל אזור: ' + region);
       const kb = await loadKB(region);
       let tok = null;
       if (aiReady() && kb.docs.length) {
-        try { tok = await countTokens({ model: settings.analysisModel, system: ANALYSIS_SYSTEM, messages: [{ role: 'user', content: kbBlock(kb.docs) }] }); } catch { }
+        try { tok = await countTokens({ model: CLAUDE_MODEL, system: ANALYSIS_SYSTEM, messages: [{ role: 'user', content: kbBlock(kb.docs) }] }); } catch { }
       }
       rows.push(`<tr><td>${esc(region)}</td><td>${kb.docs.length}</td><td>${kChars(kb.chars)}</td><td>${tok ? Math.round(tok / 1000) + 'K' : '—'}</td><td>${tok ? '$' + (tok * p[0] / 1e6).toFixed(2) : '—'}</td></tr>`);
     }
     lines.push(`<table class="kbt"><tr><th>אזור</th><th>מסמכים</th><th>תווים</th><th>טוקנים</th><th>קלט ≈</th></tr>${rows.join('')}</table>` +
-      `<span class="small muted">עלות הקלט בלבד, במודל ${esc(settings.analysisModel)}. התשובה עצמה (כולל חשיבה) מוסיפה בדרך כלל $0.05–0.30.</span>`);
+      `<span class="small muted">עלות הקלט בלבד, במודל ${esc(CLAUDE_MODEL)}. התשובה עצמה (כולל חשיבה) מוסיפה בדרך כלל $0.05–0.30.</span>`);
     show();
   } catch (e) { lines.push(bad(e.message)); show(); }
   finally { if (btn) btn.disabled = false; }

@@ -232,7 +232,7 @@ html[data-focus] .rail{display:none}
 .island.expanded{max-width:760px;padding-block:10px;box-shadow:var(--glass-sh),var(--spec),0 0 0 3px var(--tint-soft)}
 .island.expanded .isl-cap{white-space:normal;max-height:4.6em;font-size:var(--fs-body);font-weight:600}
 .island.expanded .isl-cap .k{display:block !important;font-size:var(--fs-foot);font-weight:600;color:var(--tint-ink)}
-.isl-rec{flex:none;display:grid;place-items:center;width:42px;height:42px;border:0;border-radius:50%;background:var(--fill);color:var(--label);transition:background .2s,color .2s,box-shadow .2s}
+.isl-rec{flex:none;display:grid;place-items:center;width:40px;height:40px;border:0;border-radius:50%;background:var(--fill);color:var(--label);transition:background .2s,color .2s,box-shadow .2s}
 .isl-rec:hover{background:var(--fill-strong,rgba(120,120,128,.2))}
 .isl-rec svg{width:20px;height:20px}
 .isl-rec.on{background:var(--red);color:#fff;box-shadow:0 2px 10px rgba(255,59,48,.4)}
@@ -241,7 +241,13 @@ html[data-focus] .rail{display:none}
 .island:not(.rec) .isl-top b{color:var(--label-2)}
 .isl-main{flex:1;min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:0;padding:2px 0;border:0;background:transparent;text-align:start;border-radius:12px}
 .isl-top{display:flex;align-items:baseline;gap:8px;font-size:var(--fs-foot);color:var(--label-2);white-space:nowrap;overflow:hidden}
-.isl-top b{font-size:var(--fs-sub);color:var(--label);font-weight:700;font-variant-numeric:tabular-nums}
+.isl-top b{flex:none;font-size:var(--fs-sub);color:var(--label);font-weight:700;font-variant-numeric:tabular-nums}
+.isl-top #recState{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.isl-top .dot{flex:none}
+.island:not(.expanded){height:52px;padding-block:5px}
+.island:not(.expanded) .isl-top{line-height:1.25}
+.island:not(.expanded) .isl-cap{line-height:1.3;max-height:1.3em}
+.toolbar .capsule.tools{height:52px;box-sizing:border-box}
 .isl-top .dot{width:7px;height:7px;border-radius:50%;background:var(--label-3);align-self:center}
 .island.rec .isl-top .dot{background:var(--red);animation:blink 1.6s ease-in-out infinite}
 @keyframes blink{50%{opacity:.25}}
@@ -311,7 +317,13 @@ html[data-focus] .rail{display:none}
 .prev-b dt{color:var(--label-2)}
 .prev-b dd{margin:0}
 @media (max-width:759px){.prev-b dl{grid-template-columns:1fr}.prev-b dd{margin-bottom:6px}}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:var(--gap);align-items:start}
+/* card rows (27.11): cards in a row split the width evenly and share one height; a lone card fills its row;
+   wide cards (.span2, compact) take a row of their own. Was a grid with fixed tracks, which left an empty column */
+div.grid{display:flex;flex-wrap:wrap;gap:var(--gap);align-items:stretch}
+div.grid > *{flex:1 1 300px;min-width:0}
+div.grid > .span2,div.grid > .card.compact{flex-basis:100%}
+div.grid > .card:not(.compact){display:flex;flex-direction:column}
+div.grid > .card:not(.compact) > .vizok{margin-top:auto}
 .span2{grid-column:1/-1}
 .cat-pain{--c:var(--pink);--ci:var(--pink-ink)} .cat-mob{--c:var(--orange);--ci:var(--orange-ink)} .cat-str{--c:var(--green);--ci:var(--green-ink)}
 .cat-test{--c:var(--teal);--ci:var(--teal-ink)} .cat-hyp{--c:var(--indigo);--ci:var(--indigo-ink)} .cat-note{--c:var(--yellow);--ci:var(--yellow-ink)}
@@ -580,11 +592,12 @@ html:has(body.sess){scroll-padding:84px 0 96px}
 .fields.flat .field{padding-inline:0}
 .insp-h .cnt{font-size:var(--fs-foot);color:var(--label-2)}
 #segList{display:flex;flex-direction:column;gap:6px}
-#segList .seg{position:relative;align-self:flex-start;max-width:86%;padding:8px 13px 7px;border-radius:18px;background:var(--fill);font-size:var(--fs-sub);line-height:1.45;scroll-margin:120px;transition:box-shadow .3s,background .3s}
+#segList .seg{display:block;position:relative;align-self:flex-start;max-width:86%;padding:8px 13px 7px;border-radius:18px;background:var(--fill);font-size:var(--fs-sub);line-height:1.45;scroll-margin:120px;transition:box-shadow .3s,background .3s}
 #segList .seg.s2{align-self:flex-end;background:var(--tint-soft)}
 #segList .seg.manual{background:transparent;border:1px dashed var(--sep-strong)}
 #segList .seg .sm{display:flex;align-items:center;gap:6px;margin-top:2px;font-size:11px;color:var(--label-2);white-space:nowrap}
 #segList .seg .sm .spk{font-weight:700}
+#segList .seg .seg-play{flex:none;min-height:0;width:24px;height:24px;padding:0;margin-inline-start:2px;font-weight:400}
 .seg-play{display:inline-grid;place-items:center;width:22px;height:22px;border:0;border-radius:50%;background:var(--card);color:var(--tint-ink);box-shadow:0 0 0 .5px var(--sep)}
 .seg-play svg{width:11px;height:11px}
 #segList .seg.playing{box-shadow:0 0 0 2px var(--tint)}
@@ -698,10 +711,14 @@ html[data-side-on] .home .shell,html[data-side-on] .fin .shell{grid-template-col
 .toast{max-width:560px;padding:12px 18px;border-radius:999px;font-size:var(--fs-sub);font-weight:600;pointer-events:auto;animation:popIn .35s cubic-bezier(.16,1,.3,1);background:var(--glass);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);border:.5px solid var(--glass-brd);box-shadow:var(--glass-sh),var(--spec)}
 .toast.err{color:var(--red-ink)}
 .player{position:fixed;bottom:84px;left:50%;transform:translateX(-50%);z-index:50;display:flex;align-items:center;gap:4px;padding:6px 8px;border-radius:999px;background:var(--glass);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);border:.5px solid var(--glass-brd);box-shadow:var(--glass-sh),var(--spec)}
-.player button{display:grid;place-items:center;min-width:36px;height:36px;border:0;border-radius:999px;background:transparent;font-size:var(--fs-foot);font-weight:700}
+.player[hidden]{display:none}
+.player{height:48px;box-sizing:border-box;padding:4px;gap:2px;max-width:calc(100vw - 16px)}
+.player button{flex:none;display:grid;place-items:center;min-width:40px;height:40px;padding:0 6px;border:0;border-radius:999px;background:transparent;font-size:var(--fs-foot);font-weight:700}
 .player button:hover{background:var(--fill)}
-.player button.main{background:var(--tint-btn);color:#fff}
-.player .pl-t{font-size:var(--fs-foot);color:var(--label-2);padding:0 8px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.player button.pl-main{width:40px;padding:0;border-radius:50%;background:var(--tint-btn);color:#fff}
+.player button.pl-main:hover{background:var(--tint-btn);filter:brightness(1.08)}
+.player .pl-t{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;text-align:center;font-size:var(--fs-foot);color:var(--label-2);padding:0 6px;white-space:nowrap;font-variant-numeric:tabular-nums}
+body.has-player #tabBody{padding-bottom:64px}
 .recpill{display:flex;align-items:center;gap:8px;margin:8px auto 0;padding:8px 14px;border:0;border-radius:999px;background:var(--red-soft);color:var(--red-ink);font-size:var(--fs-foot);font-weight:600}
 .recpill i{width:8px;height:8px;border-radius:50%;background:var(--red)}
 .recpill span{text-decoration:underline;text-underline-offset:3px}
@@ -722,6 +739,14 @@ html[data-side-on] .home .shell,html[data-side-on] .fin .shell{grid-template-col
   .toolbar .trail{flex:0 0 auto}
   .toolbar .tools .opt{display:none}
   .island{flex:1;min-width:0;max-width:none}
+  .toolbar{align-items:center;padding-top:0}
+  .toolbar .lead,.toolbar .trail{align-self:center}
+  .toolbar .back{width:52px;height:52px}
+  .player .pl-x{display:none}
+  .island.rec #recState,.island.rec .isl-top .dot{display:none} /* while recording the red stop button already says it; the timer gets the room */
+  .island .isl-rec{width:36px;height:36px}
+  .island{padding-inline:6px 8px;gap:6px}
+  .isl-main{min-width:52px}
   .fillst{display:none}
   #noteBar{bottom:calc(84px + env(safe-area-inset-bottom))}
   html:has(body.sess){scroll-padding:76px 0 150px}

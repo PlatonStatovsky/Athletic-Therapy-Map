@@ -8,7 +8,8 @@ const json = (obj, status = 200) => new Response(JSON.stringify(obj), {
   status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }
 });
 const PATHS = new Set(['messages', 'messages/count_tokens']);
-const MODELS = new Set(['claude-haiku-5-5', 'claude-sonnet-5-5', 'claude-opus-5-5', 'claude-fable-5-1']);
+// fixed on 27.11: the assistant uses only Sonnet 5.5 (see CLAUDE_MODEL in app/app.js)
+const MODELS = new Set(['claude-sonnet-5-5']);
 const PER_MINUTE = 40, PER_DAY = 1500, MAX_TOKENS = 20000, MAX_BODY = 2_500_000;
 const hits = new Map(); // ip -> timestamps within the last minute (per isolate)
 
