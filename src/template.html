@@ -879,6 +879,32 @@ details.chk[open] .chk-p{display:none}
 :root[data-theme="dark"] .reg[aria-selected="true"] .cnt{color:rgba(255,255,255,.82)}
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]):not([data-theme="comfort"]) .reg[aria-selected="true"]{background:color-mix(in srgb, var(--tint) 34%, var(--card)); color:#fff}
   :root:not([data-theme="light"]):not([data-theme="comfort"]) .reg[aria-selected="true"] .cnt{color:rgba(255,255,255,.82)} }
+/* frame hierarchy and test card order (27.11, impeccable layout + distill) */
+.rail-tog{display:flex; align-items:center; gap:6px; width:calc(100% - 20px); border:0; background:none; cursor:pointer; font:inherit; font-size:calc(11.5px * var(--fs)); font-weight:700; letter-spacing:.06em; padding:4px 0; text-align:start}
+.chev-i{width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; transition:transform var(--dur-2) var(--ease); margin-inline-start:auto}
+.side.regs-open .chev-i{transform:rotate(180deg)}
+@media (min-width:901px){
+  .side:not(.regs-open) .reg:not([aria-selected="true"]){display:none}
+  .side:not(.regs-open) .reg[aria-selected="true"]{cursor:pointer}
+  .side.regs-open .regions{animation:fadeIn var(--dur-2) var(--ease)}
+}
+@media (max-width:900px){ .rail-tog{pointer-events:none} .rail-tog .chev-i{display:none} .more-hint{display:none !important} }
+.fs-cycle{display:none}
+@media (min-width:1181px){
+  .seg.tsize, .disp > .tlabel{display:none}
+  .fs-cycle{display:inline-grid; place-items:center; width:38px; height:38px; border:0; border-radius:50%; background:var(--fill-2); color:var(--label); font:inherit; font-weight:700; cursor:pointer; transition:background var(--dur-2)}
+  .fs-cycle:hover{background:var(--fill)}
+  .fs-cycle[data-fs="1"]{font-size:14px} .fs-cycle[data-fs="1.1"]{font-size:17px} .fs-cycle[data-fs="1.2"]{font-size:20px}
+  .applink, .applink[href]{background:var(--tint-soft); color:var(--sel-ink); padding:0 12px; width:auto}
+  .seg.theme button{width:35px}
+  .applink:hover{filter:none; background:color-mix(in srgb, var(--tint) 22%, transparent)}
+  .applink .lb{position:static; width:auto; height:auto; overflow:visible; clip:auto}
+}
+.applink, .applink[href]{background:var(--tint-soft); color:var(--sel-ink)}
+.pn2 b{color:color-mix(in srgb, var(--label-2) 68%, var(--label))}
+.applink:hover{filter:none; background:color-mix(in srgb, var(--tint) 22%, transparent)}
+.evkey{display:grid; gap:6px}
+.evkey h4{margin:0; font-size:calc(12px * var(--fs)); letter-spacing:.06em; color:var(--label-2); font-weight:700}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   .field, .tools, .side, .mbar, .more-hint, .results, .disp, .sheet-h{background:var(--glass-solid) !important}
 }
@@ -915,6 +941,7 @@ details.chk[open] .chk-p{display:none}
       <button type="button" class="tbtn" id="testsBtn" aria-controls="panel">מבדקים</button>
       <button type="button" class="tbtn" id="dispBtn" aria-expanded="false" aria-controls="disp">תצוגה</button>
       <div class="disp" id="disp">
+      <button type="button" class="fs-cycle" id="fsCycle" title="גודל טקסט" aria-label="גודל טקסט: רגיל">א</button>
       <span class="tlabel" id="fs-l">גודל טקסט</span>
       <div class="seg tsize" role="group" aria-labelledby="fs-l">
         <button type="button" data-fs="1" aria-pressed="true" title="רגיל" aria-label="טקסט רגיל"><span style="font-size:13px">א</span></button>
@@ -936,7 +963,7 @@ details.chk[open] .chk-p{display:none}
       <button type="button" class="more-hint" id="railMore" hidden>שלבים <span aria-hidden="true">↓</span></button>
       <div class="sheet-h"><b>אזורים ושלבים</b><button type="button" class="sheet-x" data-sheet-close aria-label="סגירה">×</button></div>
       <div>
-        <div class="rail-h">אזורים</div>
+        <button type="button" class="rail-h rail-tog" id="regTog" aria-expanded="false" aria-controls="tabs"><span>אזורים</span><svg class="chev-i" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
         <div class="regions" role="tablist" id="tabs" aria-label="אזורים"></div>
       </div>
       <div>
@@ -1306,8 +1333,11 @@ function evGuide(){
 }
 function testDetail(id){
   const t = T[id], x = TX[id] || {}, uses = USES[id] || [];
-  let h = '<div class="pbox">' + evGuide() + '<button type="button" class="back" data-back>→ כל המבדקים' + (isGen(current) ? "" : " · " + esc(regionName(current))) + "</button>" +
-    '<div class="thead"><h3>' + fx(t.n) + "</h3>" + (x.img ? '<figure class="tfig"><img src="' + esc(x.img.src) + '" width="' + x.img.w + '" height="' + x.img.h + '" alt="' + esc(x.img.alt || t.n) + '" decoding="async"></figure>' : "") + (x.aim ? '<p class="aim">' + rich(x.aim) + "</p>" : "") + "</div>" + videoBox(t);
+  const vb = videoBox(t), hasVid = !!t.v, evs = x.evs || t.ev;
+  let h = '<div class="pbox"><button type="button" class="back" data-back>→ כל המבדקים' + (isGen(current) ? "" : " · " + esc(regionName(current))) + "</button>" +
+    '<div class="thead"><h3>' + fx(t.n) + "</h3>" + (x.img ? '<figure class="tfig"><img src="' + esc(x.img.src) + '" width="' + x.img.w + '" height="' + x.img.h + '" alt="' + esc(x.img.alt || t.n) + '" decoding="async"></figure>' : "") + (x.aim ? '<p class="aim">' + rich(x.aim) + "</p>" : "") + "</div>" +
+    (evs ? '<div class="evkey"><div class="h4row"><h4>ראיות</h4><button type="button" class="evq" data-evguide>איך קוראים את המספרים?</button></div><p class="evd">' + fx(evs) + "</p></div>" : "") +
+    (hasVid ? vb : "");
   // execution — who does what, in order
   if(x.steps){
     h += '<section class="ps"><h4>ביצוע</h4><div class="rolecards">' +
@@ -1326,13 +1356,13 @@ function testDetail(id){
     (pos ? '<div class="pp"><b>חיובי ←</b>' + who(rich(pos)) + cutTable(x.cut) + "</div>" : "") + (neg ? '<div class="nn"><b>שלילי ←</b>' + who(rich(neg)) + "</div>" : "") + "</div></section>";
   const stop = [x.contra, t.warn].filter(Boolean);
   if(stop.length) h += '<div class="warn"><b>מתי לא, או בזהירות</b>' + stop.map(w => "<span>" + rich(w) + "</span>").join("") + "</div>";
-  const evs = x.evs || t.ev;
-  if(evs || x.evd) h += '<section class="ps"><h4 class="h4row">ראיות <button type="button" class="evq" data-evguide>איך קוראים את המספרים?</button></h4>' + (evs ? '<p class="evd">' + fx(evs) + "</p>" : "") +
-    (x.evd ? more("ev", "פירוט ומקורות", '<p class="evx">' + rich(x.evd) + "</p>") : "") + "</section>";
+  if(x.evd) h += more("ev", "ראיות — פירוט ומקורות", '<p class="evx">' + rich(x.evd) + "</p>");
   if(x.tips && x.tips.length) h += more("tips", "דגשים וטעויות נפוצות · " + x.tips.length, '<ul class="li">' + x.tips.map(s => "<li>" + who(rich(s)) + "</li>").join("") + "</ul>");
   if(t.note) h += '<p class="plain">' + fx(t.note) + "</p>";
   if(x.pair && x.pair.length) h += '<section class="ps"><h4>משלבים עם</h4>' + chips(x.pair.filter(k => T[k]), false) + "</section>";
+  if(!hasVid) h += vb;
   if(uses.length) h += '<section class="ps"><h4>מופיע במפה</h4><div class="uses">' + uses.map(u => '<button type="button" data-' + (u.kind === "path" ? "path" : u.kind === "go" ? "go" : "chk") + '="' + u.id + '">' + fx(u.name) + ' <span class="ur">· ' + esc(regionName(u.rid)) + "</span></button>").join("") + "</div></section>";
+  h += evGuide();
   return h + "</div>";
 }
 function renderPanel(){
@@ -1563,7 +1593,9 @@ const savedTheme = store.get("uqmap-theme");
 if(THEMES.includes(savedTheme)) root.setAttribute("data-theme", savedTheme);
 else if(!sysDark()) root.setAttribute("data-theme", "comfort");
 const FS = ["1", "1.1", "1.2"];
-function setFs(v){ if(!FS.includes(v)) v = "1"; root.style.setProperty("--fs", v); $$(".seg.tsize button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.fs === v))); store.set("uqmap-fs", v); measure(); }
+const FS_NAME = { "1": "רגיל", "1.1": "גדול", "1.2": "גדול מאוד" };
+function setFs(v){ if(!FS.includes(v)) v = "1"; root.style.setProperty("--fs", v);
+  const fc = $("#fsCycle"); if(fc){ fc.setAttribute("aria-label", "גודל טקסט: " + FS_NAME[v] + " — לחיצה מחליפה"); fc.title = "גודל טקסט: " + FS_NAME[v]; fc.dataset.fs = v; } $$(".seg.tsize button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.fs === v))); store.set("uqmap-fs", v); measure(); }
 setFs(store.get("uqmap-fs") || "1");
 try{ matchMedia("(prefers-color-scheme: dark)").addEventListener("change", syncTheme); }catch(e){}
 try{ new MutationObserver(syncTheme).observe(root, { attributes: true, attributeFilter: ["data-theme"] }); }catch(e){}
@@ -1612,6 +1644,14 @@ function toggleSide(on){
 function closeDisp(){ $("#disp").classList.remove("open"); $$('#dispBtn, [data-mbar="disp"]').forEach(b => b.setAttribute("aria-expanded", "false")); }
 document.addEventListener("click", e => {
   const t = e.target;
+  if(t.closest("#fsCycle")){ const cur = FS.indexOf(getComputedStyle(root).getPropertyValue("--fs").trim()); setFs(FS[(cur + 1) % FS.length]); return; }
+  const wideRail = !matchMedia("(max-width:900px)").matches;
+  if(t.closest("#regTog")){ const o = !$("#side").classList.contains("regs-open"); $("#side").classList.toggle("regs-open", o); $("#regTog").setAttribute("aria-expanded", String(o)); return; }
+  const rg = t.closest("#side .reg");
+  if(rg && wideRail){
+    if(!$("#side").classList.contains("regs-open") && rg.getAttribute("aria-selected") === "true"){ $("#side").classList.add("regs-open"); $("#regTog").setAttribute("aria-expanded", "true"); return; }
+    setTimeout(() => { $("#side").classList.remove("regs-open"); $("#regTog").setAttribute("aria-expanded", "false"); }, 0);
+  }
   const ca = t.closest("[data-chk-all]");
   if(ca){ const box = ca.closest(".card").querySelector(".checks"), all = [...box.querySelectorAll("details.chk")], open = !all.every(d => d.open);
     all.forEach(d => d.open = open); ca.textContent = open ? "סגירת הכל" : "פתיחת הכל"; ca.setAttribute("aria-pressed", String(open)); return; }
