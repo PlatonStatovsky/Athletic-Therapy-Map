@@ -34,6 +34,7 @@ The scripts build on each other with `exec(open(...).read().split(...)[0])`, so 
 | `site_tour.py` | Ligamentum redesign: home page, map (desktop region, phone test card) and Thalamus in light / comfort / dark; checks the shared font loads and no request fails. `BASE=… TAG=before` for an old commit; `site_compose.py <phase>` makes the before/after images |
 | `frame_tour.py` | Ligamentum redesign phase 1: the map frame on desktop, tablet (tests panel open) and phone (regions / tests / display sheets, switching region from the sheet, deep link to a test card); prints positions and page errors. `THEMES=light,comfort,dark`, `BASE=… TAG=before` |
 | `phone_width.py` | Ligamentum map on narrow phones (360–412) at the three text sizes: nothing wider than the screen — page and the regions / tests / display sheets |
+| `content_tour.py` | Ligamentum redesign phase 2: content components (step cards, decisions, open red-flag check, open path, patterns, the tests panel card) on desktop 1440 and phone 384; prints sideways overflow and page errors. `THEMES=…`, `BASE=… TAG=before` |
 | `home.py` | Home page, old `/#knee` links sent to `/map/`, app links and the knowledge base read from `/map/` |
 | `play_check.py` | Real MediaRecorder audio: ▶ on a quote plays only that quote |
 | `rec_lock.py` | Record locked 24 h after the first save, on a wide screen |

@@ -578,6 +578,138 @@ header.bar{background:linear-gradient(to bottom, var(--bg) 58%, transparent); co
 @media (prefers-reduced-motion: reduce){
   .panel, .side, .disp.open, .scrim, .seg button, .reg, .mbar > *{transition:none !important; animation:none !important}
 }
+
+/* ---------- redesign phase 2 (27.11): content components in Thalamus style ----------
+   Solid cards with soft shadows and no hard borders; tinted fills instead of side stripes; pills for chips and labels;
+   one chevron for every accordion; grouped tables. Colours keep their clinical meaning (red = stop, green = go, orange = evidence). */
+details > summary{transition:background var(--dur-2)}
+details.chk > summary::after, details.more > summary::after, details.hist > summary::after, details.evi > summary::after, details.q > summary::after, details.about > summary::after{
+  content:""; flex:none; width:7px; height:7px; margin-inline:6px 2px; border:solid currentColor; border-width:0 1.8px 1.8px 0; transform:rotate(45deg) translate(-2px, -2px);
+  transition:transform var(--dur-2) var(--ease); opacity:.7; font-size:0; align-self:center}
+details.chk[open] > summary::after, details.more[open] > summary::after, details.hist[open] > summary::after, details.evi[open] > summary::after, details.q[open] > summary::after, details.about[open] > summary::after{
+  content:""; transform:rotate(-135deg) translate(-2px, -2px)}
+details.q > summary{list-style:none} details.q > summary::-webkit-details-marker{display:none}
+/* summaries made of text + abbreviations wrap as one paragraph; the chevron sits at the end, vertically centred */
+details.chk > summary, details.q > summary, details.more > summary{display:block; position:relative; padding-inline-end:38px}
+details.chk > summary::after, details.q > summary::after, details.more > summary::after{position:absolute; inset-inline-end:14px; top:50%; margin:-5px 0 0}
+details.about > summary::after{margin-inline-start:auto}
+/* region head */
+.meta span{border:0; background:var(--fill-2); padding:3px 12px; font-weight:600; color:var(--label-2)}
+.lede{color:var(--label-2)}
+/* the spine of steps: numbered badges on a thin line, cards without borders */
+.num{border:0; background:var(--card); box-shadow:var(--glass-sh), 0 0 0 .5px var(--sep); font-family:var(--font-sans); font-weight:700; color:var(--label-2)}
+.st.flag .num{background:var(--red-soft); color:var(--stop); box-shadow:0 0 0 1.5px var(--stop-line)}
+.st::before{width:1.5px; background:var(--sep)}
+.card{border:0; border-radius:var(--r-l); padding:20px 24px; box-shadow:0 1px 2px rgba(0,0,0,.04), 0 4px 18px rgba(0,0,0,.05); margin-bottom:22px}
+:root[data-theme="dark"] .card{box-shadow:0 0 0 .5px var(--sep)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]):not([data-theme="comfort"]) .card{box-shadow:0 0 0 .5px var(--sep)} }
+.card::after{display:none}
+.card h3{font-size:calc(20px * var(--fs)); letter-spacing:-.012em}
+.card .sub{color:var(--label-2)}
+.blk h4{color:var(--tint-ink); font-size:calc(14.5px * var(--fs))}
+.blk.key, .blk.stopblk{border:0; border-radius:var(--r-m); padding:10px 14px}
+.blk.key h4{color:var(--go)} .blk.stopblk h4{color:var(--stop)}
+/* decision: a grouped question with two answers */
+.dec{border:0; border-radius:var(--r-m); background:var(--card-2); box-shadow:0 0 0 .5px var(--sep); margin-top:14px}
+.dec-q{background:transparent; padding:12px 14px; gap:12px; align-items:center}
+.dia{width:20px; height:20px; border-width:1.5px; border-color:var(--label-2); border-radius:4px; margin-top:0}
+.dia span{color:var(--label-2); font-family:var(--font-sans); font-weight:700}
+.dec-out{border-top:.5px solid var(--sep)}
+.out{border-inline-start:0 !important; padding:11px 14px; line-height:1.55}
+.out + .out{border-inline-start:.5px solid var(--sep) !important}
+.out b{border-radius:999px; padding:2px 10px; font-weight:700}
+/* red-flag checks */
+.checks-label{color:var(--stop); letter-spacing:.01em}
+details.chk{border:0; border-radius:var(--r-m); background:var(--card-2); box-shadow:0 0 0 .5px var(--stop-line)}
+details.chk > summary{padding:11px 14px; align-items:center; border-radius:var(--r-m)}
+details.chk > summary:hover{background:var(--fill-2)}
+details.chk > summary::after{color:var(--stop); opacity:1}
+details.chk[open]{background:var(--card); box-shadow:0 0 0 .5px var(--stop-line), 0 6px 20px rgba(0,0,0,.06)}
+.chk-body{padding:2px 14px 14px}
+.chain .row{background:var(--fill-2); border-radius:var(--r-s); padding:8px 12px}
+.dd div{background:var(--fill-2); border-radius:var(--r-s); padding:10px 12px}
+/* chips (tests): pills */
+.chip{border:0; background:var(--fill); border-radius:999px; padding:5px 12px; color:var(--label); transition:background var(--dur-2), color var(--dur-2)}
+.chip:hover{background:var(--tint-soft); color:var(--tint-ink); border:0}
+.chip.on{background:var(--tint-btn); color:#fff}
+.chip.on .o, .chip.on .pv{color:#fff; fill:#fff}
+.chip.flat{background:transparent; box-shadow:inset 0 0 0 1px var(--sep-strong); border:0}
+/* questionnaires, tables */
+details.q{border:0; border-radius:var(--r-m); background:var(--card-2); box-shadow:0 0 0 .5px var(--sep)}
+details.q > summary{padding:11px 14px}
+.q-body{padding:0 14px 14px}
+.tbl{border-radius:var(--r-s); box-shadow:0 0 0 .5px var(--sep); background:var(--card)}
+th, td{border-bottom:.5px solid var(--sep); padding:8px 10px}
+tr:last-child > td{border-bottom:0}
+th{color:var(--label-2); background:var(--fill-2)}
+table.cut{border:0; border-radius:var(--r-s); box-shadow:0 0 0 .5px var(--sep); overflow:hidden}
+table.cut th, table.cut td{border-top:.5px solid var(--sep)}
+table.cut thead th{background:var(--fill-2); color:var(--label-2)}
+/* patterns and paths */
+.ghost{border:0; background:var(--fill); border-radius:999px; padding:6px 14px; color:var(--tint-ink); transition:background var(--dur-2)}
+.ghost:hover{background:var(--tint-soft); border:0}
+.pat{border:0; border-radius:var(--r-l); background:var(--card-2); padding:14px 16px; box-shadow:0 0 0 .5px var(--sep)}
+.pat-h .pn{border-radius:8px; width:26px; height:26px}
+.path{border:0; border-radius:var(--r-m); background:var(--card); box-shadow:0 1px 2px rgba(0,0,0,.05), 0 0 0 .5px var(--sep); transition:box-shadow var(--dur-2)}
+.path > button.ph{padding:11px 14px; border-radius:var(--r-m); color:var(--label)}
+.path > button.ph:hover{background:var(--fill-2)}
+.path.open{border:0; box-shadow:0 0 0 1px var(--tint-soft), 0 8px 24px rgba(0,0,0,.08)}
+.path.open > button.ph{border-bottom:.5px solid var(--sep); border-radius:var(--r-m) var(--r-m) 0 0}
+.ph .tg{color:var(--tint-ink)}
+.pbody{padding:12px 14px 14px}
+details.about{background:var(--tint-soft); border-radius:var(--r-s)}
+details.about > summary{color:var(--tint-ink); padding:9px 12px}
+.pn2 div{border-radius:var(--r-s); padding:9px 12px}
+.pn2 .pp{background:var(--tint-soft)} .pn2 .nn{background:var(--fill-2); border:0}
+.dot{border-width:1.5px; width:14px; height:14px; margin-top:4px}
+.fs:not(:last-child)::before{width:1px; background:var(--sep-strong); inset-inline-start:6.5px}
+.golink{color:var(--tint-ink); text-decoration:none; font-weight:600}
+.golink:hover{text-decoration:underline}
+/* foundations: history box */
+details.hist{border:0; border-radius:var(--r-m); background:var(--card-2); box-shadow:0 0 0 .5px var(--sep)}
+details.hist > summary{padding:11px 14px; align-items:center}
+details.hist > summary::after{color:var(--tint-ink)}
+.hs-l{color:var(--tint-ink)}
+.hist-b{border-top:.5px solid var(--sep)}
+.hist-b .hr.so, .hist-b .hr.dis{border-radius:var(--r-s); padding:8px 12px}
+/* tests panel */
+.ti{border-radius:var(--r-s); padding:9px 10px}
+.ti:hover{background:var(--fill-2)}
+.tl-h{letter-spacing:.02em; color:var(--label-2)}
+.back{border:0; background:var(--fill); border-radius:999px; padding:6px 14px; color:var(--tint-ink)}
+.back:hover{background:var(--tint-soft)}
+.warn{border:0; border-radius:var(--r-s); padding:10px 12px}
+.vbox{border:0; border-radius:var(--r-m); background:var(--card-2); box-shadow:0 0 0 .5px var(--sep); padding:14px}
+.yt{border-radius:var(--r-s)}
+.tfig{border:0; border-radius:var(--r-m); box-shadow:0 0 0 .5px var(--sep)}
+.rc{border-inline-start:0; border-radius:var(--r-s); padding:10px 12px}
+details.evg{border:0; border-radius:var(--r-m); box-shadow:0 0 0 1px color-mix(in srgb, var(--orange) 45%, transparent)}
+details.evi{border:0; border-radius:var(--r-s); box-shadow:0 0 0 .5px var(--sep)}
+details.evi > div{border-top:.5px solid var(--sep)}
+details.evi > summary::after{color:var(--ev); opacity:1}
+details.bit{border:0; border-radius:var(--r-s); box-shadow:0 0 0 .5px var(--sep)}
+details.bit[open]{box-shadow:0 0 0 1px var(--tint-soft), 0 6px 18px rgba(0,0,0,.07)}
+details.more{border:0; border-radius:var(--r-s); background:var(--fill-2)}
+ol.bsc li{border-radius:var(--r-s)}
+.gx{border-inline-start:0; border-radius:var(--r-s); background:var(--fill-2)}
+.mn > div{border-radius:var(--r-s)}
+p.evd{border-inline-start:0; border-radius:var(--r-s)}
+.gi{border-bottom:.5px solid var(--sep)}
+.ol-st.on .n{background:var(--tint-btn); border-color:var(--tint-btn); color:#fff}
+.ol-path.on{background:var(--tint-soft); color:var(--tint-ink)}
+/* phone: the step number sits on the card's corner instead of taking a column; the spine line goes */
+@media (max-width:900px){
+  .st{display:block; position:relative}
+  .st::before{display:none}
+  .num{position:absolute; z-index:2; top:-11px; inset-inline-start:14px; width:28px; height:28px; font-size:calc(13px * var(--fs))}
+  .card{padding:22px 16px 16px; border-radius:var(--r-l); margin-bottom:26px}
+  .card h3{font-size:calc(18.5px * var(--fs))}
+  .dec-q{padding:11px 12px} .out{padding:10px 12px}
+  .out + .out{border-inline-start:0 !important; border-top:.5px solid var(--sep)}
+  .pat{padding:12px} .pbody{padding:10px 12px 12px}
+  ol.spine{margin-top:22px}
+}
+@media (prefers-reduced-motion: reduce){ details > summary::after, .chip, .path, .ghost{transition:none !important} }
 </style>
 
 <div class="app" id="app" dir="rtl" lang="he">
