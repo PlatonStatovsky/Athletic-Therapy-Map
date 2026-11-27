@@ -877,8 +877,8 @@ details.chk[open] .chk-p{display:none}
 :root[data-theme="dark"]{ --th:var(--purple-ink) }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]):not([data-theme="comfort"]){ --th:var(--purple-ink) } }
 .seg button{color:color-mix(in srgb, var(--label-2) 70%, var(--label))}
-:root[data-theme="dark"] .out b{color:#141416}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]):not([data-theme="comfort"]) .out b{color:#141416} }
+:root[data-theme="dark"] .out b{color:var(--bg)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]):not([data-theme="comfort"]) .out b{color:var(--bg)} }
 :root[data-theme="dark"] details.evg a, :root[data-theme="dark"] details.evg abbr{color:color-mix(in srgb, var(--tint-ink) 70%, #fff)}
 :root[data-theme="dark"] .evg-src{color:var(--label)}
 /* text that sits on the atmosphere or on rail glass over it: one step darker than secondary grey in light */
