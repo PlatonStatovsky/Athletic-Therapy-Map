@@ -289,7 +289,8 @@ const fmtStamp = iso => { const d = new Date(iso); return `${d.getFullYear()}-${
 const fmtWhen = iso => { const d = new Date(iso); return `${fmtDate(iso)} · ${pad(d.getHours())}:${pad(d.getMinutes())}`; }; // everything a person reads
 // when a session ran: its start, and its end once it has one, each with date and time
 const fmtSpan = (start, end) => `התחלה: ${fmtWhen(start)}` + (end && +new Date(end) - +new Date(start) >= 60e3 ? ` · סיום: ${fmtWhen(end)}` : '');
-const fmtClock = ms => { const s = Math.floor(ms / 1000); return `${pad(Math.floor(s / 60))}:${pad(s % 60)}`; };
+// mm:ss, and h:mm:ss from an hour on (a session records up to 2 hours)
+const fmtClock = ms => { const s = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(s / 3600); return h ? `${h}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}` : `${pad(Math.floor(s / 60))}:${pad(s % 60)}`; };
 
 /* ---------------- Claude API ---------------- */
 const PRICE = { // $ per MTok: [input, output, cache-read multiplier]
@@ -1200,6 +1201,14 @@ function hypoChanged() { saveSession(true); refreshLive(); if (view === 'finish'
 
 /* ---------------- speech recognition ---------------- */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+/* recording limit per session (Platon, 27.11): at most 10 recordings (presses on record) and 2 hours in total, whichever comes first;
+   no single recording is capped. At 2 hours a running recording stops and is saved as if stopped by hand; in the last 5 minutes
+   the island's clock turns orange. The record button greys out, with no message (a tooltip / screen-reader label only). */
+const REC_MAX_STARTS = 10, REC_MAX_MS = 2 * 3600e3, REC_WARN_MS = 5 * 60e3;
+const recStartsOf = s => s?.recStarts ?? s?.audioParts ?? 0; // sessions from before the limit count their recorded parts
+const recMsOf = s => (s?.recordedMs || 0) + (recording && recSince && s === session ? Date.now() - recSince : 0);
+const recLimitReached = s => !!s && (recStartsOf(s) >= REC_MAX_STARTS || recMsOf(s) >= REC_MAX_MS);
+const REC_LIMIT_TXT = 'עד 10 הקלטות ועד שעתיים במפגש';
 let rec = null, recording = false, recSince = 0, interim = '', committedW = [], firstAdd = true, recSid = 0, wakeLock = null;
 let uttStart = 0; // when the words now being recognized began — the line's position in the saved recording
 const rawLog = []; // last recognition events, for diagnosing browser-specific duplicates
@@ -1242,17 +1251,18 @@ function envProblem() {
 const useSoniox = () => settings.engine === 'soniox';
 async function startRec() {
   if (IS_LOCAL_FILE) { toast(envProblem(), true, 9000); return; }
+  if (recLimitReached(session)) { renderRecState(); return; } // the button is already grey; nothing else to say
   if (!session.consent) { toast(noRec(session) ? 'זה מפגש ללא הקלטה: המטופל לא הסכים להקלטה' : 'חסר אישור הסכמת המטופל להקלטה', true); return; }
   if (PL.audio) PL.audio.pause(); // a playing line would be picked up by the microphone
   if (useSoniox()) {
     if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { toast('הדפדפן הזה לא תומך בהקלטה', true); return; }
-    recording = true; recSince = Date.now(); grabWakeLock(); renderRecState();
+    recording = true; recSince = Date.now(); session.recStarts = recStartsOf(session) + 1; saveSession(true); grabWakeLock(); renderRecState();
     try { await sonioxStart(); }
     catch (e) { recording = false; recSince = 0; closeMic(); releaseWakeLock(); renderRecState(); toast(micErrText(e), true, 8000); }
     return;
   }
   if (!SR) { toast('הדפדפן הזה לא תומך בזיהוי דיבור. פתח ב-Chrome, או בחר בהגדרות את מנוע Soniox, או הקלד/הדבק טקסט בלשונית "תמלול".', true, 7000); return; }
-  recording = true; recSince = Date.now();
+  recording = true; recSince = Date.now(); session.recStarts = recStartsOf(session) + 1; saveSession(true);
   spawnRec(); grabWakeLock(); renderRecState();
   // the recording is saved alongside the browser's recognizer; some phones give the microphone to only one of them
   if (settings.saveAudio && !noAudioWithSR()) openMic().then(st => { if (recording) startSaver(st); else closeMic(); })
@@ -2972,7 +2982,7 @@ function islandHtml() {
     <span class="isl-badge" id="islBadge" hidden></span>
   </div>`;
   return `<div class="island glass${recording ? ' rec' : ''}" id="island">
-    <button class="isl-rec${recording ? ' on' : ''}" id="recBtn" data-act="rec" aria-label="${recording ? 'עצור הקלטה' : 'התחל הקלטה'}">${recording ? ICON.stop : ICON.mic}</button>
+    <button class="isl-rec${recording ? ' on' : ''}" id="recBtn" data-act="rec"${!recording && recLimitReached(session) ? ` disabled title="${REC_LIMIT_TXT}"` : ''} aria-label="${recording ? 'עצור הקלטה' : recLimitReached(session) ? REC_LIMIT_TXT : 'התחל הקלטה'}">${recording ? ICON.stop : ICON.mic}</button>
     <button class="isl-main" data-act="island" aria-haspopup="dialog" aria-label="נקלט עכשיו">
       <span class="isl-top"><span class="dot" aria-hidden="true"></span><b id="timer">00:00</b><span id="recState" aria-live="polite"></span></span>
       <span class="isl-cap idle" id="islCap"></span>
@@ -3382,9 +3392,12 @@ function analysisHtml() {
 function renderRecState() {
   syncTicker();
   const b = $('#recBtn'); if (!b) return;
+  const full = !recording && recLimitReached(session);
   b.classList.toggle('on', recording);
   b.innerHTML = recording ? ICON.stop : ICON.mic;
-  b.setAttribute('aria-label', recording ? 'עצור הקלטה' : 'התחל הקלטה');
+  b.disabled = full;
+  b.setAttribute('aria-label', recording ? 'עצור הקלטה' : full ? REC_LIMIT_TXT : 'התחל הקלטה');
+  if (full) b.title = REC_LIMIT_TXT; else b.removeAttribute('title');
   $('#island')?.classList.toggle('rec', recording);
   const st = $('#recState');
   if (st) st.textContent = recording ? 'מקליט · ' + stageLabel(session.stage) : (useSoniox() || SR ? stageLabel(session.stage) : 'זיהוי דיבור לא נתמך');
@@ -3401,8 +3414,9 @@ function setFillStatus(text, err = false, raw = false) {
 }
 function tickTimer() {
   if (!session) return;
-  const ms = (session.recordedMs || 0) + (recording && recSince ? Date.now() - recSince : 0);
-  const el = $('#timer'); if (el) el.textContent = fmtClock(ms);
+  const ms = recMsOf(session);
+  if (recording && ms >= REC_MAX_MS) { stopRec(); return; }
+  const el = $('#timer'); if (el) { el.textContent = fmtClock(ms); el.classList.toggle('warn', ms >= REC_MAX_MS - REC_WARN_MS && ms < REC_MAX_MS); }
   const p = $('#pillTime'); if (p) p.textContent = fmtClock(ms);
 }
 let recTicker = null;
@@ -3511,6 +3525,7 @@ function drBody(t) {
         <option value="soniox" ${st.engine === 'soniox' ? 'selected' : ''}>Soniox: רציף, מדויק יותר, מזהה דוברים (≈$0.12 לשעה)</option></select></div>
       ${sw('continuous', st.continuous, 'זיהוי רציף בדפדפן', 'כבה אם מופיעות כפילויות בתמלול')}
       ${sw('saveAudio', st.saveAudio, 'שמירת ההקלטה', 'במכשיר עד סגירת המפגש, וב-Drive יחד עם המפגש')}
+      <div class="gi"><span class="t">הקלטות במפגש<small>בכל מפגש: עד 10 הקלטות ועד שעתיים בסך הכל</small></span></div>
     </div><p class="gf">את קוד הגישה ל-Soniox ובדיקת החיבור תמצא בלשונית API.</p></div>
     <div class="group"><h3>מילוי הטופס</h3><div class="gl">
       ${sw('autoFill', st.autoFill, 'מילוי אוטומטי תוך כדי הקלטה')}
