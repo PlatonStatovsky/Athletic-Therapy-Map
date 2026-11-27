@@ -472,6 +472,104 @@ p.evd{margin:0; color:var(--ev); font-weight:700; font-size:calc(15px * var(--fs
 :root:not([data-theme="dark"]) .pat-h .pn{background:color-mix(in srgb, var(--grp) 62%, #000)}
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]):not([data-theme="comfort"]) .pat-h .pn{background:var(--grp)} }
 abbr.ab[tabindex]:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:3px}
+
+/* ---------- redesign phase 1 (27.11): the frame in Thalamus style ----------
+   Navigation floats on glass (header capsules, region rail, popovers, the phone bar and its sheets); content stays on solid cards.
+   Tablet: the tests panel slides in from the side. Phone: a glass bar at the bottom opens regions, tests and display as sheets. */
+:root{ --barh:68px }
+.glass{background:var(--glass); -webkit-backdrop-filter:blur(24px) saturate(180%); backdrop-filter:blur(24px) saturate(180%); border:.5px solid var(--glass-brd); box-shadow:var(--glass-sh),var(--spec)}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){ .glass{background:var(--glass-solid)} }
+header.bar{background:linear-gradient(to bottom, var(--bg) 58%, transparent); color:var(--label); gap:14px; padding-block:10px 14px}
+.brand h1{font-size:calc(21px * var(--fs)); letter-spacing:-.02em}
+.field{height:44px; border-radius:999px; padding:0 16px; background:var(--glass); -webkit-backdrop-filter:blur(24px) saturate(180%); backdrop-filter:blur(24px) saturate(180%);
+  border:.5px solid var(--glass-brd); box-shadow:var(--glass-sh),var(--spec); transition:box-shadow var(--dur-2), border-color var(--dur-2)}
+.field:focus-within{border-color:var(--tint); box-shadow:0 0 0 4px var(--tint-soft), var(--glass-sh)}
+.field input{color:var(--label)} .field input::placeholder{color:var(--label-3)} .field svg{stroke:var(--label-2)}
+.field kbd{border-color:var(--sep); color:var(--label-3); background:transparent}
+.results{border:.5px solid var(--glass-brd); border-radius:var(--r-l); box-shadow:var(--glass-sh); overflow:hidden}
+.tools{gap:6px; padding:4px; border-radius:999px; background:var(--glass); -webkit-backdrop-filter:blur(24px) saturate(180%); backdrop-filter:blur(24px) saturate(180%);
+  border:.5px solid var(--glass-brd); box-shadow:var(--glass-sh),var(--spec)}
+.tlabel{display:none}
+.seg{background:var(--fill-2); border:0; padding:3px}
+.seg.theme{border:0}
+.seg button{color:var(--label-2); min-height:34px; transition:background var(--dur-2), color var(--dur-2), box-shadow var(--dur-2)}
+.seg button[aria-pressed="true"]{background:var(--card); color:var(--label); box-shadow:0 1px 3px rgba(0,0,0,.12), 0 0 0 .5px rgba(0,0,0,.04)}
+.seg button:not([aria-pressed="true"]):hover{color:var(--label); background:var(--fill-2)}
+.seg.theme button{padding:6px 14px; font-size:calc(13.5px * var(--fs))}
+.applink{background:var(--tint-btn); color:#fff; min-height:36px; padding:6px 16px; transition:filter var(--dur-1)}
+.applink:focus-visible{outline:2px solid var(--focus)}
+.tbtn{border:0; background:transparent; color:var(--label); min-height:36px; transition:background var(--dur-2)}
+.tbtn:hover,.tbtn[aria-expanded="true"]{background:var(--fill)}
+/* region rail: a floating glass sidebar; the selected region is tinted, not filled */
+.side{margin:0 0 12px; margin-inline-start:12px; height:calc(100vh - var(--barh) - 12px - env(safe-area-inset-top, 0px)); border:0;
+  border-radius:var(--r-xl); background:var(--glass); -webkit-backdrop-filter:blur(24px) saturate(180%); backdrop-filter:blur(24px) saturate(180%);
+  border:.5px solid var(--glass-brd); box-shadow:var(--glass-sh),var(--spec); padding:14px 10px 18px}
+.rail-h{color:var(--label-2); margin:0 10px 6px}
+.reg{border-radius:12px; padding:10px 12px; transition:background var(--dur-2), color var(--dur-2)}
+.reg:hover{background:var(--fill-2)}
+.reg[aria-selected="true"]{background:var(--tint-soft); color:var(--tint-ink); font-weight:700}
+.reg[aria-selected="true"] .cnt{color:var(--tint-ink); opacity:.8}
+.legend{border-top:.5px solid var(--sep); margin-inline:6px}
+.sheet-h{display:none}
+/* tests panel: a solid card at the side, its title bar on glass */
+.panel{margin:0 0 12px; margin-inline-end:12px; height:calc(100vh - var(--barh) - 12px - env(safe-area-inset-top, 0px)); border:0;
+  border-radius:var(--r-xl); background:var(--card); box-shadow:var(--glass-sh)}
+.ptabs{background:color-mix(in srgb, var(--card) 82%, transparent); -webkit-backdrop-filter:blur(20px); backdrop-filter:blur(20px); border-bottom:.5px solid var(--sep); padding:12px 16px 10px}
+.pclose{border:0; background:var(--fill); color:var(--label-2); border-radius:50%; width:32px; height:32px; font-size:20px; line-height:1}
+.pclose:hover{background:var(--fill-2); color:var(--label)}
+.scrim{animation:scrimIn var(--dur-3) var(--ease)}
+@keyframes scrimIn{from{opacity:0}}
+@keyframes sheetIn{from{opacity:0; transform:translateY(14px) scale(.98)}}
+.mbar{display:none}
+@media (max-width:1180px){
+  .cols{grid-template-columns:clamp(232px, 21vw, 272px) minmax(0, 1fr)}
+  .panel{display:block; position:fixed; z-index:31; inset-block:10px; inset-inline-end:10px; height:auto; width:min(440px, calc(100vw - 20px)); margin:0;
+    box-shadow:0 24px 60px rgba(0,0,0,.28); transform:translateX(calc(-100% - 28px)); visibility:hidden;
+    transition:transform var(--dur-3) var(--ease), visibility 0s linear var(--dur-3)}
+  .panel:not(.shown){display:block}
+  .panel.shown{transform:none; visibility:visible; transition:transform var(--dur-3) var(--ease)}
+  .disp{background:var(--glass-thick); -webkit-backdrop-filter:blur(24px) saturate(180%); backdrop-filter:blur(24px) saturate(180%); border:.5px solid var(--glass-brd);
+    border-radius:var(--r-l); box-shadow:var(--glass-sh),var(--spec); padding:14px}
+  .disp.open{animation:sheetIn var(--dur-3) var(--ease)}
+  .disp .tlabel{display:block; color:var(--label-2)}
+}
+@media (max-width:900px){
+  .cols{grid-template-columns:minmax(0, 1fr)}
+  header.bar{position:sticky; flex-wrap:nowrap; padding-block:8px 12px}
+  .brand h1{font-size:calc(19px * var(--fs))}
+  .search{order:0; flex:1 1 auto; max-width:none}
+  .field kbd{display:none}
+  .tools{flex:0 0 0; padding:0; background:none; border:0; box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none}
+  .tools > .applink, .tools > .tbtn{display:none}
+  .disp{position:fixed; z-index:33; top:auto; inset-inline:10px; bottom:calc(84px + env(safe-area-inset-bottom, 0px))}
+  /* regions and steps: a sheet from the bottom bar */
+  .side{position:fixed; z-index:32; inset-inline:10px; top:auto; bottom:calc(84px + env(safe-area-inset-bottom, 0px)); height:auto; max-height:min(72vh, 640px); margin:0;
+    padding:6px 12px 16px; gap:14px; background:var(--glass-thick); overflow-y:auto; transform:translateY(calc(100% + 120px)); visibility:hidden;
+    transition:transform var(--dur-3) var(--ease), visibility 0s linear var(--dur-3)}
+  .side.shown{transform:none; visibility:visible; transition:transform var(--dur-3) var(--ease)}
+  .sheet-h{display:flex; align-items:center; justify-content:space-between; position:sticky; top:-6px; z-index:1; padding:10px 4px 6px; background:inherit}
+  .sheet-h b{font-size:calc(17px * var(--fs))}
+  .sheet-x{border:0; background:var(--fill); color:var(--label-2); border-radius:50%; width:32px; height:32px; font-size:20px; line-height:1; cursor:pointer}
+  .rail-h, .outline{display:block}
+  .outline{display:grid}
+  .legend{display:grid}
+  .regions{display:grid; grid-template-columns:1fr 1fr; overflow:visible; gap:4px}
+  .reg{border:0; background:var(--fill-2); border-radius:12px; padding:10px 12px}
+  .reg[aria-selected="true"]{background:var(--tint-soft)}
+  main{padding-bottom:calc(110px + env(safe-area-inset-bottom, 0px))}
+  /* tests: a sheet from the bottom */
+  .panel{inset:auto 0 0 0; top:max(56px, env(safe-area-inset-top, 0px)); width:auto; border-radius:var(--r-xl) var(--r-xl) 0 0; transform:translateY(105%)}
+  /* the bottom bar, like Thalamus's tab bar */
+  .mbar{display:flex; position:fixed; z-index:34; inset-inline:12px; bottom:calc(10px + env(safe-area-inset-bottom, 0px)); justify-content:space-around; gap:2px; padding:5px; border-radius:30px}
+  .mbar > *{flex:1 1 0; display:flex; flex-direction:column; align-items:center; gap:2px; min-height:52px; padding:6px 2px; border:0; border-radius:24px; background:transparent;
+    color:var(--label-2); font:inherit; font-size:11px; font-weight:600; text-decoration:none; cursor:pointer; transition:background var(--dur-2), color var(--dur-2)}
+  .mbar svg{width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round}
+  .mbar > [aria-expanded="true"]{background:var(--tint-soft); color:var(--tint-ink)}
+  .mbar .mapp{color:var(--tint-ink)}
+}
+@media (prefers-reduced-motion: reduce){
+  .panel, .side, .disp.open, .scrim, .seg button, .reg, .mbar > *{transition:none !important; animation:none !important}
+}
 </style>
 
 <div class="app" id="app" dir="rtl" lang="he">
@@ -510,7 +608,8 @@ abbr.ab[tabindex]:focus-visible{outline:2px solid var(--accent); outline-offset:
   </header>
 
   <div class="cols">
-    <nav class="side" aria-label="אזורים ושלבים">
+    <nav class="side" id="side" aria-label="אזורים ושלבים">
+      <div class="sheet-h"><b>אזורים ושלבים</b><button type="button" class="sheet-x" data-sheet-close aria-label="סגירה">×</button></div>
       <div>
         <div class="rail-h">אזורים</div>
         <div class="regions" role="tablist" id="tabs" aria-label="אזורים"></div>
@@ -539,6 +638,12 @@ abbr.ab[tabindex]:focus-visible{outline:2px solid var(--accent); outline-offset:
       <div id="pbody"></div>
     </aside>
   </div>
+  <nav class="mbar glass" id="mbar" aria-label="ניווט">
+    <button type="button" data-mbar="regions" aria-controls="side" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4z"/><path d="M9 4v14M15 6v14"/></svg>אזורים</button>
+    <button type="button" data-mbar="tests" aria-controls="panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17"/></svg>מבדקים</button>
+    <button type="button" data-mbar="disp" aria-controls="disp" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17" /><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg>תצוגה</button>
+    <a class="mapp" href="../app/" title="Thalamus: עוזר קליני למפגש"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h2M8 8v8M12 5v14M16 8v8M20 12h-2"/></svg>Thalamus</a>
+  </nav>
   <div class="scrim" id="scrim" hidden></div>
   <div class="tip" id="tip" role="tooltip" hidden></div>
 </div>
@@ -1138,8 +1243,24 @@ syncTheme();
 document.addEventListener("toggle", e => { const d = e.target; if(d.matches && d.matches("details.more[data-more]")) store.set("uqmap-more-" + d.dataset.more, d.open ? "1" : "0"); }, true);
 
 // ---------- events ----------
+// phone (redesign phase 1): the bottom bar opens the regions sheet, the tests sheet and the display sheet
+const sideSheet = () => matchMedia("(max-width:900px)").matches;
+function toggleSide(on){
+  $("#side").classList.toggle("shown", on);
+  $$('[data-mbar="regions"]').forEach(b => b.setAttribute("aria-expanded", String(on)));
+  $("#scrim").hidden = !on && !$("#panel").classList.contains("shown");
+}
+function closeDisp(){ $("#disp").classList.remove("open"); $$('#dispBtn, [data-mbar="disp"]').forEach(b => b.setAttribute("aria-expanded", "false")); }
 document.addEventListener("click", e => {
   const t = e.target;
+  const mb = t.closest("[data-mbar]");
+  if(mb){ const k = mb.dataset.mbar;
+    if(k === "regions"){ closeDisp(); hidePanel(); toggleSide(!$("#side").classList.contains("shown")); return; }
+    if(k === "disp"){ toggleSide(false); hidePanel(); const o = !$("#disp").classList.contains("open"); $("#disp").classList.toggle("open", o); mb.setAttribute("aria-expanded", String(o)); return; }
+    if(k === "tests"){ toggleSide(false); closeDisp(); ptest = null; $$(".chip.on").forEach(c => c.classList.remove("on")); renderPanel(); $("#panel").scrollTop = 0; showPanel(); return; }
+  }
+  if(t.closest("[data-sheet-close]") || (t.id === "scrim" && $("#side").classList.contains("shown"))){ toggleSide(false); return; }
+  if($("#side").classList.contains("shown") && t.closest("#side [data-tab], #side [data-scroll], #side [data-go]")) setTimeout(() => toggleSide(false), 120);
   if(!t.closest(".search")) closeResults();
   const res = t.closest("[data-hit]"); if(res){ pick(hits[+res.dataset.hit]); return; }
   const tab = t.closest("[data-tab]"); if(tab){ show(tab.dataset.tab, true); return; }
@@ -1150,7 +1271,7 @@ document.addEventListener("click", e => {
   if(t.closest("[data-back]")){ if(history.state && history.state.card){ history.back(); return; } ptest = null; $$(".chip.on").forEach(c => c.classList.remove("on")); renderPanel(); return; }
   if(t.closest("#testsBtn")){ ptest = null; $$(".chip.on").forEach(c => c.classList.remove("on")); renderPanel(); $("#panel").scrollTop = 0; showPanel(); return; }
   const db = t.closest("#dispBtn"); if(db){ const o = !$("#disp").classList.contains("open"); $("#disp").classList.toggle("open", o); db.setAttribute("aria-expanded", String(o)); return; }
-  if(!t.closest("#disp") && $("#disp").classList.contains("open")){ $("#disp").classList.remove("open"); $("#dispBtn").setAttribute("aria-expanded", "false"); }
+  if(!t.closest("#disp") && $("#disp").classList.contains("open")) closeDisp();
   const pth = t.closest("[data-path]"); if(pth){ goPath(pth.dataset.path); if(narrowPanel() && t.closest("#panel")) hidePanel(); return; }
   const ck = t.closest("[data-chk]"); if(ck){ goChk(ck.dataset.chk); if(narrowPanel()) hidePanel(); return; }
   const sc = t.closest("[data-scroll]"); if(sc){ goStation(sc.dataset.scroll); return; }
@@ -1165,7 +1286,8 @@ document.addEventListener("click", e => {
 document.addEventListener("keydown", e => {
   const typing = e.target.matches && e.target.matches("input, textarea");
   if(!typing && (e.key === "/" || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k"))){ e.preventDefault(); $("#q").focus(); $("#q").select(); return; }
-  if(e.key === "Escape" && $("#disp").classList.contains("open")){ $("#disp").classList.remove("open"); $("#dispBtn").setAttribute("aria-expanded", "false"); $("#dispBtn").focus(); return; }
+  if(e.key === "Escape" && $("#disp").classList.contains("open")){ closeDisp(); if(!sideSheet()) $("#dispBtn").focus(); return; }
+  if(e.key === "Escape" && $("#side").classList.contains("shown")){ toggleSide(false); return; }
   if(e.key === "Escape" && $("#panel").classList.contains("shown")){ if(ptest) closeCard(); else hidePanel(); }
   if((e.key === "ArrowDown" || e.key === "ArrowUp") && e.target.matches(".reg")){
     e.preventDefault();
