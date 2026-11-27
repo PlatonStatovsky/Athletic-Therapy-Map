@@ -920,6 +920,45 @@ html{scrollbar-width:thin; scrollbar-color:color-mix(in srgb, var(--label) 28%, 
 html::-webkit-scrollbar{width:10px} html::-webkit-scrollbar-track{background:transparent}
 html::-webkit-scrollbar-thumb{background:color-mix(in srgb, var(--label) 28%, transparent); border-radius:999px; border:3px solid transparent; background-clip:padding-box}
 @media (prefers-reduced-motion: reduce){ .sb-thumb{transition:none} }
+/* living atmosphere and a grey dark theme (28.11). The atmosphere is now fixed to the viewport, so colour stays at any depth;
+   two pools drift slowly (46s / 58s, alternate) and stop under reduced motion. Hues are clamped to the cool band 170–312.
+   Dark on the map only (not Thalamus): deep grey page, cards and glass a step lighter, richer pools. */
+:root{ --h-a:min(calc(var(--rh) + 38), 312); --h-b:max(calc(var(--rh) - 34), 170); --h-c:min(calc(var(--rh) + 18), 312); --h-d:max(calc(var(--rh) - 16), 170);
+  --atm-l4:.88; --atm-c4:.08; --atm-a4:.38 }
+:root[data-theme="comfort"]{ --atm-l4:.86; --atm-c4:.06; --atm-a4:.34 }
+.cover{position:fixed; inset:0; height:auto; -webkit-mask:none; mask:none;
+  background:
+    radial-gradient(48% 60% at 88% 4%, oklch(var(--atm-l1) var(--atm-c1) var(--rh) / var(--atm-a1)), transparent 70%),
+    radial-gradient(42% 52% at 36% -6%, oklch(var(--atm-l2) var(--atm-c2) var(--h-a) / var(--atm-a2)), transparent 70%),
+    radial-gradient(40% 55% at 6% 96%, oklch(var(--atm-l3) var(--atm-c3) var(--h-b) / var(--atm-a3)), transparent 72%),
+    radial-gradient(36% 46% at 96% 92%, oklch(var(--atm-l4) var(--atm-c4) var(--h-c) / var(--atm-a4)), transparent 72%)}
+.cover::before, .cover::after{content:""; position:absolute; width:70vmax; height:70vmax; border-radius:50%; will-change:transform; pointer-events:none}
+.cover::before{inset-inline-end:-18vmax; top:18vh; background:radial-gradient(closest-side, oklch(var(--atm-l2) var(--atm-c2) var(--h-c) / calc(var(--atm-a2) * .8)), transparent);
+  animation:drift-a 46s var(--ease-std) infinite alternate}
+.cover::after{inset-inline-start:-20vmax; top:46vh; background:radial-gradient(closest-side, oklch(var(--atm-l1) var(--atm-c1) var(--h-d) / calc(var(--atm-a1) * .6)), transparent);
+  animation:drift-b 58s var(--ease-std) infinite alternate}
+@keyframes drift-a{ from{transform:translate3d(0, 0, 0) scale(1)} 50%{transform:translate3d(-14vw, 18vh, 0) scale(1.12)} to{transform:translate3d(-30vw, -6vh, 0) scale(.94)} }
+@keyframes drift-b{ from{transform:translate3d(0, 0, 0) scale(1)} 50%{transform:translate3d(18vw, -20vh, 0) scale(1.1)} to{transform:translate3d(34vw, 8vh, 0) scale(.96)} }
+@media (max-width:900px){ .cover{height:auto} .cover::before, .cover::after{width:110vmax; height:110vmax} }
+@media (prefers-reduced-motion: reduce){ .cover::before, .cover::after{animation:none} }
+:root[data-theme="dark"]{ --bg:#141417; --card:#212125; --card-2:#2b2b30; --glass:rgba(44,44,50,.6); --glass-thick:rgba(40,40,46,.88); --glass-solid:#2a2a2f;
+  --atm-l1:.52; --atm-c1:.17; --atm-a1:.72; --atm-l2:.46; --atm-c2:.15; --atm-a2:.6; --atm-l3:.42; --atm-c3:.13; --atm-a3:.55; --atm-l4:.40; --atm-c4:.12; --atm-a4:.45 }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]):not([data-theme="comfort"]){ --bg:#141417; --card:#212125; --card-2:#2b2b30; --glass:rgba(44,44,50,.6); --glass-thick:rgba(40,40,46,.88); --glass-solid:#2a2a2f;
+  --atm-l1:.52; --atm-c1:.17; --atm-a1:.72; --atm-l2:.46; --atm-c2:.15; --atm-a2:.6; --atm-l3:.42; --atm-c3:.13; --atm-a3:.55; --atm-l4:.40; --atm-c4:.12; --atm-a4:.45 } }
+/* the lighter grey dark cards need slightly brighter inks */
+:root[data-theme="dark"]{ --stop:color-mix(in srgb, var(--red-ink) 86%, #fff); --pt:color-mix(in srgb, var(--teal-ink) 82%, #fff) }
+:root[data-theme="dark"] :is(.main-in, #pbody) a:not(.vout){color:color-mix(in srgb, var(--tint-ink) 80%, #fff)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]):not([data-theme="comfort"]){ --stop:color-mix(in srgb, var(--red-ink) 86%, #fff); --pt:color-mix(in srgb, var(--teal-ink) 82%, #fff) }
+  :root:not([data-theme="light"]):not([data-theme="comfort"]) :is(.main-in, #pbody) a:not(.vout){color:color-mix(in srgb, var(--tint-ink) 80%, #fff)} }
+/* desktop proportions (28.11): the region head starts on the same line as the side panels; title and lede at the start,
+   the stat pills fill the opposite corner on the title's line, so the top of the middle column is not an empty corner */
+@media (min-width:901px){
+  main{padding-top:0}
+  .region-head{margin-top:0; grid-template-columns:minmax(0, 1fr) auto; column-gap:28px; row-gap:8px; align-items:center}
+  .region-head > h2, .region-head > .lede{grid-column:1}
+  .region-head > .meta{grid-column:2; grid-row:1; justify-content:flex-end; align-self:center; max-width:46cqi}
+  .region-head > .lede{max-width:none}
+}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   .field, .tools, .side, .mbar, .more-hint, .results, .disp, .sheet-h{background:var(--glass-solid) !important}
 }

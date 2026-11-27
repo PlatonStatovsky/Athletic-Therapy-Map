@@ -24,18 +24,43 @@ Raising transparency alone (the "glass lab" test of 27.11) changed almost nothin
 
 Element: `<div class="cover" aria-hidden="true">`, the first child of `.app`. `.app` is `position:relative; isolation:isolate`, and the cover is `position:absolute; z-index:-1`. Positioning it this way paints it under the content without lifting `.cols` into its own stacking context. Lifting `.cols` broke the phone sheets: the scrim landed on top of them.
 
-- Height: `--barh + 520px` (phone `--barh + 380px`). It scrolls away with the page and fades out through a mask `linear-gradient(#000 40%, transparent)`.
-- Three radial gradients in OKLCH:
+- **Since 28.11 it is fixed to the viewport** (`position:fixed; inset:0`), so colour stays at any scroll depth. (On 27.11 it was a band at the top that scrolled away. Platon wanted the colour to live through the page.)
+- Four static radial gradients in OKLCH:
   - the region hue, top end;
-  - the hue +38°, top centre;
-  - the hue −34°, start side.
+  - `--h-a` (hue +38°), top centre;
+  - `--h-b` (hue −34°), bottom start;
+  - `--h-c` (hue +18°), bottom end.
+- Two drifting pools on `::before` / `::after` (`--h-c` and `--h-d`, hue −16°). They are 70vmax circles (110vmax on phones) that translate and scale slowly, `drift-a` 46s and `drift-b` 58s, alternate, on `--ease-std`. Only `transform` animates, so the browser moves a finished layer and does not repaint the blur. Under reduced motion they stand still.
+- All derived hues are clamped to 170–312 with `min()` / `max()`, so no region drifts into pink.
 - Per theme, set by variables on `:root`:
 
 | Theme | Pool 1 (L / C / α) | Pool 2 | Pool 3 |
 |---|---|---|---|
 | light | .80 / .13 / .72 | .86 / .10 / .55 | .90 / .07 / .50 |
 | comfort | .80 / .09 / .62 | .85 / .07 / .50 | .88 / .05 / .45 |
-| dark | .46 / .15 / .62 | .40 / .13 / .50 | .36 / .10 / .45 |
+| dark | .52 / .17 / .72 | .46 / .15 / .60 | .42 / .13 / .55 |
+
+The fourth pool (bottom end) is `.88 / .08 / .38` in light, `.86 / .06 / .34` in comfort and `.40 / .12 / .45` in dark.
+
+### Dark theme on the map (map only, not Thalamus)
+
+Platon found pure black too flat. The map overrides the dark tokens; `shared/tokens.css` and Thalamus are unchanged.
+
+| Token | Thalamus | Map |
+|---|---|---|
+| `--bg` | #000000 | #141417 |
+| `--card` | #1c1c1e | #212125 |
+| `--card-2` | #2c2c2e | #2b2b30 |
+| `--glass` | rgba(36,36,38,.62) | rgba(44,44,50,.6) |
+| `--glass-thick` | rgba(32,32,34,.9) | rgba(40,40,46,.88) |
+| `--glass-solid` | #232325 | #2a2a2f |
+
+On the lighter cards three inks dropped just under AA, so dark brightens them too:
+- `--stop`: red ink + 14% white;
+- `--pt`: teal ink + 18% white;
+- content links: tint ink + 20% white.
+
+Thalamus keeps black on purpose (DESIGN.md: glanced at mid-session). If Thalamus ever wants this, it is a token change in `shared/tokens.css`, followed by both contrast audits.
 
 ### Region hues
 
@@ -91,6 +116,18 @@ An inline SVG filter `#lens`:
 
 It is applied as `backdrop-filter: url(#lens) blur(14px) saturate(190%) brightness(1.04)` on `.field`, `.tools` and `.mbar`. Only Chromium renders SVG filters in `backdrop-filter`, so the class `lens` is added to `<html>` only when `navigator.userAgentData.brands` names Chromium (Chrome, Edge, Opera, Samsung Internet). Everyone else keeps the plain blur declared before it. The rail does not use the lens: on a tall panel the stretched map distorts too much.
 
+## Custom scrollbars (28.11)
+
+`#side` and `#panel` (the rail, the tests panel and both phone sheets) hide the system scrollbar (`scrollbar-width:none`). Their system bar ran past the rounded corners.
+
+`customScroll(el)` adds a `.sb-thumb` instead:
+- a 5px pill at `inset-inline-end:4px`, inset 18px from the ends when the corner radius is above 20px, otherwise 10px;
+- positioned by `translateY(scrollTop + inset + ratio × track)`;
+- 45% opacity at rest when the content can scroll, full opacity on hover or while scrolling, 8px wide on hover or while dragged;
+- draggable with pointer capture, with a 6–7px invisible hit area.
+
+Wheel, touch, keyboard and assistive tech still use the native scroll. The page scrollbar stays native but thin and rounded. Port to Thalamus: the same function fits its side pane and sheets.
+
 ## Fallbacks and accessibility
 
 - **No backdrop-filter:** an `@supports not (backdrop-filter)` rule turns every navigation glass element (and `.glass`) into `--glass-solid`.
@@ -118,5 +155,5 @@ What needs a decision first:
 
 - **CSS:** `src/template.html`, from the comment "Liquid Glass + region atmosphere" to the reduced-transparency block.
 - **Markup:** `.cover` and the `#lens` SVG, just before `<header class="bar">`.
-- **JS:** `REGION_HUE`, `setHue()` (called in `show()`), `onScrollGlass`, the Chromium `lens` check.
+- **JS:** `REGION_HUE`, `setHue()` (called in `show()`), `onScrollGlass`, the Chromium `lens` check, `customScroll()`.
 - **Checks:** `tests/e2e/frame_tour.py`, `content_tour.py`, `phone_width.py`, `desk_grid.py`, `contrast_audit.py` (computed colours), `atmosphere_contrast.py` (screenshot pixels).
