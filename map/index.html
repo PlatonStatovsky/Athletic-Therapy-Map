@@ -775,6 +775,21 @@ section[role="tabpanel"]:not([hidden]){animation:fadeUp var(--dur-3) var(--ease)
 .results:not([hidden]){animation:sheetIn var(--dur-2) var(--ease)}
 .card, .path, details.chk, .chip, .ti{transition:box-shadow var(--dur-2), background var(--dur-2), transform var(--dur-2) var(--ease)}
 @media (hover:hover){ .ti:hover{transform:translateX(-2px)} }
+/* 27.11 after phase 3: desktop brand fills the regions column; phone search takes the whole bar and its results the whole width */
+@media (min-width:1181px){
+  :root{ --barh:92px }
+  .brand{padding-inline:26px 14px; margin-inline-start:12px; padding-inline-start:14px}
+  .brand h1{font-size:calc((var(--sidew) - 40px) / 5.9); font-weight:800; letter-spacing:-.03em; line-height:1}
+}
+@media (max-width:900px){
+  .brand{transition:opacity var(--dur-2)}
+  header.bar:focus-within .brand{display:none}
+  .tools{display:contents}
+  .app:has(#q:focus) .mbar{display:none}
+  .results{position:fixed; top:calc(var(--hdr-b, 64px) + 6px); inset-inline:10px; min-width:0; max-height:calc(var(--vvh, 100dvh) - var(--hdr-b, 64px) - 18px);
+    background:var(--glass-solid); border-radius:var(--r-l); box-shadow:0 18px 50px rgba(0,0,0,.22), 0 0 0 .5px var(--sep); z-index:40}
+  .res .rt{overflow-wrap:anywhere}
+}
 @media (prefers-reduced-motion: reduce){
   details::details-content{transition:none}
   section[role="tabpanel"]:not([hidden]), .pbox, .path.open > .pbody, .results:not([hidden]), .more-hint{animation:none}
@@ -5917,7 +5932,7 @@ function runSearch(){
     html += "</div>";
   });
   box.innerHTML = html || '<div class="rempty">לא נמצא דבר עבור ״' + esc(qv) + "״. אפשר לנסות בעברית או באנגלית, שם של מבדק, תסמין או ראשי תיבות.</div>";
-  box.hidden = false; $("#q").setAttribute("aria-expanded", "true");
+  box.hidden = false; $("#q").setAttribute("aria-expanded", "true"); fitResults();
   sel = hits.length ? best : -1; markSel();
 }
 function markSel(){
@@ -5978,6 +5993,14 @@ syncTheme();
 document.addEventListener("toggle", e => { const d = e.target; if(d.matches && d.matches("details.more[data-more]")) store.set("uqmap-more-" + d.dataset.more, d.open ? "1" : "0"); }, true);
 
 // ---------- events ----------
+// phone search: the results panel sits under the bar and stops above the on-screen keyboard
+function fitResults(){
+  const vv = window.visualViewport, root = document.documentElement.style;
+  root.setProperty("--vvh", (vv ? vv.height : innerHeight) + "px");
+  root.setProperty("--hdr-b", Math.round($("#bar").getBoundingClientRect().bottom) + "px");
+}
+if(window.visualViewport) visualViewport.addEventListener("resize", fitResults);
+$("#q").addEventListener("focus", () => setTimeout(fitResults, 60));
 // redesign phase 3: scroll cues for the side columns
 function scrollCue(el){
   if(!el) return;
