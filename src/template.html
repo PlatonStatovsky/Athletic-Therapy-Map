@@ -782,6 +782,65 @@ section[role="tabpanel"]:not([hidden]){animation:fadeUp var(--dur-3) var(--ease)
     background:var(--glass-solid); border-radius:var(--r-l); box-shadow:0 18px 50px rgba(0,0,0,.22), 0 0 0 .5px var(--sep); z-index:40}
   .res .rt{overflow-wrap:anywhere}
 }
+/* ---------- Liquid Glass + region atmosphere (27.11, impeccable overdrive) ----------
+   Spec and the port notes for Thalamus: shared/GLASS.md. In short: every region paints a soft cool-hue "atmosphere" at the top of
+   the page (--rh, one hue per region from a cool band 175–305 that no clinical meaning uses); the navigation layer floats over it
+   as glass; the header turns to glass only when content passes under it. Content cards stay opaque. */
+@property --rh { syntax:'<number>'; inherits:true; initial-value:240 }
+:root{ --rh:240; transition:--rh .9s var(--ease);
+  --atm-l1:.80; --atm-c1:.13; --atm-a1:.72; --atm-l2:.86; --atm-c2:.10; --atm-a2:.55; --atm-l3:.90; --atm-c3:.07; --atm-a3:.5;
+  --nav-glass:color-mix(in srgb, var(--glass-solid) 52%, transparent); --nav-glass-thick:color-mix(in srgb, var(--glass-solid) 80%, transparent);
+  --rim:inset 0 1px 0 rgba(255,255,255,.85), inset 0 0 0 .5px rgba(255,255,255,.55) }
+:root[data-theme="comfort"]{ --atm-l1:.80; --atm-c1:.09; --atm-a1:.62; --atm-l2:.85; --atm-c2:.07; --atm-a2:.5; --atm-l3:.88; --atm-c3:.05; --atm-a3:.45;
+  --rim:inset 0 1px 0 rgba(255,252,244,.85), inset 0 0 0 .5px rgba(255,250,240,.5) }
+:root[data-theme="dark"]{ --atm-l1:.46; --atm-c1:.15; --atm-a1:.62; --atm-l2:.40; --atm-c2:.13; --atm-a2:.5; --atm-l3:.36; --atm-c3:.10; --atm-a3:.45;
+  --rim:inset 0 1px 0 rgba(255,255,255,.24), inset 0 0 0 .5px rgba(255,255,255,.16) }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]):not([data-theme="comfort"]){
+  --atm-l1:.46; --atm-c1:.15; --atm-a1:.62; --atm-l2:.40; --atm-c2:.13; --atm-a2:.5; --atm-l3:.36; --atm-c3:.10; --atm-a3:.45;
+  --rim:inset 0 1px 0 rgba(255,255,255,.24), inset 0 0 0 .5px rgba(255,255,255,.16) } }
+.app{position:relative; isolation:isolate}
+.cover{position:absolute; z-index:-1; inset:0 0 auto 0; height:calc(var(--barh) + 520px); pointer-events:none; overflow:hidden;
+  background:
+    radial-gradient(52% 78% at 86% 6%, oklch(var(--atm-l1) var(--atm-c1) var(--rh) / var(--atm-a1)), transparent 72%),
+    radial-gradient(46% 70% at 34% -4%, oklch(var(--atm-l2) var(--atm-c2) calc(var(--rh) + 38) / var(--atm-a2)), transparent 72%),
+    radial-gradient(40% 62% at 8% 30%, oklch(var(--atm-l3) var(--atm-c3) calc(var(--rh) - 34) / var(--atm-a3)), transparent 74%);
+  -webkit-mask:linear-gradient(to bottom, #000 40%, transparent); mask:linear-gradient(to bottom, #000 40%, transparent)}
+/* header: transparent at rest; once content passes under it, a frosted scroll-edge band fades in behind the capsules */
+header.bar{background:transparent; isolation:isolate}
+header.bar::before{content:""; position:absolute; inset:0 0 -26px 0; z-index:-1; pointer-events:none; opacity:0; transition:opacity var(--dur-3) var(--ease);
+  -webkit-backdrop-filter:blur(18px) saturate(180%); backdrop-filter:blur(18px) saturate(180%);
+  background:linear-gradient(to bottom, color-mix(in srgb, var(--bg) 72%, transparent), color-mix(in srgb, var(--bg) 25%, transparent));
+  -webkit-mask:linear-gradient(to bottom, #000 64%, transparent); mask:linear-gradient(to bottom, #000 64%, transparent)}
+.app.scrolled header.bar::before{opacity:1}
+/* the navigation material: lighter tint so the atmosphere shows through, brighter rim */
+.field, .tools, .side, .mbar, .more-hint{background:var(--nav-glass); box-shadow:var(--glass-sh), var(--rim)}
+.field{background:color-mix(in srgb, var(--glass-solid) 62%, transparent)}
+.side{-webkit-backdrop-filter:blur(26px) saturate(190%); backdrop-filter:blur(26px) saturate(190%)}
+.seg{background:color-mix(in srgb, var(--fill) 70%, transparent)}
+/* lens: in Chromium the capsules bend what is under their rim (SVG displacement); elsewhere plain blur stays */
+.lens .field, .lens .tools, .lens .mbar{-webkit-backdrop-filter:blur(14px) saturate(190%); backdrop-filter:url(#lens) blur(14px) saturate(190%) brightness(1.04)}
+/* search results and phone sheets: thick glass, not paper */
+.results{background:var(--nav-glass-thick); -webkit-backdrop-filter:blur(30px) saturate(180%); backdrop-filter:blur(30px) saturate(180%); box-shadow:0 18px 50px rgba(0,0,0,.18), var(--rim)}
+/* region title holds its own against the wordmark */
+.region-head h2{font-size:calc(clamp(40px, 3.3vw, 56px) * var(--fs)); font-weight:800; letter-spacing:-.028em; line-height:1.05}
+.region-head{margin-top:14px}
+@media (max-width:1180px){ .disp{background:var(--nav-glass-thick); -webkit-backdrop-filter:blur(30px) saturate(180%); backdrop-filter:blur(30px) saturate(180%)} }
+@media (max-width:900px){
+  .cover{height:calc(var(--barh) + 380px)}
+  .region-head h2{font-size:calc(32px * var(--fs))}
+  .side, .disp, .results{background:var(--nav-glass-thick); -webkit-backdrop-filter:blur(30px) saturate(180%); backdrop-filter:blur(30px) saturate(180%)}
+  .sheet-h{background:transparent}
+  .side.shown .sheet-h{-webkit-backdrop-filter:blur(20px); backdrop-filter:blur(20px); background:color-mix(in srgb, var(--glass-solid) 70%, transparent)}
+}
+@media (prefers-reduced-motion: reduce){ :root{transition:none} header.bar::before{transition:none} }
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .field, .tools, .side, .mbar, .more-hint, .results, .disp, .sheet-h{background:var(--glass-solid) !important}
+}
+@media (prefers-reduced-transparency: reduce){
+  .field, .tools, .side, .mbar, .more-hint, .results, .disp, .sheet-h, header.bar::before{background:var(--glass-solid) !important; -webkit-backdrop-filter:none !important; backdrop-filter:none !important}
+  .cover{opacity:.45}
+}
+@media (forced-colors: active){ .cover, header.bar::before{display:none} }
 @media (prefers-reduced-motion: reduce){
   details::details-content{transition:none}
   section[role="tabpanel"]:not([hidden]), .pbox, .path.open > .pbody, .results:not([hidden]), .more-hint{animation:none}
@@ -790,6 +849,8 @@ section[role="tabpanel"]:not([hidden]){animation:fadeUp var(--dur-3) var(--ease)
 </style>
 
 <div class="app" id="app" dir="rtl" lang="he">
+  <div class="cover" aria-hidden="true"></div>
+  <svg class="sr" width="0" height="0" aria-hidden="true" focusable="false"><filter id="lens" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feImage href="data:image/png;base64,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" x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" result="m"/><feDisplacementMap in="SourceGraphic" in2="m" scale="-34" xChannelSelector="R" yChannelSelector="G"/></filter></svg>
   <header class="bar" id="bar">
     <div class="brand">
       <h1 lang="en" dir="ltr">Ligamentum</h1>
@@ -1270,7 +1331,7 @@ window.addEventListener("popstate", () => {
 });
 function show(id, scroll){
   if(!TABS.some(t => t[0] === id)) id = "general";
-  current = id;
+  current = id; setHue(id);
   TABS.forEach(([t]) => { $("#p-" + t).hidden = t !== id; $("#t-" + t).setAttribute("aria-selected", String(t === id)); });
   store.set("uqmap-tab", id);
   if(location.hash !== "#" + id){ try{ if(booted && !fromHistory) history.pushState(null, "", "#" + id); else history.replaceState(null, "", "#" + id); }catch(e){} }
@@ -1461,6 +1522,12 @@ syncTheme();
 document.addEventListener("toggle", e => { const d = e.target; if(d.matches && d.matches("details.more[data-more]")) store.set("uqmap-more-" + d.dataset.more, d.open ? "1" : "0"); }, true);
 
 // ---------- events ----------
+// Liquid Glass (27.11): each region's atmosphere hue; the header frosts once content passes under it; the lens only where Chromium renders SVG backdrop filters
+const REGION_HUE = { tissue:175, neck:188, shoulder:201, elbow:214, hand:227, general:240, found:253, lowback:266, hip:279, knee:292, ankle:305 };
+function setHue(id){ document.documentElement.style.setProperty("--rh", String(REGION_HUE[id] ?? 245)); }
+const onScrollGlass = () => { const s = scrollY > 6; if($("#app").classList.contains("scrolled") !== s) $("#app").classList.toggle("scrolled", s); };
+addEventListener("scroll", onScrollGlass, { passive: true }); onScrollGlass();
+try{ if(navigator.userAgentData && navigator.userAgentData.brands.some(b => /Chromium/.test(b.brand))) document.documentElement.classList.add("lens"); }catch(e){}
 // phone search: the results panel sits under the bar and stops above the on-screen keyboard
 function fitResults(){
   const vv = window.visualViewport, root = document.documentElement.style;
