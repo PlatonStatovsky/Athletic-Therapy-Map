@@ -856,6 +856,37 @@ details.chk[open] .chk-p{display:none}
 :root[data-theme="dark"] .out.good{background:color-mix(in srgb, var(--green) 11%, var(--card-2))}
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]):not([data-theme="comfort"]) .out.bad{background:color-mix(in srgb, var(--red) 13%, var(--card-2))}
   :root:not([data-theme="light"]):not([data-theme="comfort"]) .out.good{background:color-mix(in srgb, var(--green) 11%, var(--card-2))} }
+/* contrast to AA in all three themes (27.11, impeccable colorize). Text in a hue uses a deeper ink in light and comfort;
+   video is indigo, never red (red means stop); the selected region and the placeholder get readable greys. */
+:root{ --stop:color-mix(in srgb, var(--red-ink) 86%, #000); --go:color-mix(in srgb, var(--green-ink) 80%, #000);
+  --ev:color-mix(in srgb, var(--orange-ink) 88%, #000); --pt:color-mix(in srgb, var(--teal-ink) 76%, #000);
+  --video:var(--indigo); --video-ink:var(--indigo-ink); --sel-ink:color-mix(in srgb, var(--tint-ink) 78%, var(--label)) }
+:root[data-theme="dark"]{ --stop:var(--red-ink); --go:var(--green-ink); --ev:var(--orange-ink); --pt:var(--teal-ink); --sel-ink:color-mix(in srgb, var(--tint-ink) 75%, #fff) }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]):not([data-theme="comfort"]){ --stop:var(--red-ink); --go:var(--green-ink); --ev:var(--orange-ink); --pt:var(--teal-ink); --sel-ink:color-mix(in srgb, var(--tint-ink) 75%, #fff) } }
+.field input::placeholder, .field kbd{color:var(--label-2)}
+.reg[aria-selected="true"], .reg[aria-selected="true"] .cnt{color:var(--sel-ink); opacity:1}
+.ti .tv, .vid, .vout{color:var(--video-ink)}
+.meta span{color:color-mix(in srgb, var(--label-2) 55%, var(--label))}
+.st.flag .num{background:var(--card)}
+.out-h{font-size:calc(19px * var(--fs))}
+.out.good b{background:var(--go); color:#fff}
+.out.bad b{background:var(--stop); color:#fff}
+.chain .row{background:var(--card-2)}
+.pat-h .pn, :root:not([data-theme="dark"]) .pat-h .pn{background:var(--label-2); color:var(--card)}
+:root{ --th:color-mix(in srgb, var(--purple-ink) 80%, #000) }
+:root[data-theme="dark"]{ --th:var(--purple-ink) }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]):not([data-theme="comfort"]){ --th:var(--purple-ink) } }
+.seg button{color:color-mix(in srgb, var(--label-2) 70%, var(--label))}
+:root[data-theme="dark"] .out b{color:#141416}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]):not([data-theme="comfort"]) .out b{color:#141416} }
+:root[data-theme="dark"] details.evg a, :root[data-theme="dark"] details.evg abbr{color:color-mix(in srgb, var(--tint-ink) 70%, #fff)}
+:root[data-theme="dark"] .evg-src{color:var(--label)}
+/* text that sits on the atmosphere or on rail glass over it: one step darker than secondary grey in light */
+.lede, .rail-h, .reg .cnt{color:color-mix(in srgb, var(--label-2) 72%, var(--label))}
+:root[data-theme="dark"] .reg[aria-selected="true"]{background:color-mix(in srgb, var(--tint) 34%, var(--card)); color:#fff}
+:root[data-theme="dark"] .reg[aria-selected="true"] .cnt{color:rgba(255,255,255,.82)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]):not([data-theme="comfort"]) .reg[aria-selected="true"]{background:color-mix(in srgb, var(--tint) 34%, var(--card)); color:#fff}
+  :root:not([data-theme="light"]):not([data-theme="comfort"]) .reg[aria-selected="true"] .cnt{color:rgba(255,255,255,.82)} }
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   .field, .tools, .side, .mbar, .more-hint, .results, .disp, .sheet-h{background:var(--glass-solid) !important}
 }

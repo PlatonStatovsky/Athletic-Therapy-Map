@@ -67,7 +67,10 @@ One hue per region, `--rh` (an OKLCH hue angle), set by `setHue(id)` from `show(
 | saturation | 180–190% | |
 | `--rim` | light: `inset 0 1px 0 rgba(255,255,255,.85), inset 0 0 0 .5px rgba(255,255,255,.55)`; comfort: warm white; dark: `.24` / `.16` | every glass element, together with `--glass-sh` |
 
-These are lighter than DESIGN.md's `glass` (.66 alpha). It works because the atmosphere is pale: text on the rail stays above AA in all three themes. If Thalamus adopts the lighter tint, re-check contrast wherever glass sits over busy content (the transcript, the record).
+These are lighter than DESIGN.md's `glass` (.66 alpha). It works because the atmosphere is pale, but only after two adjustments, measured against real screenshot pixels (`tests/e2e/atmosphere_contrast.py`, every region × three themes × three widths):
+
+- `.lede`, `.rail-h` and `.reg .cnt` take `--label-2` mixed 72% with `--label` (plain `--label-2` was 4.1–4.4:1 in light).
+- In dark, the selected region row uses a solid `tint 34%` over `--card` with white text (tint ink on tint-soft over glass was 3.1:1). If Thalamus adopts the lighter tint, re-check contrast wherever glass sits over busy content (the transcript, the record).
 
 ### Header: glass only when needed
 
@@ -116,4 +119,4 @@ What needs a decision first:
 - **CSS:** `src/template.html`, from the comment "Liquid Glass + region atmosphere" to the reduced-transparency block.
 - **Markup:** `.cover` and the `#lens` SVG, just before `<header class="bar">`.
 - **JS:** `REGION_HUE`, `setHue()` (called in `show()`), `onScrollGlass`, the Chromium `lens` check.
-- **Checks:** `tests/e2e/frame_tour.py`, `content_tour.py`, `phone_width.py`, `desk_grid.py`.
+- **Checks:** `tests/e2e/frame_tour.py`, `content_tour.py`, `phone_width.py`, `desk_grid.py`, `contrast_audit.py` (computed colours), `atmosphere_contrast.py` (screenshot pixels).
