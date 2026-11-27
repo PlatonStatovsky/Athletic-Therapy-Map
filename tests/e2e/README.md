@@ -33,6 +33,7 @@ The scripts build on each other with `exec(open(...).read().split(...)[0])`, so 
 | `reclimit.py` | Recording limit per session: 10 recordings and 2 hours in total (no cap per recording); grey button with title / aria only; stop at 2 h; orange clock in the last 5 min; older sessions; settings line. `reclimit_compose.py` makes the image |
 | `site_tour.py` | Ligamentum redesign: home page, map (desktop region, phone test card) and Thalamus in light / comfort / dark; checks the shared font loads and no request fails. `BASE=… TAG=before` for an old commit; `site_compose.py <phase>` makes the before/after images |
 | `frame_tour.py` | Ligamentum redesign phase 1: the map frame on desktop, tablet (tests panel open) and phone (regions / tests / display sheets, switching region from the sheet, deep link to a test card); prints positions and page errors. `THEMES=light,comfort,dark`, `BASE=… TAG=before` |
+| `phone_width.py` | Ligamentum map on narrow phones (360–412) at the three text sizes: nothing wider than the screen — page and the regions / tests / display sheets |
 | `home.py` | Home page, old `/#knee` links sent to `/map/`, app links and the knowledge base read from `/map/` |
 | `play_check.py` | Real MediaRecorder audio: ▶ on a quote plays only that quote |
 | `rec_lock.py` | Record locked 24 h after the first save, on a wide screen |
