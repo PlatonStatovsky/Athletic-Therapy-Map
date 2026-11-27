@@ -841,6 +841,21 @@ header.bar::before{content:""; position:absolute; inset:0 0 -26px 0; z-index:-1;
   .side.shown .sheet-h{-webkit-backdrop-filter:blur(20px); backdrop-filter:blur(20px); background:color-mix(in srgb, var(--glass-solid) 70%, transparent)}
 }
 @media (prefers-reduced-motion: reduce){ :root{transition:none} header.bar::before{transition:none} }
+/* red-flag screening (27.11, impeccable clarify): the criterion reads without opening; one control opens them all;
+   a red "yes" leads with its short imperative; calmer outcome fills in dark */
+.checks-label{display:flex; align-items:center; justify-content:space-between; gap:10px}
+.chk-all{border:0; cursor:pointer; font:inherit; font-size:calc(13px * var(--fs)); font-weight:600; color:var(--tint-ink); background:var(--fill-2); border-radius:999px; padding:5px 12px; min-height:32px}
+.chk-all:hover{background:var(--tint-soft)}
+.chk-t{display:block; font-weight:600}
+.chk-p{display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-top:3px; font-weight:400; font-size:calc(13.5px * var(--fs)); line-height:1.5; color:var(--label-2)}
+details.chk[open] .chk-p{display:none}
+.out-h{display:block; font-size:calc(16px * var(--fs)); font-weight:800; letter-spacing:-.005em; margin:6px 0 2px}
+.out.bad .out-h{color:var(--stop)}
+.out-d{display:block}
+:root[data-theme="dark"] .out.bad{background:color-mix(in srgb, var(--red) 13%, var(--card-2))}
+:root[data-theme="dark"] .out.good{background:color-mix(in srgb, var(--green) 11%, var(--card-2))}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]):not([data-theme="comfort"]) .out.bad{background:color-mix(in srgb, var(--red) 13%, var(--card-2))}
+  :root:not([data-theme="light"]):not([data-theme="comfort"]) .out.good{background:color-mix(in srgb, var(--green) 11%, var(--card-2))} }
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   .field, .tools, .side, .mbar, .more-hint, .results, .disp, .sheet-h{background:var(--glass-solid) !important}
 }
@@ -5533,8 +5548,10 @@ function chip(id, i){
 const chips = (ids, ordered) => '<div class="chips">' + ids.map((id, i) => ordered && i ? '<span class="cg"><span class="arr" aria-hidden="true">←</span>' + chip(id, i) + "</span>" : chip(id, ordered ? i : null)).join("") + "</div>";
 function decision(d){
   const yesCls = d.yesGood ? "good" : "bad", noCls = d.yesGood ? "bad" : "good";
+  const m = !d.yesGood && /^([^:]{2,26}):\s*([\s\S]+)$/.exec(d.yes || "");
+  const yesHtml = m ? '<strong class="out-h">' + fx(m[1]) + '</strong><span class="out-d">' + fx(m[2]) + "</span>" : fx(d.yes);
   return '<div class="dec"><div class="dec-q"><span class="dia" aria-hidden="true"><span>?</span></span><span>' + fx(d.q) + "</span></div>" +
-    '<div class="dec-out"><div class="out ' + yesCls + '"><b>כן</b>' + fx(d.yes) + '</div><div class="out ' + noCls + '"><b>' + esc(d.noLabel || "לא") + "</b>" + fx(d.no) + "</div></div></div>";
+    '<div class="dec-out"><div class="out ' + yesCls + '"><b>כן</b>' + yesHtml + '</div><div class="out ' + noCls + '"><b>' + esc(d.noLabel || "לא") + "</b>" + fx(d.no) + "</div></div></div>";
 }
 function histHTML(x){
   const row = (cls, label, v) => v ? '<div class="hr ' + cls + '"><span class="hl">' + label + "</span><span>" + fx(v) + "</span></div>" : "";
@@ -5650,7 +5667,7 @@ function renderRegion(r){
   html += station(r.id, n++, "קבלת מטופל ואנמנזה", "לפי המסגרת הכללית", "<p>" + fx(r.anam) + "</p>");
   scope();
   let rf = decision({ q: r.s1.q, yes: r.s1.yes, no: "המשך לבדיקה קלינית" });
-  rf += '<div class="checks-label">איך מסננים</div><div class="checks">' + r.s1.checks.map((c, i) => {
+  rf += '<div class="checks-label"><span>איך מסננים</span><button type="button" class="chk-all" data-chk-all aria-pressed="false">פתיחת הכל</button></div><div class="checks">' + r.s1.checks.map((c, i) => {
     scope();
     let b = "";
     if(c.chain) b += '<div class="chain">' + c.chain.map((row, k) => '<div class="row"><span>' + fx(row[0]) + '</span><span class="y">כן ← ' + fx(row[1]) + "</span></div>" + (k < c.chain.length - 1 ? '<div class="nx">לא ↓</div>' : '<div class="nx">לא ← ממשיכים</div>')).join("") + "</div>";
@@ -5660,7 +5677,8 @@ function renderRegion(r){
     if(c.list5d) b += '<div class="dd"><div><h4>5D\'s</h4>' + li(FIVE_D) + "</div><div><h4>3N's</h4>" + li(THREE_N) + "</div></div>";
     if(c.note) b += "<p>" + fx(c.note) + "</p>";
     if(c.src) b += '<p class="bsrc">' + rich(c.src) + "</p>";
-    return '<details class="chk" id="chk-' + r.id + "-" + i + '"><summary>' + fx(c.title, { ng: 1 }) + '</summary><div class="chk-body">' + b + "</div></details>";
+    const pv = c.li ? c.li[0] : c.chain ? c.chain[0][0] + " ← " + c.chain[0][1] : "";
+    return '<details class="chk" id="chk-' + r.id + "-" + i + '"><summary><span class="chk-t">' + fx(c.title, { ng: 1 }) + "</span>" + (pv ? '<span class="chk-p">' + fx(pv, { ng: 1 }) + "</span>" : "") + '</summary><div class="chk-body">' + b + "</div></details>";
   }).join("") + "</div>";
   html += station(r.id, n++, "סינון דגלים אדומים", "", rf, true);
   scope();
@@ -6095,6 +6113,9 @@ function toggleSide(on){
 function closeDisp(){ $("#disp").classList.remove("open"); $$('#dispBtn, [data-mbar="disp"]').forEach(b => b.setAttribute("aria-expanded", "false")); }
 document.addEventListener("click", e => {
   const t = e.target;
+  const ca = t.closest("[data-chk-all]");
+  if(ca){ const box = ca.closest(".card").querySelector(".checks"), all = [...box.querySelectorAll("details.chk")], open = !all.every(d => d.open);
+    all.forEach(d => d.open = open); ca.textContent = open ? "סגירת הכל" : "פתיחת הכל"; ca.setAttribute("aria-pressed", String(open)); return; }
   const mb = t.closest("[data-mbar]");
   if(mb){ const k = mb.dataset.mbar;
     if(k === "regions"){ closeDisp(); hidePanel(); toggleSide(!$("#side").classList.contains("shown")); return; }
