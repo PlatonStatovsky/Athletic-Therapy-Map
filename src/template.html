@@ -1260,14 +1260,10 @@ function renderOutline(){
     const r = REGIONS.find(x => x.id === current);
     STAGES.forEach((t, i) => {
       h += '<button type="button" class="ol-st' + (i === 1 ? " flag" : "") + '" data-scroll="st-' + r.id + "-" + (i + 1) + '"><span class="n">' + (i + 1) + "</span><span>" + esc(t) + "</span></button>";
-      if(i === 3){
-        h += '<div class="ol-pat">' + r.s3.patterns.map((pt, pi) => '<div class="pt">' + "אבגדהוזח"[pi] + " · " + fx(pt.title, { ng: 1 }) + "</div>" +
-          pt.paths.map((p, ji) => '<button type="button" class="ol-path" data-path="' + r.id + "-" + pi + "-" + ji + '">' + fx(p.n, { ng: 1 }) + "</button>").join("")).join("") + "</div>";
-      }
     });
   }
   $("#outline").innerHTML = h;
-  $("#ol-h").textContent = current === "general" ? "שמונת השלבים" : topicTab(current) ? "נושאים" : "שלבים ופתולוגיות";
+  $("#ol-h").textContent = current === "general" ? "שמונת השלבים" : topicTab(current) ? "נושאים" : "שלבים";
 }
 
 // ---------- panel ----------
@@ -1440,11 +1436,13 @@ function goChk(id){
   if(current !== rid) show(rid);
   el.open = true; el.scrollIntoView({ behavior: "smooth", block: "start" }); flash(el);
 }
+let spyPin = null;
+["wheel", "touchstart", "keydown"].forEach(ev => addEventListener(ev, e => { if(ev !== "keydown" || /^(Arrow|Page|Home|End| )/.test(e.key)) spyPin = null; }, { passive: true }));
 function goStation(id){
-  const el = document.getElementById(id); if(!el) return;
+  const el = document.getElementById(id); if(!el) return; spyPin = id;
   const rid = id.split("-")[1];
   if(current !== rid) show(rid);
-  el.scrollIntoView({ behavior: "smooth", block: "start" }); flash(el.querySelector(".card"));
+  el.scrollIntoView({ behavior: "smooth", block: "start" }); flash(el.querySelector(".card")); spy();
 }
 
 // scroll spy for the outline
@@ -1456,6 +1454,8 @@ function spy(){
     const line = (parseFloat(getComputedStyle(root).getPropertyValue("--barh")) || 64) + 120;
     let act = sts[0];
     sts.forEach(s => { if(s.getBoundingClientRect().top <= line) act = s; });
+    if(innerHeight + scrollY >= document.documentElement.scrollHeight - 4 && sts[sts.length - 1].getBoundingClientRect().top < innerHeight) act = sts[sts.length - 1];
+    const pin = spyPin && document.getElementById(spyPin); if(pin && pin.closest("#p-" + current)) act = pin;
     $$(".ol-st").forEach(b => b.classList.toggle("on", b.dataset.scroll === act.id));
   });
 }
