@@ -58,8 +58,9 @@ const REGION_ALIAS = { 'גב תחתון': 'גב תחתון ואגן', 'ירך ו
 const newRegion = r => REGION_ALIAS[r] || r;
 function fixRegion(s) { if (!s) return s; if (s.region) s.region = newRegion(s.region); if (s.prev?.region) s.prev.region = newRegion(s.prev.region); return s; }
 const fixTags = text => String(text || '').split('\n').map(l => { if (l.trim().startsWith('#') || !l.includes('|')) return l; const [a, tags, ...rest] = l.split('|'); return [a, ' ' + tags.split(',').map(t => newRegion(t.trim())).join(', ') + ' ', ...rest].join('|').replace(/ +\|/g, ' |').replace(/\| +$/, ''); }).join('\n');
-// Claude is fixed (Platon, 27.11): Sonnet 5.5 at high effort for every call; there is no model choice in the settings
-const CLAUDE_MODEL = 'claude-sonnet-5-5', CLAUDE_EFFORT = 'high';
+// Claude is fixed (Platon, 27.11): Sonnet 5.5 for every call, no model choice in the settings.
+// Effort: medium for the live updates (form filling, smart tools), high for everything else (the analysis)
+const CLAUDE_MODEL = 'claude-sonnet-5-5', CLAUDE_EFFORT = 'high', CLAUDE_EFFORT_LIVE = 'medium';
 const DEFAULT_SETTINGS = {
   extractModel: CLAUDE_MODEL, analysisModel: CLAUDE_MODEL,
   clientId: '', rootFolderName: 'מטופלים', rootFolderId: '',
@@ -363,7 +364,7 @@ async function countTokens(body) {
   return (await r.json()).input_tokens;
 }
 // form filling runs in the background, so accuracy matters more than speed
-function fillParams() { return { effort: CLAUDE_EFFORT }; }
+function fillParams() { return { effort: CLAUDE_EFFORT_LIVE }; }
 // one retry without optional parameters if the API rejects them
 async function callWithFallback(body, opts) {
   try { return await callClaude(body, opts); }
