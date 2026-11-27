@@ -19,39 +19,26 @@
   try { var t = localStorage.getItem('uqmap-theme'); if (t === 'light' || t === 'comfort' || t === 'dark') document.documentElement.dataset.theme = t; else if (!matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.dataset.theme = 'comfort'; } catch (e) { }
 })();
 </script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@400;500;600;700&family=Suez+One&display=swap">
+<link rel="preload" href="app/fonts/heebo-hebrew-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="shared/tokens.css">
 <style>
+/* colours, fonts and themes: shared/tokens.css (the Thalamus tokens); the page keeps its names as aliases */
 :root{
-  --bg:#edf0ee; --surface:#fbfcfb; --ink:#1d2429; --muted:#57636c; --line:#d5dcd8;
-  --accent:#2a5c9e; --accent-soft:#e5ecf6; --th:#7136c9; --th-soft:#efe7fb; --on-accent:#fff;
-  --shadow:0 1px 2px rgb(22 33 42 / .05), 0 4px 14px rgb(22 33 42 / .04);
-  color-scheme:light;
+  --surface:var(--card); --ink:var(--label); --muted:var(--label-2); --line:var(--sep);
+  --accent:var(--tint-ink); --accent-soft:var(--tint-soft); --th:var(--purple-ink); --th-soft:color-mix(in srgb, var(--purple) 13%, transparent); --on-accent:#fff;
+  --shadow:var(--card-sh);
 }
-:root[data-theme="comfort"]{
-  --bg:#f0dcc0; --surface:#faecd8; --ink:#33271b; --muted:#735e45; --line:#e4cba8;
-  --accent:#2f5b86; --accent-soft:#e8e2d6; --th:#694a9f; --th-soft:#ecdde3; --on-accent:#faecd8;
-  --shadow:0 1px 2px rgb(80 50 20 / .07);
-}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]):not([data-theme="comfort"]){
-  --bg:#1a1917; --surface:#22211f; --ink:#e3ddd2; --muted:#a39b8e; --line:#3a3733;
-  --accent:#9ab8dd; --accent-soft:#25303c; --th:#c0a6f0; --th-soft:#2a2340; --on-accent:#1a1917;
-  --shadow:0 1px 2px rgb(0 0 0 / .3); color-scheme:dark; } }
-:root[data-theme="dark"]{
-  --bg:#1a1917; --surface:#22211f; --ink:#e3ddd2; --muted:#a39b8e; --line:#3a3733;
-  --accent:#9ab8dd; --accent-soft:#25303c; --th:#c0a6f0; --th-soft:#2a2340; --on-accent:#1a1917;
-  --shadow:0 1px 2px rgb(0 0 0 / .3); color-scheme:dark;
-}
+@media (prefers-color-scheme:dark){ :root:not([data-theme]){ --accent:var(--tint) } }
+:root[data-theme="dark"]{ --accent:var(--tint) }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink)}
-body{font-family:"IBM Plex Sans Hebrew","Assistant","Segoe UI",Arial,sans-serif;font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased;
+body{font-family:var(--font-sans);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased;
   min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom)}
 main{width:100%;max-width:880px;margin:0 auto;flex:1;display:flex;flex-direction:column;justify-content:center;padding:48px 0}
 .top{display:flex;justify-content:flex-end;max-width:880px;width:100%;margin:12px auto 0}
 .theme{font:inherit;font-size:14px;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 14px;cursor:pointer}
 .theme:hover{color:var(--ink)}
-h1{font-family:"Suez One","Frank Ruhl Libre",Georgia,serif;font-weight:400;font-size:clamp(40px,8vw,64px);line-height:1.1;margin:0 0 10px}
+h1{font-family:var(--font-sans);font-weight:800;letter-spacing:-.02em;font-size:clamp(40px,8vw,64px);line-height:1.1;margin:0 0 10px}
 .lead{font-size:clamp(17px,2.6vw,20px);color:var(--muted);margin:0 0 36px;max-width:36em}
 .doors{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
 .door{display:flex;flex-direction:column;gap:10px;padding:24px;border-radius:16px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);color:inherit;text-decoration:none;transition:transform .15s,border-color .15s}

@@ -31,6 +31,7 @@ The scripts build on each other with `exec(open(...).read().split(...)[0])`, so 
 | `intake.py` | Patient details (age, sex, address, occupation, marital) on the start screen: not in the form, not filled by the model, not in "still not said"; kept in the record, the Drive doc and the AI context; popup on the patient name; prefill of a known patient. `intake_compose.py` makes the before/after images |
 | `ui_tour.py` | Layout tour (phone 390/412, tablet, desktop 1280/1440/1920; `THEMES=light,comfort,dark`): top bar heights, timer not clipped, player position and size, card rows (equal height / width), transcript panel, finish screen. `ui_compose.py` makes the before/after images |
 | `reclimit.py` | Recording limit per session: 10 recordings and 2 hours in total (no cap per recording); grey button with title / aria only; stop at 2 h; orange clock in the last 5 min; older sessions; settings line. `reclimit_compose.py` makes the image |
+| `site_tour.py` | Ligamentum redesign: home page, map (desktop region, phone test card) and Thalamus in light / comfort / dark; checks the shared font loads and no request fails. `BASE=… TAG=before` for an old commit; `site_compose.py <phase>` makes the before/after images |
 | `home.py` | Home page, old `/#knee` links sent to `/map/`, app links and the knowledge base read from `/map/` |
 | `play_check.py` | Real MediaRecorder audio: ▶ on a quote plays only that quote |
 | `rec_lock.py` | Record locked 24 h after the first save, on a wide screen |

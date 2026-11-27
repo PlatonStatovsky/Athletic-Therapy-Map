@@ -1,69 +1,31 @@
 <title>Ligamentum</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+Hebrew:wght@400;500;600;700&family=Suez+One&display=swap">
+<link rel="preload" href="../app/fonts/heebo-hebrew-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../shared/tokens.css">
 <style>
 /* Layout: desktop console — region rail on the right, the decision spine in the middle, a test & glossary panel on the left */
+/* Colours, fonts and themes come from ../shared/tokens.css (the Thalamus tokens, redesign phase 0, 27.11).
+   The map keeps its own variable names as aliases, so its components follow every theme (light / comfort = warm paper / dark)
+   and every later change in the shared file. */
 :root{
-  /* בהיר — clean, softened (no pure white) */
-  --bg:#edf0ee; --surface:#fbfcfb; --surface-2:#f3f6f4; --ink:#1d2429; --muted:#57636c; --line:#d5dcd8; --line-2:#b9c3be;
-  --accent:#2a5c9e; --accent-soft:#e5ecf6; --accent-line:#bccde4; --on-accent:#ffffff;
-  --stop:#b02a20; --stop-soft:#fbeae8; --stop-line:#ecc1bc;
-  --go:#22764a; --go-soft:#e4f2e9; --go-line:#b3d6c1;
-  --ev:#9a540c; --ev-soft:#fbf0e1; --video:#c0302f;
-  --grp:#8794a0; --grp-soft:#eef1f3;
-  --chip:#eef3fa; --shadow:0 1px 2px rgb(22 33 42 / .05), 0 4px 14px rgb(22 33 42 / .04);
-  --bar:#1d2429; --bar-ink:#edf0ee; --bar-muted:#a3b2ba; --bar-field:#2a343c; --bar-line:#3a4852;
-  --mark:#ffe39a; --mark-ink:#1d2429; --flash:rgb(42 92 158 / .14); --scrim:rgb(10 14 18 / .45);
-  --pt:#0a6f6a; --pt-soft:#e0f2f0; --th:#7136c9; --th-soft:#efe7fb;
-  --f-display:"Suez One", "Frank Ruhl Libre", Georgia, serif;
-  --f-body:"IBM Plex Sans Hebrew", "Assistant", "Segoe UI", Arial, sans-serif;
-  --f-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
-  --r:12px; --barh:64px; --fs:1; --lh:1.65;
+  --surface:var(--card); --surface-2:var(--card-2); --ink:var(--label); --muted:var(--label-2); --line:var(--sep); --line-2:var(--sep-strong);
+  --accent:var(--tint-ink); --accent-soft:var(--tint-soft); --accent-line:color-mix(in srgb, var(--tint) 32%, transparent); --on-accent:#ffffff;
+  --stop:var(--red-ink); --stop-soft:var(--red-soft); --stop-line:color-mix(in srgb, var(--red) 34%, transparent);
+  --go:var(--green-ink); --go-soft:var(--green-soft); --go-line:color-mix(in srgb, var(--green) 36%, transparent);
+  --ev:var(--orange-ink); --ev-soft:var(--orange-soft); --video:var(--red);
+  --grp:var(--label-3); --grp-soft:var(--fill-2);
+  --chip:var(--fill-2); --shadow:var(--card-sh);
+  --bar:var(--card); --bar-ink:var(--label); --bar-muted:var(--label-2); --bar-field:var(--fill); --bar-line:var(--sep);
+  --mark:var(--yellow-soft); --mark-ink:var(--label); --flash:var(--tint-soft);
+  --pt:var(--teal-ink); --pt-soft:var(--teal-soft); --th:var(--purple-ink); --th-soft:color-mix(in srgb, var(--purple) 13%, transparent);
+  --f-display:var(--font-sans); --f-body:var(--font-sans); --f-mono:var(--font-mono);
+  --r:var(--r-m); --barh:64px; --fs:1; --lh:1.65;
 }
-/* נוח לעין — warm paper, less blue light, lower glare, a little more air between lines */
-:root[data-theme="comfort"]{
-  --bg:#f0dcc0; --surface:#faecd8; --surface-2:#f3e1c6; --ink:#33271b; --muted:#735e45; --line:#e4cba8; --line-2:#cfae84;
-  --accent:#2f5b86; --accent-soft:#e8e2d6; --accent-line:#c6c6bf; --on-accent:#faecd8;
-  --stop:#a3372b; --stop-soft:#f7dac9; --stop-line:#e6b9a1;
-  --go:#376a41; --go-soft:#e6e6cc; --go-line:#c6cca4;
-  --ev:#8a4e0c; --ev-soft:#f6dcb6; --video:#ad3a2f;
-  --grp:#b39268; --grp-soft:#f1dfc4;
-  --chip:#efe1cc; --shadow:0 1px 2px rgb(80 50 20 / .07);
-  --bar:#3e3125; --bar-ink:#f7eadb; --bar-muted:#d0b99c; --bar-field:#4e3f31; --bar-line:#655140;
-  --mark:#f2c96b; --mark-ink:#33271b; --flash:rgb(47 91 134 / .14); --scrim:rgb(35 22 10 / .45);
-  --pt:#1f6a60; --pt-soft:#e0e3d2; --th:#694a9f; --th-soft:#ecdde3;
-  --lh:1.72;
-  color-scheme:light;
-}
-/* כהה — warm dark, no pure black or white, softened accents */
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]):not([data-theme="comfort"]){
-  --bg:#1a1917; --surface:#22211f; --surface-2:#2a2826; --ink:#e3ddd2; --muted:#a39b8e; --line:#3a3733; --line-2:#514c45;
-  --accent:#9ab8dd; --accent-soft:#25303c; --accent-line:#3b4d62; --on-accent:#1a1917;
-  --stop:#ec978c; --stop-soft:#3a2422; --stop-line:#5a3631;
-  --go:#8ccb9b; --go-soft:#1f3226; --go-line:#2f4b37;
-  --ev:#e2ab66; --ev-soft:#3a2d1c; --video:#ec877d;
-  --grp:#6f7a84; --grp-soft:#262a2d;
-  --chip:#262d34; --shadow:0 1px 2px rgb(0 0 0 / .3);
-  --bar:#121110; --bar-ink:#e3ddd2; --bar-muted:#8f887d; --bar-field:#22211f; --bar-line:#3a3733;
-  --mark:#6b5410; --mark-ink:#fff3d3; --flash:rgb(154 184 221 / .16); --scrim:rgb(0 0 0 / .55);
-  --pt:#6ccdc0; --pt-soft:#173230; --th:#c0a6f0; --th-soft:#2a2340;
-  --lh:1.7;
-  color-scheme:dark; } }
-:root[data-theme="dark"]{
-  --bg:#1a1917; --surface:#22211f; --surface-2:#2a2826; --ink:#e3ddd2; --muted:#a39b8e; --line:#3a3733; --line-2:#514c45;
-  --accent:#9ab8dd; --accent-soft:#25303c; --accent-line:#3b4d62; --on-accent:#1a1917;
-  --stop:#ec978c; --stop-soft:#3a2422; --stop-line:#5a3631;
-  --go:#8ccb9b; --go-soft:#1f3226; --go-line:#2f4b37;
-  --ev:#e2ab66; --ev-soft:#3a2d1c; --video:#ec877d;
-  --grp:#6f7a84; --grp-soft:#262a2d;
-  --chip:#262d34; --shadow:0 1px 2px rgb(0 0 0 / .3);
-  --bar:#121110; --bar-ink:#e3ddd2; --bar-muted:#8f887d; --bar-field:#22211f; --bar-line:#3a3733;
-  --mark:#6b5410; --mark-ink:#fff3d3; --flash:rgb(154 184 221 / .16); --scrim:rgb(0 0 0 / .55);
-  --pt:#6ccdc0; --pt-soft:#173230; --th:#c0a6f0; --th-soft:#2a2340;
-  --lh:1.7;
-  color-scheme:dark; }
+/* נוח לעין — the reading theme: a little more air between lines */
+:root[data-theme="comfort"]{ --lh:1.72 }
+/* dark: the accent fills (active region, buttons, step numbers) carry white text, so they take the system blue, not the light text blue */
+@media (prefers-color-scheme:dark){ :root:not([data-theme]){ --accent:var(--tint) } }
+:root[data-theme="dark"]{ --accent:var(--tint) }
 
 *{box-sizing:border-box}
 body{background:var(--bg); color:var(--ink); font-family:var(--f-body); font-size:calc(15.5px * var(--fs)); line-height:var(--lh); margin:0; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; transition:background-color .25s, color .25s}
@@ -81,7 +43,7 @@ header.bar{position:sticky; top:env(safe-area-inset-top, 0px); z-index:8; backgr
   padding-block:10px; padding-left:max(20px, env(safe-area-inset-left, 0px)); padding-right:max(20px, env(safe-area-inset-right, 0px))}
 .brand{display:grid; line-height:1.15; flex:0 0 auto}
 .brand .eyebrow{font-size:calc(11.5px * var(--fs)); letter-spacing:.06em; color:var(--bar-muted); font-weight:500}
-.brand h1{font-family:var(--f-display); font-weight:400; font-size:calc(24px * var(--fs)); margin:0; white-space:nowrap}
+.brand h1{font-family:var(--f-display); font-weight:700; letter-spacing:-.01em; font-size:calc(22px * var(--fs)); margin:0; white-space:nowrap}
 .search{position:relative; flex:1 1 420px; max-width:680px; min-width:0}
 .field{display:flex; align-items:center; gap:10px; background:var(--bar-field); border:1px solid var(--bar-line); border-radius:10px; padding:0 12px; height:42px}
 .field:focus-within{border-color:var(--bar-ink)}
@@ -156,7 +118,7 @@ main{min-width:0; padding:22px 32px 90px}
 
 /* ---------- main ---------- */
 .region-head{display:grid; gap:6px; margin:4px 0 8px}
-.region-head h2{font-family:var(--f-display); font-weight:400; font-size:calc(36px * var(--fs)); margin:0; line-height:1.15; text-wrap:balance}
+.region-head h2{font-family:var(--f-display); font-weight:800; letter-spacing:-.015em; font-size:calc(34px * var(--fs)); margin:0; line-height:1.15; text-wrap:balance}
 .meta{display:flex; flex-wrap:wrap; gap:8px; font-size:calc(13px * var(--fs)); color:var(--muted)}
 .meta span{border:1px solid var(--line); border-radius:999px; padding:2px 10px; background:var(--surface)}
 .lede{color:var(--muted); margin:0; max-width:72ch}
