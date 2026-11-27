@@ -905,6 +905,21 @@ details.chk[open] .chk-p{display:none}
 .applink:hover{filter:none; background:color-mix(in srgb, var(--tint) 22%, transparent)}
 .evkey{display:grid; gap:6px}
 .evkey h4{margin:0; font-size:calc(12px * var(--fs)); letter-spacing:.06em; color:var(--label-2); font-weight:700}
+/* custom scrollbars (28.11): the side columns and phone sheets hide the system bar and draw a slim pill inside their rounded
+   frame, inset from the corners; it rests faint, brightens on hover or while scrolling, and can be dragged. Page bar: thin, rounded. */
+#side, #panel{scrollbar-width:none}
+#side::-webkit-scrollbar, #panel::-webkit-scrollbar{display:none}
+.sb-thumb{position:absolute; z-index:6; inset-inline-end:4px; top:0; width:5px; border-radius:999px; background:color-mix(in srgb, var(--label) 34%, transparent);
+  opacity:0; transition:opacity var(--dur-2), width var(--dur-1), background var(--dur-1); touch-action:none; cursor:grab}
+.sb-thumb::before{content:""; position:absolute; inset:-6px -7px}
+.sb-host.sb-can .sb-thumb{opacity:.45}
+.sb-host.sb-can:hover .sb-thumb, .sb-host.sb-live .sb-thumb{opacity:1}
+.sb-thumb:hover, .sb-thumb.drag{width:8px; background:color-mix(in srgb, var(--label) 50%, transparent)}
+.sb-thumb.drag{cursor:grabbing}
+html{scrollbar-width:thin; scrollbar-color:color-mix(in srgb, var(--label) 28%, transparent) transparent}
+html::-webkit-scrollbar{width:10px} html::-webkit-scrollbar-track{background:transparent}
+html::-webkit-scrollbar-thumb{background:color-mix(in srgb, var(--label) 28%, transparent); border-radius:999px; border:3px solid transparent; background-clip:padding-box}
+@media (prefers-reduced-motion: reduce){ .sb-thumb{transition:none} }
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   .field, .tools, .side, .mbar, .more-hint, .results, .disp, .sheet-h{background:var(--glass-solid) !important}
 }
@@ -1617,6 +1632,32 @@ function fitResults(){
 }
 if(window.visualViewport) visualViewport.addEventListener("resize", fitResults);
 $("#q").addEventListener("focus", () => setTimeout(fitResults, 60));
+// custom scrollbars for the side columns and phone sheets (28.11)
+function customScroll(el){
+  if(!el) return;
+  el.classList.add("sb-host");
+  const th = document.createElement("span"); th.className = "sb-thumb"; th.setAttribute("aria-hidden", "true"); el.appendChild(th);
+  const inset = () => parseFloat(getComputedStyle(el).borderTopLeftRadius) > 20 ? 18 : 10;
+  let live = 0;
+  const place = () => {
+    const ch = el.clientHeight, sh = el.scrollHeight, can = sh > ch + 4;
+    el.classList.toggle("sb-can", can); if(!can) return;
+    const m = inset(), track = ch - 2 * m, h = Math.max(28, track * ch / sh), pos = (track - h) * (el.scrollTop / (sh - ch));
+    th.style.height = h + "px"; th.style.transform = "translateY(" + (el.scrollTop + m + pos) + "px)";
+  };
+  el.addEventListener("scroll", () => { requestAnimationFrame(place); el.classList.add("sb-live"); clearTimeout(live); live = setTimeout(() => el.classList.remove("sb-live"), 900); }, { passive: true });
+  addEventListener("resize", place); new ResizeObserver(place).observe(el);
+  new MutationObserver(() => requestAnimationFrame(place)).observe(el, { childList: true, subtree: true, attributes: true, attributeFilter: ["open", "class", "hidden"] });
+  th.addEventListener("pointerdown", e => {
+    e.preventDefault(); th.setPointerCapture(e.pointerId); th.classList.add("drag");
+    const y0 = e.clientY, s0 = el.scrollTop, m = inset(), track = el.clientHeight - 2 * m, h = th.offsetHeight, k = (el.scrollHeight - el.clientHeight) / Math.max(1, track - h);
+    const mv = ev => { el.scrollTop = s0 + (ev.clientY - y0) * k; };
+    const up = () => { th.classList.remove("drag"); th.removeEventListener("pointermove", mv); th.removeEventListener("pointerup", up); th.removeEventListener("pointercancel", up); };
+    th.addEventListener("pointermove", mv); th.addEventListener("pointerup", up); th.addEventListener("pointercancel", up);
+  });
+  setTimeout(place, 200);
+}
+customScroll($("#side")); customScroll($("#panel"));
 // redesign phase 3: scroll cues for the side columns
 function scrollCue(el){
   if(!el) return;
